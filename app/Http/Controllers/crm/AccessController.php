@@ -7,6 +7,7 @@ use App\Models\core\User;
 use App\Models\core\PagePermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Traits\HasPagePermissions;
 
@@ -86,18 +87,20 @@ class AccessController extends Controller
             $submittedPages[] = ['page' => 'dashboard', 'permission' => 'view'];
         }
 
-        PagePermission::where('user_id', $request->user_id)
-            ->where('module', $module)
-            ->delete();
+        DB::transaction(function () use ($request, $targetUser, $module, $submittedPages) {
+            PagePermission::where('user_id', $request->user_id)
+                ->where('module', $module)
+                ->delete();
 
-        foreach ($submittedPages as $pageData) {
-            $pagePerm = new PagePermission();
-            $pagePerm->user_id = $targetUser->id;
-            $pagePerm->module = $module;
-            $pagePerm->page = $pageData['page'];
-            $pagePerm->permission_level = $pageData['permission'];
-            $pagePerm->save();
-        }
+            foreach ($submittedPages as $pageData) {
+                $pagePerm = new PagePermission();
+                $pagePerm->user_id = $targetUser->id;
+                $pagePerm->module = $module;
+                $pagePerm->page = $pageData['page'];
+                $pagePerm->permission_level = $pageData['permission'];
+                $pagePerm->save();
+            }
+        });
 
         return back()->with('message', 'Permissions updated successfully.');
     }

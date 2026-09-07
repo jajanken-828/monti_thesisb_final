@@ -2,6 +2,7 @@
 
 namespace App\Models\man;
 
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Model;
 
 class IronJob extends Model
@@ -27,10 +28,5 @@ class IronJob extends Model
     public function operator()
     {
         return $this->belongsTo(User::class, 'operator_id');
-    }
-
-    public function formJob()
-    {
-        return $this->hasOne(FormJob::class);
     }
 }

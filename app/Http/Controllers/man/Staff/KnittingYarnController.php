@@ -28,12 +28,40 @@ class KnittingYarnController extends ManufacturingStaffController
             ->take(10)
             ->get();
 
+        // Next in queue: oldest unlinked pending fabrics (role-wide queue, read-only).
+        $nextQueue = Fabric::with('machine')
+            ->where('status', 'pending')
+            ->whereNull('sales_order_id')
+            ->orderBy('created_at', 'asc')
+            ->take(3)
+            ->get(['id', 'code', 'yarn_type', 'weight', 'created_at']);
+
         return Inertia::render('Dashboard/MAN/Employee/KnittingYarn/Index', [
             'stats' => [
                 'pending'     => $pendingCount,
                 'total_today' => Fabric::whereDate('processed_at', today())->count(),
             ],
             'recentFabrics' => $recentFabrics,
+            // NEW — personal efficiency (own output only) + next queue + machine context.
+            'efficiency' => array_merge(
+                $this->staffEfficiency(Fabric::class),
+                ['machines' => $this->machineAvailability('knitting')]
+            ),
+            'nextQueue' => $nextQueue,
+        ]);
+    }
+
+    /**
+     * Personal work log — own fabrics only, searchable/filterable.
+     * Route is inside the knitting_yarn prefix so man.role:knitting_yarn applies.
+     */
+    public function history()
+    {
+        return Inertia::render('Dashboard/MAN/Employee/Common/History', [
+            'roleLabel' => 'Knitting Yarn',
+            'historyRoute' => 'man.staff.knitting-yarn.history',
+            'dateColumn' => 'processed_at',
+            'jobs' => $this->staffHistory(Fabric::class, ['machine', 'operator', 'salesOrder.client', 'salesOrder.recipe.product', 'dyeJobs', 'softenerJobs', 'packages']),
         ]);
     }
 

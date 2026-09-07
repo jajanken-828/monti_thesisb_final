@@ -1,7 +1,7 @@
 <script>
 import {
     Factory, LayoutDashboard, ClipboardList, XCircle, Boxes, CheckCircle2,
-    Eye, Award, ShieldCheck, FileText, Sparkles, Palette, Wrench,
+    Eye, Award, ShieldCheck, FileText, Sparkles, Palette, Wrench, History,
 } from 'lucide-vue-next'
 
 // Static config for the "single manufacturing role" staff view (Case 2 below)
@@ -11,8 +11,7 @@ const STAFF_ROLE_CONFIG = {
     dyeing_fabric_softener: { label: 'Dyeing Fabric Softener', icon: Palette, hasReports: true },
     dyeing_squeezer: { label: 'Dyeing Squeezer', icon: Palette, hasReports: true },
     dyeing_ironing: { label: 'Dyeing Ironing', icon: Palette, hasReports: true },
-    dyeing_forming: { label: 'Dyeing Forming', icon: Palette, hasReports: true },
-    dyeing_packaging: { label: 'Dyeing Packaging', icon: Palette, hasReports: false },
+    dyeing_packaging: { label: 'Dyeing Packaging', icon: Palette, hasReports: true },
     maintenance_checker: { label: 'Maintenance Checker', icon: Wrench, hasReports: true },
 }
 
@@ -21,7 +20,7 @@ const DEPARTMENT_ROLES = {
     knitting: ['knitting_yarn'],
     dyeing: [
         'dyeing_color', 'dyeing_fabric_softener', 'dyeing_squeezer',
-        'dyeing_ironing', 'dyeing_forming', 'dyeing_packaging',
+        'dyeing_ironing', 'dyeing_packaging',
     ],
     maintenance: ['maintenance_checker'],
 }
@@ -32,6 +31,7 @@ function getRoleLinks(route, roleWithUnderscores, label, icon, hasReports = true
     const links = [
         { label: 'Dashboard', href: route(`${routePrefix}.dashboard`), icon: LayoutDashboard },
         { label: label, href: route(`${routePrefix}.page`), icon: icon },
+        { label: 'My History', href: route(`${routePrefix}.history`), icon: History },
     ]
     if (hasReports) {
         links.push({ label: 'Reports', href: route(`${routePrefix}.reports`), icon: FileText })

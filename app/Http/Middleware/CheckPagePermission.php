@@ -12,19 +12,21 @@ class CheckPagePermission
     /**
      * Handle an incoming request.
      *
-     * NOTE: The old "view" vs "edit" permission-level distinction has been
-     * removed. Any user who has been granted access to a page (or who
-     * qualifies via one of the role-based shortcuts below) now gets full
-     * access to that page — they can view AND make changes.
+     * Permission levels: 'view' grants read-only access, 'edit' grants
+     * read + write. 'edit' implies 'view'. Role-based shortcuts (CEO,
+     * module-native manager/staff) still grant full access.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      * @param  string  $page  The page identifier (e.g., 'dashboard', 'employees')
-     * @param  string|null  $requiredLevel  Deprecated / unused — kept only so existing
-     *                                      route definitions that still pass a second
-     *                                      middleware parameter (e.g. 'edit') don't break.
+     * @param  string|null  $requiredLevel  'view' (default) or 'edit'.
      */
     public function handle(Request $request, Closure $next, string $page, ?string $requiredLevel = null): Response
     {
+        $requiredLevel = strtolower($requiredLevel ?? 'view');
+        if (! in_array($requiredLevel, ['view', 'edit'], true)) {
+            $requiredLevel = 'view';
+        }
+
         $user = Auth::user();
 
         if (!$user) {
@@ -63,20 +65,31 @@ class CheckPagePermission
             abort(403, 'Could not determine module for permission check.');
         }
 
-        // Check whether the user has ANY permission record for this page.
-        // Any granted permission (regardless of the old level field) now
-        // means full access — view and edit.
-        if (method_exists($user, 'pagePermissions')) {
-            $hasPermission = $user->pagePermissions()
+        // Check the user's explicit permission record for this page and
+        // enforce the required level ('edit' implies 'view').
+        // NOTE: first() (not value()) is used so a legacy row whose
+        // permission_level is NULL is still recognised as a grant.
+        $record = method_exists($user, 'pagePermissions')
+            ? $user->pagePermissions()
                 ->where('module', $module)
                 ->where('page', $page)
-                ->exists();
-        } else {
-            $hasPermission = false;
-        }
+                ->first(['permission_level'])
+            : null;
 
-        if ($hasPermission) {
-            return $next($request);
+        if ($record !== null) {
+            // Legacy rows created before permission_level existed have NULL;
+            // grandfather them as 'edit' to avoid locking out existing users.
+            $grantedLevel = strtolower($record->permission_level ?? 'edit');
+
+            $sufficient = $requiredLevel === 'view'
+                ? in_array($grantedLevel, ['view', 'edit'], true)
+                : $grantedLevel === 'edit';
+
+            if ($sufficient) {
+                return $next($request);
+            }
+
+            abort(403, "The '{$page}' page in the {$module} module requires '{$requiredLevel}' permission; this account only has '{$grantedLevel}'.");
         }
 
         abort(403, "You do not have permission to access the '{$page}' page in the {$module} module.");

@@ -32,7 +32,6 @@ const machineTypes = [
     { value: 'dyeing', label: 'Dyeing Machine' },
     { value: 'softening', label: 'Softening Machine' },
     { value: 'squeezer', label: 'Squeezer Machine' },
-    { value: 'forming', label: 'Forming Machine' },
 ];
 
 // Status options

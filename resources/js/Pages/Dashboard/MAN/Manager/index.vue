@@ -161,7 +161,6 @@ const roleOptions = [
     { value: 'dyeing_fabric_softener', label: 'Dyeing Fabric Softener' },
     { value: 'dyeing_squeezer', label: 'Dyeing Squeezer' },
     { value: 'dyeing_ironing', label: 'Dyeing Ironing' },
-    { value: 'dyeing_forming', label: 'Dyeing Forming' },
     { value: 'dyeing_packaging', label: 'Dyeing Packaging' },
     { value: 'maintenance_checker', label: 'Maintenance Checker' },
     { value: 'checker_quality', label: 'Checker Quality' },

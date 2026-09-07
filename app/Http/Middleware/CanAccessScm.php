@@ -21,7 +21,7 @@ class CanAccessScm
         }
 
         // Check if user has explicit SCM access permission
-        $hasAccess = \App\Models\ScmAccessPermission::where('user_id', $user->id)
+        $hasAccess = \App\Models\Scm\ScmAccessPermission::where('user_id', $user->id)
                         ->where('can_access_scm', true)
                         ->exists();
 

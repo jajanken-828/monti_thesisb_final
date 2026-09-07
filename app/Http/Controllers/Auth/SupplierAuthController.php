@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\pro\Supplier;
 use App\Models\pro\VendorRegistration;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class SupplierAuthController extends Controller
@@ -26,6 +30,8 @@ class SupplierAuthController extends Controller
             'password' => ['required'],
         ]);
 
+        $this->ensureIsNotRateLimited($request);
+
         if (Auth::guard('supplier')->attempt($credentials, $request->boolean('remember'))) {
             $supplier = Auth::guard('supplier')->user();
 
@@ -39,6 +45,7 @@ class SupplierAuthController extends Controller
                 Auth::guard('supplier')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                RateLimiter::hit($this->throttleKey($request));
 
                 return back()->withErrors([
                     'email' => 'Your vendor registration is still pending SCM approval or has been rejected.',
@@ -46,13 +53,39 @@ class SupplierAuthController extends Controller
             }
 
             // Approved – let them in
+            RateLimiter::clear($this->throttleKey($request));
             $request->session()->regenerate();
             return redirect()->route('supplier.dashboard');
         }
 
+        RateLimiter::hit($this->throttleKey($request));
+
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
+    }
+
+    protected function throttleKey(Request $request): string
+    {
+        return Str::transliterate(Str::lower($request->string('email')).'|'.$request->ip().'|supplier-login');
+    }
+
+    protected function ensureIsNotRateLimited(Request $request): void
+    {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey($request), 5)) {
+            return;
+        }
+
+        event(new Lockout($request));
+
+        $seconds = RateLimiter::availableIn($this->throttleKey($request));
+
+        throw ValidationException::withMessages([
+            'email' => trans('auth.throttle', [
+                'seconds' => $seconds,
+                'minutes' => ceil($seconds / 60),
+            ]),
+        ]);
     }
 
     /** Show the supplier registration form */

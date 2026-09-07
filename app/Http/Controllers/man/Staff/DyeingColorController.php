@@ -23,12 +23,36 @@ class DyeingColorController extends ManufacturingStaffController
             ->take(10)
             ->get();
 
+        $nextQueue = Fabric::with('machine')
+            ->where('status', 'dyeing')
+            ->orderBy('created_at', 'asc')
+            ->take(3)
+            ->get(['id', 'code', 'yarn_type', 'weight', 'created_at']);
+
         return Inertia::render('Dashboard/MAN/Employee/DyeingColor/Index', [
             'stats' => [
                 'pending'     => $pendingCount,
                 'total_today' => DyeJob::whereDate('processed_at', today())->count(),
             ],
             'recentJobs' => $recentJobs,
+            'efficiency' => array_merge(
+                $this->staffEfficiency(DyeJob::class),
+                ['machines' => $this->machineAvailability('dyeing')]
+            ),
+            'nextQueue' => $nextQueue,
+        ]);
+    }
+
+    /**
+     * Personal work log — own dye jobs only.
+     */
+    public function history()
+    {
+        return Inertia::render('Dashboard/MAN/Employee/Common/History', [
+            'roleLabel' => 'Dyeing Color',
+            'historyRoute' => 'man.staff.dyeing-color.history',
+            'dateColumn' => 'processed_at',
+            'jobs' => $this->staffHistory(DyeJob::class, ['fabric.machine', 'fabric.salesOrder.client', 'fabric.salesOrder.recipe.product', 'machine', 'operator', 'chemicals', 'fabric.softenerJobs', 'fabric.packages']),
         ]);
     }
 

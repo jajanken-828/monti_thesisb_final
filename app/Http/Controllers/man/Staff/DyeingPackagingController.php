@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\man\Staff;
 
 use App\Models\man\Fabric;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
 use App\Models\man\Package;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,13 +28,75 @@ class DyeingPackagingController extends ManufacturingStaffController
             ->take(10)
             ->get();
 
+        $nextQueue = Fabric::where('status', 'packed')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('packages')
+                    ->whereColumn('packages.fabric_id', 'fabrics.id');
+            })
+            ->orderBy('created_at', 'asc')
+            ->take(3)
+            ->get(['id', 'code', 'yarn_type', 'weight', 'created_at']);
+
         return Inertia::render('Dashboard/MAN/Employee/DyeingPackaging/Index', [
             'stats' => [
                 'pending' => $pendingCount,
                 'total_today' => Package::whereDate('packaged_at', today())->count(),
             ],
             'recentPackages' => $recentPackages,
+            'efficiency' => array_merge(
+                $this->staffEfficiency(Package::class, 'packaged_at'),
+                ['machines' => $this->machineAvailability(null)]
+            ),
+            'nextQueue' => $nextQueue,
         ]);
+    }
+
+    /**
+     * Personal work log — own packages only.
+     */
+    public function history()
+    {
+        return Inertia::render('Dashboard/MAN/Employee/Common/History', [
+            'roleLabel' => 'Dyeing Packaging',
+            'historyRoute' => 'man.staff.dyeing-packaging.history',
+            'dateColumn' => 'packaged_at',
+            'jobs' => $this->staffHistory(Package::class, ['fabric.machine', 'fabric.salesOrder.client', 'fabric.salesOrder.recipe.product', 'operator', 'items'], 'packaged_at'),
+        ]);
+    }
+
+    /**
+     * Machine reports (parity with other production roles).
+     * Packaging staff previously had no reporting channel.
+     */
+    public function reports()
+    {
+        $machines = Machine::orderBy('type')->orderBy('machine_no')
+            ->get(['id', 'machine_no', 'type', 'status']);
+        $myReports = MachineReport::where('reported_by', $this->staff()->id)
+            ->with('machine')->latest()->get();
+
+        return Inertia::render('Dashboard/MAN/Employee/DyeingPackaging/Reports', [
+            'machines' => $machines,
+            'myReports' => $myReports,
+        ]);
+    }
+
+    public function reportMachine(Request $request)
+    {
+        $validated = $request->validate([
+            'machine_id' => 'required|exists:machines,id',
+            'issue' => 'required|string',
+        ]);
+
+        MachineReport::create([
+            'machine_id' => $validated['machine_id'],
+            'reported_by' => $this->staff()->id,
+            'issue' => $validated['issue'],
+            'status' => 'pending',
+        ]);
+
+        return redirect()->back()->with('message', 'Machine issue reported.');
     }
 
     public function packaging()

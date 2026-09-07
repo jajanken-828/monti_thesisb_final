@@ -1,9 +1,10 @@
 <?php
 
 namespace App\Models\man;
+use App\Models\core\User;
 use App\Models\man\Machine;
 use App\Models\man\Fabric;
-use App\Models\man\Dyejobchemical;
+use App\Models\man\DyeJobChemical;
 
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;

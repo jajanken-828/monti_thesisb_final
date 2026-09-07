@@ -2,6 +2,7 @@
 
 namespace App\Models\ceo;
 
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Model;
 
 class CeoLocation extends Model {

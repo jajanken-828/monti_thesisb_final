@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\crm\Client;
 use App\Models\crm\CrmLogoPartner;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ClientAuthController extends Controller
@@ -68,15 +72,23 @@ class ClientAuthController extends Controller
             'password' => 'required',
         ]);
 
+        $this->ensureIsNotRateLimited($request);
+
         $client = Client::where('email', $credentials['email'])->first();
 
         if ($client && Hash::check($credentials['password'], $client->password)) {
-            // ✅ Allow both 'approved' and 'active' as valid statuses
+            // Allow both 'approved' and 'active' as valid statuses.
+            // NOTE: a single generic message is used for every failure so
+            // attackers cannot enumerate registered emails or approval state.
             if (! in_array($client->status, ['approved', 'active'])) {
+                RateLimiter::hit($this->throttleKey($request));
+
                 return back()->withErrors([
-                    'email' => 'Your account does not exist.',
+                    'email' => 'Invalid credentials.',
                 ]);
             }
+
+            RateLimiter::clear($this->throttleKey($request));
 
             Auth::guard('client')->login($client, $request->boolean('remember'));
             $request->session()->regenerate();
@@ -84,8 +96,33 @@ class ClientAuthController extends Controller
             return redirect()->intended(route('client.dashboard'));
         }
 
+        RateLimiter::hit($this->throttleKey($request));
+
         return back()->withErrors([
-            'email' => 'Invalid Credentials.',
+            'email' => 'Invalid credentials.',
+        ]);
+    }
+
+    protected function throttleKey(Request $request): string
+    {
+        return Str::transliterate(Str::lower($request->string('email')).'|'.$request->ip().'|client-login');
+    }
+
+    protected function ensureIsNotRateLimited(Request $request): void
+    {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey($request), 5)) {
+            return;
+        }
+
+        event(new Lockout($request));
+
+        $seconds = RateLimiter::availableIn($this->throttleKey($request));
+
+        throw ValidationException::withMessages([
+            'email' => trans('auth.throttle', [
+                'seconds' => $seconds,
+                'minutes' => ceil($seconds / 60),
+            ]),
         ]);
     }
 

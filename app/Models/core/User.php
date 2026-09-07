@@ -20,12 +20,11 @@ use App\Models\man\DyeJob;
 use App\Models\man\SoftenerJob;
 use App\Models\man\SqueezerJob;
 use App\Models\man\IronJob;
-use App\Models\man\FormJob;
 use App\Models\man\Package;
 use App\Models\man\MachineReport;   
 use App\Models\man\ManufacturingSupervisorRole;
 use App\Models\pro\ProAccess;
-use App\Models\scm\ScmAccessPermission;
+use App\Models\Scm\ScmAccessPermission;
 use App\Models\core\UserModuleAccess;
 use App\Models\war\Warehouse;
 use App\Models\eco\CreditAccount;
@@ -247,11 +246,6 @@ class User extends Authenticatable
         return $this->hasMany(IronJob::class, 'operator_id');
     }
 
-    public function formJobs()
-    {
-        return $this->hasMany(FormJob::class, 'operator_id');
-    }
-
     public function packages()
     {
         return $this->hasMany(Package::class, 'operator_id');
@@ -267,22 +261,40 @@ class User extends Authenticatable
         return $this->hasMany(MachineReport::class, 'resolved_by');
     }
 
-    public function hasPagePermission($module, $page)
+    public function hasPagePermission($module, $page, $requiredLevel = 'view')
     {
-        // Superusers (CEO, secretary, general managers) have full access
-        if (in_array($this->position, ['ceo', 'secretary', 'general_manager'])) {
+        $requiredLevel = strtolower($requiredLevel ?? 'view');
+        if (! in_array($requiredLevel, ['view', 'edit'], true)) {
+            $requiredLevel = 'view';
+        }
+
+        // Superusers (CEO role, secretary, general managers) have full access
+        if ($this->role === 'CEO' || in_array($this->position, ['secretary', 'general_manager'])) {
             return true;
         }
-        // Module managers can access all pages of their module
-        if ($this->position === 'manager' && $this->role === $module) {
+        // Module-native managers and staff have full access to their own module
+        if (strtoupper((string) $this->role) === strtoupper((string) $module)
+            && in_array($this->position, ['manager', 'staff'])) {
             return true;
         }
 
-        // For staff, check page_permissions table
-        return PagePermission::where('user_id', $this->id)
+        // Otherwise check the explicit page_permissions record ('edit' implies 'view').
+        // Legacy NULL levels are grandfathered as 'edit'. first() (not value())
+        // is used so a NULL level is still recognised as a grant.
+        $record = PagePermission::where('user_id', $this->id)
             ->where('module', $module)
             ->where('page', $page)
-            ->exists();
+            ->first(['permission_level']);
+
+        if ($record === null) {
+            return false;
+        }
+
+        $grantedLevel = strtolower($record->permission_level ?? 'edit');
+
+        return $requiredLevel === 'view'
+            ? in_array($grantedLevel, ['view', 'edit'], true)
+            : $grantedLevel === 'edit';
     }
 
     /**
@@ -464,7 +476,6 @@ class User extends Authenticatable
                 'dyeing_fabric_softener',
                 'dyeing_squeezer',
                 'dyeing_ironing',
-                'dyeing_forming',
                 'dyeing_packaging',
                 'checker_quality',
             ],

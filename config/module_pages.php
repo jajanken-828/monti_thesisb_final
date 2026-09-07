@@ -50,9 +50,11 @@ return [
     ],
 
     'ord' => [
+        'dashboard'   => 'Dashboard',
         'orders'      => 'Orders',
         'productions' => 'Productions',
         'delivery'    => 'Delivery',
+        'returns'     => 'Returns',
         'access'      => 'Access Control',
     ],
 

@@ -21,20 +21,45 @@ class DyeingIroningController extends ManufacturingStaffController
             ->take(10)
             ->get();
 
+        $nextQueue = SqueezerJob::with('softenerJob.fabric')
+            ->whereDoesntHave('ironJob')
+            ->orderBy('created_at', 'asc')
+            ->take(3)
+            ->get(['id', 'code', 'created_at']);
+
         return Inertia::render('Dashboard/MAN/Employee/DyeingIroning/Index', [
             'stats' => [
                 'pending' => $pendingCount,
                 'total_today' => IronJob::whereDate('processed_at', today())->count(),
             ],
             'recentJobs' => $recentJobs,
+            // Ironing has no dedicated machine type — machine context is null.
+            'efficiency' => array_merge(
+                $this->staffEfficiency(IronJob::class),
+                ['machines' => $this->machineAvailability(null)]
+            ),
+            'nextQueue' => $nextQueue,
+        ]);
+    }
+
+    /**
+     * Personal work log — own iron jobs only.
+     */
+    public function history()
+    {
+        return Inertia::render('Dashboard/MAN/Employee/Common/History', [
+            'roleLabel' => 'Dyeing Ironing',
+            'historyRoute' => 'man.staff.dyeing-ironing.history',
+            'dateColumn' => 'processed_at',
+            'jobs' => $this->staffHistory(IronJob::class, ['squeezerJob.softenerJob.fabric.machine', 'squeezerJob.softenerJob.fabric.salesOrder.client', 'squeezerJob.softenerJob.fabric.salesOrder.recipe.product', 'squeezerJob.machine', 'operator']),
         ]);
     }
 
     public function dyeingIroning()
     {
-        // Option B: auto-flow from squeezer (fabric status is set to 'iron'
-        // in DyeingSqueezerController@storeSqueezer). Same pattern as
-        // iron -> forming which only checks for missing next-stage job.
+        // Auto-flow from squeezer (fabric status is set to 'iron'
+        // in DyeingSqueezerController@storeSqueezer). Only jobs without
+        // a next-stage iron job are listed.
         $squeezerJobs = SqueezerJob::with('softenerJob.fabric')
             ->whereDoesntHave('ironJob')
             ->get();

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\man\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\man\Fabric;
-use App\Models\man\FormJob;
 use App\Models\man\Machine;
 use App\Models\man\ManufacturingOrder;
 use App\Models\man\Package;
@@ -181,33 +180,8 @@ class ManufacturingManagerController extends Controller
         ];
     });
 
-    // Rejected Form Jobs
-    $rejectedFormsQuery = FormJob::where('status', 'rejected')
-        ->with(['ironJob.squeezerJob.softenerJob.fabric', 'product', 'operator']);
-
-    if ($user->is_manufacturing_supervisor && $user->supervisor_department) {
-        $supervisedRoles = $user->supervised_roles;
-        $rejectedFormsQuery->whereHas('operator', function ($q) use ($supervisedRoles) {
-            $q->whereIn('manufacturing_role', $supervisedRoles);
-        });
-    }
-
-    $rejectedForms = $rejectedFormsQuery->latest()->get()->map(function ($form) {
-        return [
-            'id'             => $form->id,
-            'code'           => $form->code,
-            'product_name'   => $form->product->name ?? 'Unknown',
-            'quantity'       => $form->quantity,
-            'rejected_by'    => $form->operator->name ?? 'N/A',
-            'reason'         => $form->remarks ?? 'No reason provided',
-            'rejected_at'    => $form->updated_at,
-            'type'           => 'form',
-        ];
-    });
-
-    // Merge and sort
+    // Forming stage removed: rejected items are fabrics only.
     $rejectedItems = $rejectedFabrics
-        ->concat($rejectedForms)
         ->sortByDesc('rejected_at')
         ->values();
 
@@ -356,7 +330,7 @@ class ManufacturingManagerController extends Controller
         }
 
         $validated = $request->validate([
-            'manufacturing_role' => 'required|in:knitting_yarn,dyeing_color,dyeing_fabric_softener,dyeing_squeezer,dyeing_ironing,dyeing_forming,dyeing_packaging,maintenance_checker,checker_quality',
+            'manufacturing_role' => 'required|in:knitting_yarn,dyeing_color,dyeing_fabric_softener,dyeing_squeezer,dyeing_ironing,dyeing_packaging,maintenance_checker,checker_quality',
         ]);
 
         $staff->update(['manufacturing_role' => $validated['manufacturing_role']]);

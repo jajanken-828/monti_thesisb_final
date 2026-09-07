@@ -12,8 +12,9 @@ class OrdAccessController extends Controller
 {
     public function index()
     {
-        // Only CEO can access
-        $this->authorize('ceo-only');
+        // Only CEO can manage ORD access grants.
+        // (Replaces the undefined `ceo-only` gate, which denied everyone.)
+        abort_unless(auth()->user()?->role === 'CEO', 403, 'Only the CEO can manage ORD access.');
 
         $candidateRoles = ['secretary', 'general manager', 'manager'];
         $users = User::whereIn('position', $candidateRoles)
@@ -42,7 +43,7 @@ class OrdAccessController extends Controller
 
     public function update(Request $request)
     {
-        $this->authorize('ceo-only');
+        abort_unless(auth()->user()?->role === 'CEO', 403, 'Only the CEO can manage ORD access.');
 
         $request->validate([
             'user_id' => 'required|exists:users,id',

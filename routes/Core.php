@@ -8,7 +8,7 @@ use App\Http\Controllers\trainee\TraineePayslipController;
 use App\Http\Controllers\trainee\TraineeTimeKeepingController;
 use App\Http\Controllers\users\AppController;
 use App\Http\Controllers\users\ClockController;
-use App\Http\Controllers\users\leaveController as UserLeaveController;
+use App\Http\Controllers\users\LeaveController as UserLeaveController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -40,7 +40,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, '350'])->name('profile.destroy');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 /*
@@ -51,7 +51,9 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'position:staff,manager'])->prefix('dashboard/employee-ui')->group(function () {
     Route::get('/', [AppController::class, 'index'])->name('employee.ui.dashboard');
     Route::get('/clock', [ClockController::class, 'clock'])->name('employee.ui.clock');
-    Route::post('/clock/toggle', [ClockController::class, 'toggle'])->name('employee.attendance.toggle');
+    Route::post('/clock/toggle', [ClockController::class, 'toggle'])
+        ->middleware('geofence')
+        ->name('employee.attendance.toggle');
     Route::get('/leave', [UserLeaveController::class, 'leave'])->name('employee.ui.leave');
     Route::post('/leave', [UserLeaveController::class, 'store'])->name('employee.leave.store');
     Route::get('/payslip', function () {

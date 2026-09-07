@@ -160,6 +160,7 @@ const submitPackage = () => {
                                 </button>
                             </div>
                         </div>
+                        
 
                         <form @submit.prevent="submitPackage" class="p-6 space-y-4 overflow-y-auto">
                             <div class="bg-indigo-50/60 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/40 p-3 rounded-2xl text-sm">

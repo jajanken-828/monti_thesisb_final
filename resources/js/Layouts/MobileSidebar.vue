@@ -234,7 +234,6 @@ const departmentStaffRoles = computed(() => {
             createRoleDropdown('dyeing_fabric_softener', 'Dyeing Fabric Softener', Palette, true),
             createRoleDropdown('dyeing_squeezer', 'Dyeing Squeezer', Palette, true),
             createRoleDropdown('dyeing_ironing', 'Dyeing Ironing', Palette, true),
-            createRoleDropdown('dyeing_forming', 'Dyeing Forming', Palette, true),
             createRoleDropdown('dyeing_packaging', 'Dyeing Packaging', Palette, false)
         ]
     } else if (dept === 'maintenance') {
@@ -328,7 +327,6 @@ const getFilteredManChildren = () => {
             dyeing_fabric_softener: { label: 'Dyeing Fabric Softener', icon: Palette,  hasReports: true },
             dyeing_squeezer:        { label: 'Dyeing Squeezer',        icon: Palette,  hasReports: true },
             dyeing_ironing:         { label: 'Dyeing Ironing',         icon: Palette,  hasReports: true },
-            dyeing_forming:         { label: 'Dyeing Forming',         icon: Palette,  hasReports: true },
             dyeing_packaging:       { label: 'Dyeing Packaging',       icon: Palette,  hasReports: false },
             maintenance_checker:    { label: 'Maintenance Checker',    icon: Wrench,   hasReports: true },
         }

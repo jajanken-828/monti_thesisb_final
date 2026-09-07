@@ -21,7 +21,7 @@ class CanAccessProcurement
         }
         
         // Check explicit permission
-        $hasAccess = \App\Models\ProAccess::where('user_id', $user->id)
+        $hasAccess = \App\Models\pro\ProAccess::where('user_id', $user->id)
             ->where('can_access_procurement', true)
             ->exists();
         if (!$hasAccess) {

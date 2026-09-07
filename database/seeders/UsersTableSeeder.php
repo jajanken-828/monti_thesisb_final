@@ -91,7 +91,6 @@ class UsersTableSeeder extends Seeder
             'dyeing_fabric_softener' => 'Dyeing Fabric Softener Staff',
             'dyeing_squeezer'    => 'Dyeing Squeezer Staff',
             'dyeing_ironing'     => 'Dyeing Ironing Staff',
-            'dyeing_forming'     => 'Dyeing Forming Staff',
             'dyeing_packaging'   => 'Dyeing Packaging Staff',
             'maintenance_checker'=> 'Maintenance Checker Staff',
             'checker_quality'    => 'Checker Quality Staff',

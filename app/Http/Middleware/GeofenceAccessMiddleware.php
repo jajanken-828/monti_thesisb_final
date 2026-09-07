@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\CeoLocation; // Ensure correct path to your model
+use App\Models\ceo\CeoLocation;
 use Symfony\Component\HttpFoundation\Response;
 
 class GeofenceAccessMiddleware
@@ -22,7 +22,7 @@ class GeofenceAccessMiddleware
 
         // If no safe zone is set, we block access for security
         if (!$safeZone) {
-            return response()->json(['message' => 'Security Error: No authorized zone defined.'], 403);
+            return $this->deny($request, 'Security Error: No authorized zone defined.');
         }
 
         // 2. CHECK GPS: THE PRIMARY VALIDATION
@@ -50,13 +50,28 @@ class GeofenceAccessMiddleware
         }
 
         // 4. DENY: BOTH FAILED
-        return response()->json([
-            'message' => 'Access Denied: You must be at the warehouse or connected to the office network.',
-            'debug_info' => [
-                'reason' => 'GPS out of range or sensor timeout AND IP mismatch.',
-                'detected_ip' => $userIp
-            ]
-        ], 403);
+        return $this->deny(
+            $request,
+            'Access Denied: You must be at the warehouse or connected to the office network.',
+            ['reason' => 'GPS out of range or sensor timeout AND IP mismatch.', 'detected_ip' => $userIp]
+        );
+    }
+
+    /**
+     * Return a geofence denial in the format the caller expects:
+     * JSON for API callers, redirect-with-flash for Inertia page visits
+     * (AuthenticatedLayout surfaces flash.geofence_error via SweetAlert).
+     */
+    private function deny(Request $request, string $message, array $debug = [])
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => $message,
+                'debug_info' => $debug,
+            ], 403);
+        }
+
+        return redirect()->back()->with('geofence_error', $message);
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)

@@ -2,6 +2,7 @@
 
 namespace App\Models\eco;
 
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Model;
 
 class EcoAccess extends Model

@@ -2,6 +2,7 @@
 
 namespace App\Models\ceo;
 
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

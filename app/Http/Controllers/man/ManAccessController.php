@@ -65,7 +65,6 @@ class ManAccessController extends Controller
                     'dyeing_fabric_softener',
                     'dyeing_squeezer',
                     'dyeing_ironing',
-                    'dyeing_forming',
                     'dyeing_packaging',
                     'checker_quality',
                 ],
@@ -99,8 +98,8 @@ class ManAccessController extends Controller
     {
         return match ($role) {
             'knitting_yarn' => 'knitting',
-            'dyeing_color', 'dyeing_fabric_softener', 'dyeing_squeezer', 
-            'dyeing_ironing', 'dyeing_forming', 'dyeing_packaging', 'checker_quality' => 'dyeing',
+            'dyeing_color', 'dyeing_fabric_softener', 'dyeing_squeezer',
+            'dyeing_ironing', 'dyeing_packaging', 'checker_quality' => 'dyeing',
             'maintenance_checker' => 'maintenance',
             default => null,
         };

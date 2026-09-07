@@ -37,11 +37,6 @@ class Machine extends Model
         return $this->hasMany(SqueezerJob::class);
     }
 
-    public function formJobs()
-    {
-        return $this->hasMany(FormJob::class);
-    }
-
     public function reports()
     {
         return $this->hasMany(MachineReport::class);

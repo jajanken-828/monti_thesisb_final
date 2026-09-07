@@ -1,5 +1,5 @@
 <script>
-import { ClipboardList, Factory, Truck, ShieldCheck, ClipboardCheck } from 'lucide-vue-next'
+import { ClipboardList, Factory, Truck, ShieldCheck, ClipboardCheck, LayoutDashboard, Undo2 } from 'lucide-vue-next'
 
 export const ordModule = {
     key: 'ORD',
@@ -12,9 +12,11 @@ export const ordModule = {
     getChildren(ctx) {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, canAccessModule, hasModulePermission, grantedModules } = ctx
         const all = [
+            { label: 'Dashboard', href: route('ord.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
             { label: 'Orders', href: route('ord.orders'), icon: ClipboardList, permKey: 'orders' },
             { label: 'Productions', href: route('ord.productions'), icon: Factory, permKey: 'productions' },
             { label: 'Delivery', href: route('ord.delivery'), icon: Truck, permKey: 'delivery' },
+            { label: 'Returns', href: route('ord.returns'), icon: Undo2, permKey: 'returns' },
         ]
         if (isCEO) {
             all.push({ label: 'Access Control', href: route('ord.ceo-access.index'), icon: ShieldCheck, permKey: 'access' })

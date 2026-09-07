@@ -22,7 +22,7 @@ class WarehouseReject extends Model
     ];
 
     /**
-     * Get the parent rejectable model (Fabric, FormJob, etc.).
+     * Get the parent rejectable model (Fabric, etc.).
      */
     public function rejectable()
     {

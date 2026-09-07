@@ -50,6 +50,33 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        // Post-authentication account-state checks. These run after a
+        // successful credential check so Oracle-disabled / trainee accounts
+        // can never obtain a session through this portal (previously only
+        // the employee-ID portal blocked trainees and nothing checked
+        // is_active at all).
+        $user = Auth::user();
+
+        if ($user && isset($user->is_active) && ! $user->is_active) {
+            Auth::logout();
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => __('This account has been deactivated. Please contact HR.'),
+            ]);
+        }
+
+        if ($user && ($user->position ?? null) === 'trainee') {
+            Auth::logout();
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => __('Access Denied. Trainee accounts must use the trainee portal until promoted.'),
+            ]);
+        }
     }
 
     /**

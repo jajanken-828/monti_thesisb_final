@@ -8,7 +8,6 @@ class PackageItem extends Model
 {
     protected $fillable = [
         'package_id',
-        'form_job_id',
         'quantity',
     ];
 
@@ -19,10 +18,5 @@ class PackageItem extends Model
     public function package()
     {
         return $this->belongsTo(Package::class);
-    }
-
-    public function formJob()
-    {
-        return $this->belongsTo(FormJob::class);
     }
 }

@@ -20,12 +20,36 @@ class DyeingSqueezerController extends ManufacturingStaffController
             ->take(10)
             ->get();
 
+        $nextQueue = SoftenerJob::with('fabric')
+            ->where('status', 'softened')
+            ->orderBy('created_at', 'asc')
+            ->take(3)
+            ->get(['id', 'code', 'fabric_id', 'created_at']);
+
         return Inertia::render('Dashboard/MAN/Employee/DyeingSqueezer/Index', [
             'stats' => [
                 'pending' => $pendingCount,
                 'total_today' => SqueezerJob::whereDate('processed_at', today())->count(),
             ],
             'recentJobs' => $recentJobs,
+            'efficiency' => array_merge(
+                $this->staffEfficiency(SqueezerJob::class),
+                ['machines' => $this->machineAvailability('squeezer')]
+            ),
+            'nextQueue' => $nextQueue,
+        ]);
+    }
+
+    /**
+     * Personal work log — own squeezer jobs only.
+     */
+    public function history()
+    {
+        return Inertia::render('Dashboard/MAN/Employee/Common/History', [
+            'roleLabel' => 'Dyeing Squeezer',
+            'historyRoute' => 'man.staff.dyeing-squeezer.history',
+            'dateColumn' => 'processed_at',
+            'jobs' => $this->staffHistory(SqueezerJob::class, ['softenerJob.fabric.machine', 'softenerJob.fabric.salesOrder.client', 'softenerJob.fabric.salesOrder.recipe.product', 'machine', 'operator', 'ironJob']),
         ]);
     }
 
@@ -56,8 +80,8 @@ class DyeingSqueezerController extends ManufacturingStaffController
         $softenerJob = SoftenerJob::findOrFail($validated['softener_job_id']);
         $softenerJob->update(['status' => 'squeezed']);
 
-        // Auto-pass fabric to ironing stage (Option B: no checker gate between
-        // squeezer and ironing, matching iron -> forming flow).
+        // Auto-pass fabric to ironing stage (no checker gate between
+        // squeezer and ironing; ironing flows directly to packaging).
         $softenerJob->fabric()->update(['status' => 'iron']);
 
         SqueezerJob::create([

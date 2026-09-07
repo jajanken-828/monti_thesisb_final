@@ -1,6 +1,6 @@
 <template>
     <AuthenticatedLayout>
-        <Head title="Order Calendar" />
+        <Head title="Orders Worklist" />
         <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
             <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-16">
 
@@ -11,320 +11,155 @@
                     <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
                     <div class="relative flex flex-wrap items-center gap-4">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
-                            <CalendarDays class="h-7 w-7" />
+                            <ClipboardList class="h-7 w-7" />
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
-                                <Sparkles class="h-3.5 w-3.5" /> ORD · Scheduling
+                                <Sparkles class="h-3.5 w-3.5" /> ORD · Order-to-Cash
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Order Calendar</h1>
-                            <p class="text-sm text-blue-100/90">All purchase and sales orders by expected date</p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Orders Worklist</h1>
+                            <p class="text-sm text-blue-100/90">Client purchase orders and mill job orders in one pipeline</p>
                         </div>
-
-                        <!-- Month Navigation -->
-                        <div class="flex items-center gap-2">
-                            <button
-                                @click="prevMonth"
-                                class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur transition-all duration-200 hover:bg-white/25 active:scale-95"
-                            >
-                                <ChevronLeft class="h-4 w-4" />
-                            </button>
-                            <div class="min-w-[9rem] rounded-2xl bg-white/95 px-4 py-2 text-center shadow-lg">
-                                <p class="font-black text-gray-900 text-sm">{{ currentMonthName }}</p>
-                                <p class="text-[11px] font-bold text-indigo-600">{{ currentYear }}</p>
-                            </div>
-                            <button
-                                @click="nextMonth"
-                                class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur transition-all duration-200 hover:bg-white/25 active:scale-95"
-                            >
-                                <ChevronRight class="h-4 w-4" />
-                            </button>
-                        </div>
+                        <button @click="showCreate = true" class="rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-indigo-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95">
+                            + New PO
+                        </button>
                     </div>
-
-                    <!-- Legend -->
-                    <div class="relative mt-6 flex flex-wrap items-center gap-2 text-xs font-bold">
-                        <span class="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 ring-1 ring-white/25 backdrop-blur">
-                            <span class="h-2 w-2 rounded-full bg-blue-300 animate-pulse" /> PO — Purchase Order
-                        </span>
-                        <span class="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 ring-1 ring-white/25 backdrop-blur">
-                            <span class="h-2 w-2 rounded-full bg-amber-300 animate-pulse" /> SO — Sales Order
-                        </span>
+                    <!-- Group tabs -->
+                    <div class="relative mt-6 flex flex-wrap gap-2">
+                        <button
+                            v-for="(label, key) in groups"
+                            :key="key"
+                            @click="setGroup(key)"
+                            class="rounded-full px-3.5 py-1.5 text-xs font-black ring-1 backdrop-blur transition-all active:scale-95"
+                            :class="filters.group === key ? 'bg-white text-indigo-700 ring-white shadow' : 'bg-white/15 text-white ring-white/25 hover:bg-white/25'"
+                        >
+                            {{ label }} · {{ groupCounts[key] ?? (key === 'all' ? orders.length : 0) }}
+                        </button>
                     </div>
                 </div>
 
-                <!-- Calendar -->
-                <div class="animate-fade-up relative overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300" style="animation-delay: 100ms">
-                    <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 hover:opacity-100 transition-opacity duration-500" />
-                    <!-- Week Day Headers -->
-                    <div class="grid grid-cols-7 border-b border-gray-100 dark:border-zinc-800">
-                        <div
-                            v-for="day in weekDays"
-                            :key="day"
-                            class="py-3 text-center text-[10px] sm:text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500"
-                        >
-                            <span class="hidden sm:inline">{{ day }}</span>
-                            <span class="sm:hidden">{{ day.charAt(0) }}</span>
-                        </div>
+                <!-- Filters -->
+                <div class="animate-fade-up flex flex-wrap items-center gap-2" style="animation-delay: 80ms">
+                    <div class="relative flex-1 min-w-[12rem]">
+                        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <input v-model="local.search" @keyup.enter="applyFilters" placeholder="Search PO / JO / control no…" class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400" />
                     </div>
+                    <select v-model="local.client_id" @change="applyFilters" class="rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm font-medium">
+                        <option value="">All clients</option>
+                        <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.company_name }}</option>
+                    </select>
+                    <select v-model="local.status" @change="applyFilters" class="rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm font-medium">
+                        <option value="">All statuses</option>
+                        <optgroup label="Sales orders"><option v-for="s in soStatuses" :key="s" :value="s">{{ formatStatus(s) }}</option></optgroup>
+                        <optgroup label="Purchase orders"><option v-for="s in poStatuses" :key="s" :value="s">{{ formatStatus(s) }}</option></optgroup>
+                    </select>
+                    <button @click="clearFilters" class="rounded-2xl border border-gray-200 dark:border-zinc-700 px-3 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-50">Reset</button>
+                </div>
 
-                    <!-- Calendar Grid -->
-                    <div class="grid grid-cols-7 divide-x divide-y divide-gray-100 dark:divide-zinc-800">
-                        <div
-                            v-for="(day, idx) in calendarDays"
-                            :key="idx"
-                            class="min-h-[72px] sm:min-h-[110px] p-1 sm:p-2 relative transition-colors hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30"
-                            :class="day.isCurrentMonth ? 'bg-white/60 dark:bg-zinc-900/60' : 'bg-slate-50/80 dark:bg-zinc-950/60'"
-                        >
-                            <!-- Day Number -->
-                            <div
-                                class="text-xs sm:text-sm font-bold leading-none mb-1"
-                                :class="day.isCurrentMonth ? 'text-gray-800 dark:text-gray-100' : 'text-gray-300 dark:text-zinc-600'"
-                            >
-                                {{ day.date }}
-                            </div>
-
-                            <!-- Order Events -->
-                            <div class="space-y-0.5 sm:space-y-1">
-                                <div
-                                    v-for="order in day.orders"
-                                    :key="order.id"
-                                    @click="openOrderModal(order)"
-                                    class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg cursor-pointer truncate font-bold transition-all hover:scale-[1.03] hover:shadow-md active:scale-95 flex items-center gap-1"
-                                    :class="order.type === 'PO'
-                                        ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30'
-                                        : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30'"
-                                    :title="`${order.number} - ${order.client_name}`"
-                                >
-                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse flex-shrink-0" />
-                                    <span class="hidden sm:inline truncate">{{ order.type }} {{ order.number }}</span>
-                                    <span class="sm:hidden">{{ order.type }}</span>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Table -->
+                <div class="animate-fade-up overflow-hidden rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm" style="animation-delay: 140ms">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[52rem] text-sm">
+                            <thead>
+                                <tr class="text-left text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-zinc-800">
+                                    <th class="px-4 py-3">Document</th>
+                                    <th class="px-4 py-3">Client</th>
+                                    <th class="px-4 py-3">Detail</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3 text-right">Total</th>
+                                    <th class="px-4 py-3">Expected</th>
+                                    <th class="px-4 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="o in orders" :key="`${o.type}-${o.id}`" class="border-b border-gray-50 dark:border-zinc-800/60 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20 transition-colors">
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center gap-2">
+                                            <span class="rounded-lg px-2 py-0.5 text-[10px] font-black" :class="o.type === 'PO' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'">{{ o.type }}</span>
+                                            <span class="font-black">{{ o.number }}</span>
+                                        </div>
+                                        <p class="text-[11px] text-gray-400 mt-0.5">{{ o.created_at }}</p>
+                                    </td>
+                                    <td class="px-4 py-3 font-medium">{{ o.client_name }}</td>
+                                    <td class="px-4 py-3 text-gray-500 text-xs">{{ o.type === 'SO' ? `${o.product_name} · ${o.quantity} kg` : `${o.group === 'intake' ? 'Pending review' : formatStatus(o.status)}` }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase border" :class="statusBadge(o.status)">{{ formatStatus(o.status) }}</span>
+                                        <span v-if="o.priority !== 'normal'" class="ml-1 rounded-full px-2 py-1 text-[10px] font-black uppercase bg-red-100 text-red-700">{{ o.priority }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-black">₱{{ Number(o.total).toLocaleString() }}</td>
+                                    <td class="px-4 py-3 text-xs" :class="isOverdue(o) ? 'text-red-600 font-black' : 'text-gray-500'">{{ o.expected_ship_date || '—' }}</td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex justify-end gap-1">
+                                            <Link :href="route('ord.orders.show', { type: o.type.toLowerCase(), id: o.id })" class="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-black text-white hover:bg-indigo-500">Open</Link>
+                                            <button v-if="o.transitions.includes('confirmed') || o.transitions.includes('approved')" @click="quickTransition(o, o.type === 'PO' ? 'approved' : 'confirmed')" class="rounded-xl bg-green-600 px-3 py-1.5 text-xs font-black text-white hover:bg-green-500">Confirm</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="orders.length === 0">
+                                    <td colspan="7" class="px-4 py-10 text-center text-gray-400 text-sm">No orders in this view.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- Order Detail Modal -->
+        <!-- Create PO modal -->
         <Teleport to="body">
             <Transition name="modal">
-                <div
-                    v-if="selectedOrder"
-                    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm"
-                    @click.self="selectedOrder = null"
-                >
-                    <div
-                        class="bg-white dark:bg-zinc-900 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-100 dark:border-zinc-800"
-                    >
-                        <!-- Handle (mobile) -->
-                        <div class="sm:hidden flex justify-center pt-3 pb-1">
-                            <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-zinc-700"></div>
+                <div v-if="showCreate" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm" @click.self="showCreate = false">
+                    <form @submit.prevent="submitPo" class="bg-white dark:bg-zinc-900 w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+                            <h3 class="font-black text-lg">New client purchase order</h3>
+                            <button type="button" @click="showCreate = false" class="rounded-xl p-1.5 hover:bg-gray-100"><X class="h-5 w-5" /></button>
                         </div>
-
-                        <!-- Modal Header -->
-                        <div class="relative overflow-hidden px-6 py-4 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 flex items-center justify-between flex-shrink-0">
-                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
-                            <div class="relative">
-                                <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em]">Order Details</p>
-                                <h3 class="text-white font-black text-lg leading-tight">{{ selectedOrder.number }}</h3>
+                        <div class="p-5 space-y-4 overflow-y-auto">
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <label class="block text-sm font-bold">Client
+                                    <select v-model="poForm.client_id" required class="mt-1 w-full rounded-xl border px-3 py-2 text-sm font-medium">
+                                        <option value="">Select client…</option>
+                                        <option v-for="c in clients" :key="c.id" :value="c.id">{{ c.company_name }}</option>
+                                    </select>
+                                </label>
+                                <label class="block text-sm font-bold">Priority
+                                    <select v-model="poForm.priority" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm font-medium">
+                                        <option value="normal">Normal</option><option value="rush">Rush</option><option value="urgent">Urgent</option>
+                                    </select>
+                                </label>
+                                <label class="block text-sm font-bold">Delivery date
+                                    <input v-model="poForm.delivery_date" type="date" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm" />
+                                </label>
+                                <label class="block text-sm font-bold">Expected ship date
+                                    <input v-model="poForm.expected_ship_date" type="date" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm" />
+                                </label>
                             </div>
-                            <div class="relative flex items-center gap-2">
-                                <span
-                                    class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border"
-                                    :class="selectedOrder.type === 'PO'
-                                        ? 'bg-white/15 text-white border-white/30 backdrop-blur'
-                                        : 'bg-amber-300/90 text-amber-950 border-amber-200'"
-                                >{{ selectedOrder.type }}</span>
-                                <button
-                                    @click="selectedOrder = null"
-                                    class="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
-                                >
-                                    <X class="w-4 h-4 text-white" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Modal Body -->
-                        <div class="overflow-y-auto flex-1 p-5 space-y-4">
-                            <!-- Core Details Grid -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3 border border-gray-100 dark:border-zinc-800">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Client</p>
-                                    <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ selectedOrder.client_name }}</p>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3 border border-gray-100 dark:border-zinc-800">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total</p>
-                                    <p class="font-black text-indigo-600 dark:text-indigo-300 text-base">₱{{ formatCurrency(selectedOrder.total) }}</p>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3 border border-gray-100 dark:border-zinc-800">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                                    <span :class="statusBadge(selectedOrder.status)" class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border inline-flex items-center gap-1">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ selectedOrder.status }}
-                                    </span>
-                                </div>
-                                <div class="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-3 border border-gray-100 dark:border-zinc-800">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Date</p>
-                                    <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ selectedOrder.date }}</p>
-                                </div>
-                            </div>
-
-                            <!-- Payment Section -->
-                            <div class="bg-slate-50 dark:bg-zinc-800/60 rounded-2xl p-4 border border-gray-200 dark:border-zinc-700">
+                            <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Payment</p>
-                                    <span
-                                        class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border inline-flex items-center gap-1"
-                                        :class="selectedOrder.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30' : 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'"
-                                    >
-                                        <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-                                        {{ selectedOrder.payment_status === 'paid' ? 'Paid' : 'Unpaid' }}
-                                    </span>
+                                    <p class="text-sm font-black">Line items</p>
+                                    <button type="button" @click="addLine" class="text-xs font-black text-indigo-600 hover:underline">+ Add line</button>
                                 </div>
-                                <div class="flex flex-wrap items-center gap-2 mt-2">
-                                    <button
-                                        @click="openPaymentModal(selectedOrder)"
-                                        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-indigo-500/25 active:scale-95"
-                                    >
-                                        Manage Payment
-                                    </button>
-                                    <a
-                                        v-if="selectedOrder.receipt_file"
-                                        :href="route('ord.orders.download-receipt', { type: selectedOrder.type, id: selectedOrder.id })"
-                                        target="_blank"
-                                        class="px-3 py-1.5 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl transition-colors"
-                                    >
-                                        View Receipt
-                                    </a>
+                                <div v-for="(line, i) in poForm.items" :key="i" class="grid grid-cols-12 gap-2 mb-2">
+                                    <select v-model="line.product_id" required class="col-span-6 rounded-xl border px-2 py-2 text-sm">
+                                        <option value="">Product…</option>
+                                        <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
+                                    </select>
+                                    <input v-model.number="line.quantity" type="number" min="1" required placeholder="Qty" class="col-span-2 rounded-xl border px-2 py-2 text-sm" />
+                                    <input v-model.number="line.unit_price" type="number" min="0" step="0.01" required placeholder="Price" class="col-span-3 rounded-xl border px-2 py-2 text-sm" />
+                                    <button type="button" @click="poForm.items.splice(i, 1)" class="col-span-1 text-red-500 font-black">×</button>
                                 </div>
                             </div>
-
-                            <!-- Production Details (SO only) -->
-                            <div v-if="selectedOrder.type === 'SO'" class="bg-indigo-50/60 dark:bg-indigo-950/30 rounded-2xl p-4 border border-indigo-100 dark:border-indigo-800/50">
-                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Production Details</p>
-                                <div class="grid grid-cols-2 gap-2.5">
-                                    <div>
-                                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Product</p>
-                                        <p class="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mt-0.5">{{ selectedOrder.product_name || 'N/A' }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Yarn Type</p>
-                                        <p class="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mt-0.5">{{ selectedOrder.yarn_type || 'N/A' }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Color</p>
-                                        <p class="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mt-0.5">{{ selectedOrder.color || 'N/A' }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Quantity</p>
-                                        <p class="text-base font-black text-indigo-600 dark:text-indigo-300 mt-0.5">{{ selectedOrder.quantity || 0 }} <span class="text-xs font-bold text-indigo-400">kg</span></p>
-                                    </div>
-                                </div>
-                            </div>
+                            <label class="block text-sm font-bold">Notes
+                                <textarea v-model="poForm.notes" rows="2" class="mt-1 w-full rounded-xl border px-3 py-2 text-sm"></textarea>
+                            </label>
+                            <p v-if="poForm.errors.items" class="text-xs text-red-600">{{ poForm.errors.items }}</p>
                         </div>
-
-                        <!-- Modal Footer -->
-                        <div class="p-4 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
-                            <button
-                                @click="selectedOrder = null"
-                                class="w-full py-3 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-zinc-900 rounded-2xl text-sm font-bold transition-all active:scale-[0.99]"
-                            >
-                                Close
-                            </button>
+                        <div class="px-5 py-4 border-t border-gray-100 dark:border-zinc-800 flex justify-end gap-2">
+                            <button type="button" @click="showCreate = false" class="rounded-xl border px-4 py-2 text-sm font-bold">Cancel</button>
+                            <button type="submit" :disabled="poForm.processing" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-black text-white hover:bg-indigo-500 disabled:opacity-50">Create PO</button>
                         </div>
-                    </div>
-                </div>
-            </Transition>
-        </Teleport>
-
-        <!-- Payment Modal -->
-        <Teleport to="body">
-            <Transition name="modal">
-                <div
-                    v-if="paymentOrder"
-                    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm"
-                    @click.self="paymentOrder = null"
-                >
-                    <div
-                        class="bg-white dark:bg-zinc-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-100 dark:border-zinc-800"
-                    >
-                        <!-- Handle (mobile) -->
-                        <div class="sm:hidden flex justify-center pt-3 pb-1">
-                            <div class="w-10 h-1 rounded-full bg-gray-200 dark:bg-zinc-700"></div>
-                        </div>
-
-                        <!-- Modal Header -->
-                        <div class="relative overflow-hidden px-6 py-4 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 flex items-center justify-between flex-shrink-0">
-                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
-                            <div class="relative">
-                                <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em]">Manage Payment</p>
-                                <h3 class="text-white font-black text-lg leading-tight">{{ paymentOrder.number }}</h3>
-                            </div>
-                            <button
-                                @click="paymentOrder = null"
-                                class="relative w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
-                            >
-                                <X class="w-4 h-4 text-white" />
-                            </button>
-                        </div>
-
-                        <!-- Modal Body -->
-                        <div class="overflow-y-auto flex-1 p-5">
-                            <form @submit.prevent="submitPayment" enctype="multipart/form-data">
-                                <div class="space-y-4">
-                                    <!-- Payment Status -->
-                                    <div>
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Payment Status</label>
-                                        <div class="flex gap-3">
-                                            <label class="inline-flex items-center">
-                                                <input type="radio" v-model="form.payment_status" value="unpaid" class="form-radio">
-                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">Unpaid</span>
-                                            </label>
-                                            <label class="inline-flex items-center">
-                                                <input type="radio" v-model="form.payment_status" value="paid" class="form-radio">
-                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">Paid</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <!-- Receipt Upload -->
-                                    <div>
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Receipt (PDF, JPG, PNG)</label>
-                                        <input
-                                            type="file"
-                                            accept=".jpg,.jpeg,.png,.pdf"
-                                            @change="handleFileUpload"
-                                            class="block w-full text-sm text-gray-500 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-500/15 dark:file:text-indigo-300"
-                                        />
-                                        <p v-if="form.receipt" class="text-xs text-emerald-600 mt-1">File selected: {{ form.receipt.name }}</p>
-                                        <p v-if="paymentOrder.receipt_file" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Current receipt: <a :href="route('ord.orders.download-receipt', { type: paymentOrder.type, id: paymentOrder.id })" target="_blank" class="text-indigo-600 dark:text-indigo-400 underline">Download</a></p>
-                                    </div>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex gap-2 mt-6">
-                                    <button
-                                        type="submit"
-                                        class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold transition-all hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.99]"
-                                        :disabled="form.processing"
-                                    >
-                                        {{ form.processing ? 'Saving...' : 'Save Payment' }}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        @click="paymentOrder = null"
-                                        class="flex-1 py-3 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 text-gray-700 dark:text-gray-200 rounded-2xl text-sm font-bold transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                    </form>
                 </div>
             </Transition>
         </Teleport>
@@ -332,164 +167,74 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { X, CalendarDays, Sparkles, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import { ClipboardList, Search, Sparkles, X } from 'lucide-vue-next';
 
 const props = defineProps({
     orders: Array,
-    currentYear: Number,
-    currentMonth: Number,
+    filters: Object,
+    groups: Object,
+    soStatuses: Array,
+    poStatuses: Array,
+    clients: Array,
+    products: Array,
 });
 
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const currentYear = ref(props.currentYear);
-const currentMonth = ref(props.currentMonth);
-const selectedOrder = ref(null);
-const paymentOrder = ref(null);
+const local = ref({ group: props.filters.group || 'all', status: props.filters.status || '', client_id: props.filters.client_id || '', search: props.filters.search || '' });
 
-const form = useForm({
-    order_id: null,
-    type: null,
-    payment_status: 'unpaid',
-    receipt: null,
+const groupCounts = computed(() => {
+    const counts = { all: props.orders.length };
+    for (const o of props.orders) counts[o.group] = (counts[o.group] || 0) + 1;
+    return counts;
 });
 
-const currentMonthName = computed(() => {
-    return new Date(currentYear.value, currentMonth.value - 1).toLocaleString('default', { month: 'long' });
-});
+const setGroup = (key) => { local.value.group = key; applyFilters(); };
+const applyFilters = () => router.get(route('ord.orders'), { ...local.value }, { preserveState: true, preserveScroll: true });
+const clearFilters = () => router.get(route('ord.orders'), { group: 'all' });
 
-const calendarDays = computed(() => {
-    const firstDayOfMonth = new Date(currentYear.value, currentMonth.value - 1, 1);
-    const startDay = firstDayOfMonth.getDay();
-    const daysInMonth = new Date(currentYear.value, currentMonth.value, 0).getDate();
-
-    const days = [];
-    const ordersByDate = {};
-    props.orders.forEach(order => {
-        const d = order.date;
-        if (d) {
-            if (!ordersByDate[d]) ordersByDate[d] = [];
-            ordersByDate[d].push(order);
-        }
-    });
-
-    // Previous month tail
-    const prevMonthDays = startDay;
-    for (let i = prevMonthDays - 1; i >= 0; i--) {
-        const date = new Date(currentYear.value, currentMonth.value - 1, -i);
-        days.push({ date: date.getDate(), isCurrentMonth: false, orders: [] });
-    }
-
-    // Current month
-    for (let i = 1; i <= daysInMonth; i++) {
-        const dateStr = `${currentYear.value}-${String(currentMonth.value).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-        days.push({ date: i, isCurrentMonth: true, orders: ordersByDate[dateStr] || [] });
-    }
-
-    // Fill remaining cells
-    const totalCells = Math.ceil(days.length / 7) * 7;
-    while (days.length < totalCells) {
-        days.push({ date: '', isCurrentMonth: false, orders: [] });
-    }
-    return days;
-});
-
-const prevMonth = () => {
-    if (currentMonth.value === 1) {
-        currentMonth.value = 12;
-        currentYear.value--;
-    } else {
-        currentMonth.value--;
-    }
-    refresh();
+const quickTransition = (o, to) => {
+    if (!confirm(`Move ${o.number} to ${to}?`)) return;
+    router.post(route('ord.orders.transition', { type: o.type.toLowerCase(), id: o.id }), { to }, { preserveScroll: true });
 };
 
-const nextMonth = () => {
-    if (currentMonth.value === 12) {
-        currentMonth.value = 1;
-        currentYear.value++;
-    } else {
-        currentMonth.value++;
-    }
-    refresh();
-};
+const isOverdue = (o) => o.expected_ship_date && !['completed', 'cancelled', 'delivered'].includes(o.status) && o.expected_ship_date < new Date().toISOString().slice(0, 10);
 
-const refresh = () => {
-    window.location.href = route('ord.orders', { year: currentYear.value, month: currentMonth.value });
-};
+const statusBadge = (s) => ({
+    pending: 'bg-slate-100 text-slate-600 border-slate-200',
+    credit_review: 'bg-slate-100 text-slate-600 border-slate-200',
+    confirmed: 'bg-violet-100 text-violet-700 border-violet-200',
+    approved: 'bg-violet-100 text-violet-700 border-violet-200',
+    in_planning: 'bg-purple-100 text-purple-700 border-purple-200',
+    in_production: 'bg-blue-100 text-blue-700 border-blue-200',
+    production_done: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    ready_for_dispatch: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    in_transit: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    delivered: 'bg-green-100 text-green-700 border-green-200',
+    completed: 'bg-green-100 text-green-700 border-green-200',
+    on_hold: 'bg-amber-100 text-amber-700 border-amber-200',
+    returned: 'bg-red-100 text-red-700 border-red-200',
+    cancelled: 'bg-gray-100 text-gray-500 border-gray-200',
+}[s] || 'bg-gray-100 text-gray-600 border-gray-200');
 
-const formatCurrency = (val) => Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+const formatStatus = (s) => String(s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-const statusBadge = (status) => {
-    const map = {
-        pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-        approved: 'bg-green-50 text-green-700 border-green-200',
-        in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-        completed: 'bg-green-50 text-green-700 border-green-200',
-        shipped: 'bg-gray-100 text-gray-700 border-gray-200',
-    };
-    return map[status] || 'bg-gray-50 text-gray-600 border-gray-200';
-};
-
-const openOrderModal = (order) => {
-    selectedOrder.value = order;
-};
-
-const openPaymentModal = (order) => {
-    // Populate form
-    form.order_id = order.id;
-    form.type = order.type;
-    form.payment_status = order.payment_status || 'unpaid';
-    form.receipt = null;
-    paymentOrder.value = order;
-};
-
-const handleFileUpload = (e) => {
-    form.receipt = e.target.files[0] || null;
-};
-
-const submitPayment = () => {
-    // Use FormData to handle file upload
-    const data = new FormData();
-    data.append('order_id', form.order_id);
-    data.append('type', form.type);
-    data.append('payment_status', form.payment_status);
-    if (form.receipt) {
-        data.append('receipt', form.receipt);
-    }
-
-    router.post(route('ord.orders.payment'), data, {
-        forceFormData: true,
-        preserveScroll: true,
-        onSuccess: () => {
-            paymentOrder.value = null;
-            // Refresh the page or update local data
-            refresh();
-        },
-        onError: (errors) => {
-            console.error(errors);
-        }
-    });
-};
+// Create PO form
+const showCreate = ref(false);
+const poForm = useForm({ client_id: '', priority: 'normal', delivery_date: '', expected_ship_date: '', notes: '', items: [{ product_id: '', quantity: 1, unit_price: 0 }] });
+const addLine = () => poForm.items.push({ product_id: '', quantity: 1, unit_price: 0 });
+const submitPo = () => poForm.post(route('ord.orders.store'), { onSuccess: () => { showCreate.value = false; poForm.reset(); } });
 </script>
 
 <style scoped>
 @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
 .animate-float { animation: float 7s ease-in-out infinite; }
 .animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
 .animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
-.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
-.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
-.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
-.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
-.card-leave-to { opacity: 0; transform: scale(0.96); }
-.card-move { transition: transform 0.4s ease; }
 .modal-enter-active { transition: opacity 0.25s ease, transform 0.32s cubic-bezier(0.22,1,0.36,1); }
 .modal-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .modal-enter-from, .modal-leave-to { opacity: 0; transform: translateY(18px) scale(0.97); }

@@ -11,13 +11,11 @@ class CheckModuleAccess
 {
     public function handle(Request $request, Closure $next, string $module): Response
     {
-        // ─── DEV BYPASS ──────────────────────────────────────────────────────────
-        // Remove or comment this out before deploying to production.
-        if (app()->environment('local')) {
-            return $next($request);
-        }
-        // ─────────────────────────────────────────────────────────────────────────
-
+        // NOTE: A previous revision skipped this gate entirely when
+        // APP_ENV=local, which silently disabled module authorization on any
+        // deployment running with that env value. The bypass has been removed:
+        // authorization is now enforced in every environment. For local
+        // development seeding, grant access via user_module_access rows instead.
         $user = Auth::user();
 
         if (! $user) {

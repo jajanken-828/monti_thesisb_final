@@ -39,7 +39,6 @@ class CheckManufacturingRoleAccess
             'dyeing_fabric_softener',
             'dyeing_squeezer',
             'dyeing_ironing',
-            'dyeing_forming',
             'dyeing_packaging',
         ],
         'maintenance' => [

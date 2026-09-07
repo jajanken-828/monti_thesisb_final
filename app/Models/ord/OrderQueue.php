@@ -11,6 +11,7 @@ class OrderQueue extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'sales_order_id',
         'stage',
         'scm_received_at',
         'inv_checked_at',

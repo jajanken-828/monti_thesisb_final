@@ -92,7 +92,7 @@ const props = defineProps({
 })
 
 const updateAccess = (userId, canAccess) => {
-    router.post(route('ord.access.update'), {
+    router.post(route('ord.ceo-access.update'), {
         user_id: userId,
         can_access: canAccess
     }, {

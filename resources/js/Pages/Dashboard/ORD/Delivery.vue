@@ -106,10 +106,10 @@
                                 View Packages
                             </button>
                             <Link
-                                :href="route('logistics.tracking')"
+                                :href="route('ord.delivery.track', { id: delivery.id })"
                                 class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold text-center transition-all hover:shadow-lg hover:shadow-indigo-500/25 active:scale-95"
                             >
-                                Live Map
+                                Track & POD
                             </Link>
                         </div>
                     </div>

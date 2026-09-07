@@ -42,7 +42,7 @@ class SupplierDashboardController extends Controller
             'my_response' => $rfq->responses->first(),
         ]);
 
-        return Inertia::render('SUPPLIER/supplierDashboard', [
+        return Inertia::render('Supplier/supplierDashboard', [
             'auth' => [
                 'user' => $supplier,
                 'supplier' => $supplier,
@@ -102,7 +102,7 @@ class SupplierDashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return Inertia::render('SUPPLIER/supplierOrders', [
+        return Inertia::render('Supplier/supplierOrders', [
             'auth' => [
                 'user' => $supplier,
                 'supplier' => $supplier,

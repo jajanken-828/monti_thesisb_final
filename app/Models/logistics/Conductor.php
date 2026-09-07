@@ -2,7 +2,7 @@
 
 namespace App\Models\logistics;
 
-use App\Models\User;
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Conductor extends Model

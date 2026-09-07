@@ -26,9 +26,31 @@ class SalesOrder extends Model
         'design',
         'recipe_id',
         'status',
-        'pushed_to', 
-        'inv_check_sufficient', 
+        'pushed_to',
+        'inv_check_sufficient',
          'knitting_done_at', 'knitting_done_by',        // ← Added: stores 'SCM' or 'Order Mgmt'
+        // ORD lifecycle fields (see 2026_09_08_100000 migration)
+        'expected_ship_date',
+        'priority',
+        'confirmed_at',
+        'confirmed_by',
+        'production_started_at',
+        'production_done_at',
+        'delivered_at',
+        'cancel_reason',
+        'on_hold_reason',
+        'created_by',
+    ];
+
+    protected $casts = [
+        'quantity' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'unit_price' => 'decimal:2',
+        'expected_ship_date' => 'date',
+        'confirmed_at' => 'datetime',
+        'production_started_at' => 'datetime',
+        'production_done_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     /**
@@ -58,8 +80,28 @@ class SalesOrder extends Model
 {
     return $this->hasOne(ManufacturingOrder::class, 'sales_order_id');
 }
- public function bomRecord()
+  public function bomRecord()
     {
         return $this->belongsTo(BomRecord::class, 'recipe_id');
+    }
+
+    /**
+     * ORD lifecycle audit trail (order_status_histories morph).
+     */
+    public function statusHistory()
+    {
+        return $this->morphMany(OrderStatusHistory::class, 'orderable')->latest();
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(OrderReturn::class)->latest();
+    }
+
+    public function activeManufacturingOrder()
+    {
+        return $this->hasOne(ManufacturingOrder::class, 'sales_order_id')
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->latestOfMany();
     }
 }

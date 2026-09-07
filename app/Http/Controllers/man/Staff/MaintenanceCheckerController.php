@@ -13,6 +13,7 @@ class MaintenanceCheckerController extends ManufacturingStaffController
     {
         $pendingReports = MachineReport::where('status', 'pending')->count();
         $resolvedToday = MachineReport::whereDate('resolved_at', today())->count();
+        $staffId = $this->staff()->id;
 
         return Inertia::render('Dashboard/MAN/Employee/MaintenanceChecker/Index', [
             'stats' => [
@@ -20,6 +21,14 @@ class MaintenanceCheckerController extends ManufacturingStaffController
                 'resolved_today' => $resolvedToday,
                 'total_machines' => Machine::count(),
                 'available_machines' => Machine::where('status', 'available')->count(),
+            ],
+            // NEW — personal efficiency (own resolutions only).
+            'efficiency' => [
+                'my_resolved_today' => MachineReport::where('resolved_by', $staffId)
+                    ->whereDate('resolved_at', today())->count(),
+                'my_resolved_week' => MachineReport::where('resolved_by', $staffId)
+                    ->whereBetween('resolved_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                'my_resolved_total' => MachineReport::where('resolved_by', $staffId)->count(),
             ],
         ]);
     }
@@ -37,7 +46,7 @@ class MaintenanceCheckerController extends ManufacturingStaffController
     {
         $validated = $request->validate([
             'machine_no' => 'required|string|unique:machines,machine_no',
-            'type' => 'required|string|in:knitting,dyeing,softening,squeezer,forming',
+            'type' => 'required|string|in:knitting,dyeing,softening,squeezer',
             'remarks' => 'nullable|string',
         ]);
 

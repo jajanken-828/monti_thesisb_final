@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use App\Models\EcoAccess;
+use App\Models\eco\EcoAccess;
 
 class CheckEcoAccess
 {

@@ -2,6 +2,7 @@
 
 namespace App\Models\crm;
 
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Model;
 
 class LeadInterview extends Model

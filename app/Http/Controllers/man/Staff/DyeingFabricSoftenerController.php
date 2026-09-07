@@ -28,12 +28,40 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
             ->take(10)
             ->get();
 
+        $nextQueue = Fabric::where('status', 'softener')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('softener_jobs')
+                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id');
+            })
+            ->orderBy('created_at', 'asc')
+            ->take(3)
+            ->get(['id', 'code', 'yarn_type', 'weight', 'created_at']);
+
         return Inertia::render('Dashboard/MAN/Employee/DyeingFabricSoftener/Index', [
             'stats' => [
                 'pending' => $pendingCount,
                 'total_today' => SoftenerJob::whereDate('processed_at', today())->count(),
             ],
             'recentJobs' => $recentJobs,
+            'efficiency' => array_merge(
+                $this->staffEfficiency(SoftenerJob::class),
+                ['machines' => $this->machineAvailability('softening')]
+            ),
+            'nextQueue' => $nextQueue,
+        ]);
+    }
+
+    /**
+     * Personal work log — own softener jobs only.
+     */
+    public function history()
+    {
+        return Inertia::render('Dashboard/MAN/Employee/Common/History', [
+            'roleLabel' => 'Dyeing Fabric Softener',
+            'historyRoute' => 'man.staff.dyeing-fabric-softener.history',
+            'dateColumn' => 'processed_at',
+            'jobs' => $this->staffHistory(SoftenerJob::class, ['fabric.machine', 'fabric.salesOrder.client', 'fabric.salesOrder.recipe.product', 'machine', 'operator', 'squeezerJob', 'fabric.dyeJobs', 'fabric.packages']),
         ]);
     }
 

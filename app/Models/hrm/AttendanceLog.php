@@ -2,6 +2,7 @@
 
 namespace App\Models\hrm;
 
+use App\Models\core\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

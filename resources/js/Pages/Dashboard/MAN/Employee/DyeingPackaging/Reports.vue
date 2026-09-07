@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { useForm, router } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { AlertTriangle, CheckCircle, Wrench, Sparkles, PlusCircle, ClipboardList } from 'lucide-vue-next';
 
@@ -16,7 +16,7 @@ const form = useForm({
 });
 
 const submitReport = () => {
-    form.post(route('man.staff.dyeing-color.report-machine'), {
+    form.post(route('man.staff.dyeing-packaging.report-machine'), {
         preserveScroll: true,
         onSuccess: () => {
             showReportForm.value = false;
@@ -74,7 +74,7 @@ const submitReport = () => {
                                     class="w-full rounded-2xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none transition">
                                     <option value="">Select Machine</option>
                                     <option v-for="machine in machines" :key="machine.id" :value="machine.id">
-                                        {{ machine.machine_no }} ({{ machine.status }})
+                                        {{ machine.machine_no }} ({{ machine.type }} · {{ machine.status }})
                                     </option>
                                 </select>
                             </div>

@@ -6,6 +6,8 @@ import { Package, Clock, AlertTriangle, Sparkles, ChevronRight, ArrowUpRight, Li
 const props = defineProps({
     stats: Object,
     recentFabrics: Array,
+    efficiency: Object,
+    nextQueue: Array,
 });
 </script>
 
@@ -39,6 +41,10 @@ const props = defineProps({
                             <Link :href="route('man.staff.knitting-yarn.reports')"
                                 class="rounded-2xl bg-white/15 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/25 active:scale-95 transition-all duration-200">
                                 View Reports
+                            </Link>
+                            <Link :href="route('man.staff.knitting-yarn.history')"
+                                class="rounded-2xl bg-white/15 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/25 active:scale-95 transition-all duration-200">
+                                My History
                             </Link>
                         </div>
                     </div>
@@ -106,6 +112,24 @@ const props = defineProps({
                         <ArrowUpRight class="absolute top-4 right-4 h-4 w-4 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                 </TransitionGroup>
+
+                <!-- Personal efficiency (own output only — role-guarded on backend) -->
+                <div v-if="efficiency" class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm p-5" style="animation-delay: 120ms">
+                    <h2 class="text-sm font-black text-gray-900 dark:text-white tracking-tight mb-3">My Efficiency</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+                        <div class="rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 p-3"><p class="text-2xl font-black text-indigo-700 dark:text-indigo-300">{{ efficiency.my_today }}</p><p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Mine today</p></div>
+                        <div class="rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 p-3"><p class="text-2xl font-black text-indigo-700 dark:text-indigo-300">{{ efficiency.my_week }}</p><p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Mine this week</p></div>
+                        <div class="rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 p-3"><p class="text-2xl font-black text-indigo-700 dark:text-indigo-300">{{ efficiency.my_total }}</p><p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Mine total</p></div>
+                        <div class="rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 p-3"><p class="text-2xl font-black text-amber-700 dark:text-amber-300">{{ efficiency.my_open_reports }}</p><p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Open reports</p></div>
+                        <div class="rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 p-3"><p class="text-2xl font-black text-rose-700 dark:text-rose-300">{{ efficiency.machines?.down ?? 0 }}/{{ efficiency.machines?.total ?? 0 }}</p><p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">Machines down</p></div>
+                    </div>
+                    <div v-if="nextQueue?.length" class="mt-4 rounded-2xl border border-dashed border-indigo-200 dark:border-indigo-800 p-3">
+                        <p class="text-[10px] font-black uppercase tracking-wider text-indigo-500 mb-2">Up next in queue ({{ stats.pending }} waiting)</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span v-for="item in nextQueue" :key="item.id" class="rounded-full bg-indigo-600/10 dark:bg-indigo-500/15 px-3 py-1.5 font-mono text-xs font-bold text-indigo-700 dark:text-indigo-300">{{ item.code }}</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Recent fabrics -->
                 <div class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden" style="animation-delay: 160ms">

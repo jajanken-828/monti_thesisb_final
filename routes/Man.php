@@ -8,7 +8,6 @@ use App\Http\Controllers\man\ManufacturingInventoryController;
 use App\Http\Controllers\man\Staff\CheckerQualityController;
 use App\Http\Controllers\man\Staff\DyeingColorController;
 use App\Http\Controllers\man\Staff\DyeingFabricSoftenerController;
-use App\Http\Controllers\man\Staff\DyeingFormingController;
 use App\Http\Controllers\man\Staff\DyeingIroningController;
 use App\Http\Controllers\man\Staff\DyeingPackagingController;
 use App\Http\Controllers\man\Staff\DyeingSqueezerController;
@@ -27,8 +26,11 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
     // Route::get('/interview', [InterviewController::class, 'index'])->name('interview.index');
     // Route::get('/trainee', [TraineeController::class, 'index'])->name('trainee.index');
 
-    // Public access control (view-only for HRM? Leave outside manager group for now)
-    Route::get('/access', [AccessController::class, 'index'])->name('access.index');
+    // Access control overview — restricted to manufacturing managers
+    // (previously had no inner authorization check beyond module access).
+    Route::get('/access', [AccessController::class, 'index'])
+        ->middleware('can.access.man.manager')
+        ->name('access.index');
 
     // ──────────────────────────────────────────────────────────────────────────
     // Manager-level access (includes MAN managers, supervisors, and elevated roles)
@@ -68,8 +70,6 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/softener/{id}/pass', 'passSoftener')->name('pass-softener');
                 Route::post('/squeezer/{id}/pass', 'passSqueezer')->name('pass-squeezer');
                 Route::post('/iron/{id}/pass', 'passIron')->name('pass-iron');
-                Route::post('/form/{id}/pack', 'packForm')->name('pack-form');
-                Route::post('/form/{id}/reject', 'rejectForm')->name('reject-form');
                 Route::post('/package/{id}/assign-to-order', 'assignPackageToOrder')->name('assign-package');
             });
     });
@@ -95,6 +95,7 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/machine-report', 'reportMachine')->name('report-machine');
                 Route::post('mark-done/{id}', 'markDone')->name('mark-done');
                 Route::post('unmark-done/{id}', 'unmarkDone')->name('unmark-done');
+                Route::get('/history', 'history')->name('history');
             });
 
         // Dyeing Color
@@ -106,6 +107,7 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/dye', 'storeDye')->name('store-dye');
                 Route::get('/reports', 'reports')->name('reports');
                 Route::post('/machine-report', 'reportMachine')->name('report-machine');
+                Route::get('/history', 'history')->name('history');
             });
 
         // Dyeing Fabric Softener
@@ -117,6 +119,7 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/soften', 'storeSoftener')->name('store-soften');
                 Route::get('/reports', 'reports')->name('reports');
                 Route::post('/machine-report', 'reportMachine')->name('report-machine');
+                Route::get('/history', 'history')->name('history');
             });
 
         // Dyeing Squeezer
@@ -128,6 +131,7 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/squeeze', 'storeSqueezer')->name('store-squeeze');
                 Route::get('/reports', 'reports')->name('reports');
                 Route::post('/machine-report', 'reportMachine')->name('report-machine');
+                Route::get('/history', 'history')->name('history');
             });
 
         // Dyeing Ironing
@@ -139,26 +143,19 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/iron', 'storeIron')->name('store-iron');
                 Route::get('/reports', 'reports')->name('reports');
                 Route::post('/machine-report', 'reportMachine')->name('report-machine');
+                Route::get('/history', 'history')->name('history');
             });
 
-        // Dyeing Forming
-        Route::prefix('dyeing-forming')->name('staff.dyeing-forming.')->controller(DyeingFormingController::class)
-            ->middleware('man.role:dyeing_forming')
-            ->group(function () {
-                Route::get('/', 'index')->name('dashboard');
-                Route::get('/dyeing-forming', 'dyeingForming')->name('page');
-                Route::post('/form', 'storeForm')->name('store-form');
-                Route::get('/reports', 'reports')->name('reports');
-                Route::post('/machine-report', 'reportMachine')->name('report-machine');
-            });
-
-        // Dyeing Packaging
+        // Dyeing Packaging (ironing flows directly here; forming stage removed)
         Route::prefix('dyeing-packaging')->name('staff.dyeing-packaging.')->controller(DyeingPackagingController::class)
             ->middleware('man.role:dyeing_packaging')
             ->group(function () {
                 Route::get('/', 'index')->name('dashboard');
                 Route::get('/packaging', 'packaging')->name('page');
                 Route::post('/package', 'storePackage')->name('store-package');
+                Route::get('/reports', 'reports')->name('reports');
+                Route::post('/machine-report', 'reportMachine')->name('report-machine');
+                Route::get('/history', 'history')->name('history');
             });
 
         // Maintenance Checker
@@ -186,8 +183,6 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                 Route::post('/softener/{id}/pass', 'passSoftener')->name('pass-softener');
                 Route::post('/squeezer/{id}/pass', 'passSqueezer')->name('pass-squeezer');
                 Route::post('/iron/{id}/pass', 'passIron')->name('pass-iron');
-                Route::post('/form/{id}/pack', 'packForm')->name('pack-form');
-                Route::post('/form/{id}/reject', 'rejectForm')->name('reject-form');
                 Route::post('/package/{id}/assign-to-order', 'assignPackageToOrder')->name('assign-package');
                 Route::post('/package/{id}/push-to-logistics', 'pushToLogistics')->name('push-to-logistics');
             });

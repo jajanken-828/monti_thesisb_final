@@ -30,6 +30,30 @@
                     <!-- Summary pills -->
                     <div class="relative mt-6 flex flex-wrap items-center gap-2 text-xs font-black">
                         <span class="rounded-full bg-white/15 px-3 py-1.5 ring-1 ring-white/25 backdrop-blur">{{ productions.length }} batch{{ productions.length !== 1 ? 'es' : '' }}</span>
+                        <span class="rounded-full bg-emerald-400/25 px-3 py-1.5 ring-1 ring-white/25 backdrop-blur">{{ releasable.length }} ready to release</span>
+                    </div>
+                </div>
+
+                <!-- Releasable job orders -->
+                <div v-if="releasable.length > 0" class="animate-fade-up overflow-hidden rounded-3xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/20 shadow-sm" style="animation-delay: 60ms">
+                    <div class="px-5 pt-4 pb-2 flex items-center justify-between">
+                        <h2 class="font-black text-emerald-800 dark:text-emerald-200 text-sm tracking-tight">Ready to release to the plant floor</h2>
+                        <span class="text-[11px] font-bold text-emerald-600">{{ releasable.length }} cleared</span>
+                    </div>
+                    <div class="overflow-x-auto px-2 pb-3">
+                        <table class="w-full min-w-[44rem] text-sm">
+                            <tbody>
+                                <tr v-for="job in releasable" :key="job.id" class="border-t border-emerald-100 dark:border-emerald-900/50">
+                                    <td class="px-3 py-2.5 font-black">{{ job.jo_number }}</td>
+                                    <td class="px-3 py-2.5">{{ job.client_name }}</td>
+                                    <td class="px-3 py-2.5 text-gray-500 text-xs">{{ job.product_name }} · {{ job.quantity }} kg</td>
+                                    <td class="px-3 py-2.5 text-xs font-bold">{{ job.expected_ship_date || '—' }}</td>
+                                    <td class="px-3 py-2.5 text-right">
+                                        <button @click="release(job)" class="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-black text-white hover:bg-emerald-500 active:scale-95">Release</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -179,13 +203,22 @@
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Factory, Sparkles } from 'lucide-vue-next';
 
 defineProps({
-    productions: Array
+    productions: Array,
+    releasable: {
+        type: Array,
+        default: () => [],
+    },
 });
+
+const release = (job) => {
+    if (!confirm(`Release ${job.jo_number} (${job.quantity} kg) to production?`)) return;
+    router.post(route('ord.productions.release', { id: job.id }), {}, { preserveScroll: true });
+};
 
 const statusBadge = (status) => {
     const map = {

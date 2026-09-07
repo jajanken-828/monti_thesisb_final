@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'can.access.warehouse' => \App\Http\Middleware\CanAccessWarehouse::class,
             'can.access.inventory' => \App\Http\Middleware\CanAccessInventory::class,
             'can.access.scm' => \App\Http\Middleware\CanAccessScm::class,
-            'man.role' => \App\Http\Middleware\EnsureManufacturingRole::class,
+            'man.ensure-role' => \App\Http\Middleware\EnsureManufacturingRole::class,
             'can.access.procurement' => \App\Http\Middleware\CanAccessProcurement::class,
             'can.access.logistics' => \App\Http\Middleware\CheckLogisticsAccess::class,
             'module.access' => \App\Http\Middleware\CheckModuleAccess::class,

@@ -39,6 +39,22 @@ class PurchaseOrder extends Model
         'attachment_path', // Added for manual P.O. uploads
         'control_number',  // Added for the detailed Pending Push table
         'yarn',            // Added for the detailed Pending Push table
+        // ORD lifecycle fields (see 2026_09_08_100000 migration)
+        'expected_ship_date',
+        'priority',
+        'confirmed_at',
+        'confirmed_by',
+        'cancel_reason',
+        'on_hold_reason',
+    ];
+
+    protected $casts = [
+        'subtotal' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+        'delivery_date' => 'date',
+        'expected_ship_date' => 'date',
+        'confirmed_at' => 'datetime',
     ];
 
     /**
@@ -87,4 +103,17 @@ class PurchaseOrder extends Model
 {
     return $this->hasMany(ManufacturingOrder::class);
 }
+
+    /**
+     * ORD lifecycle audit trail (order_status_histories morph).
+     */
+    public function statusHistory()
+    {
+        return $this->morphMany(OrderStatusHistory::class, 'orderable')->latest();
+    }
+
+    public function salesOrders()
+    {
+        return $this->hasMany(SalesOrder::class, 'purchase_order_id', 'po_number');
+    }
 }

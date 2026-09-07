@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\OrdAccess;
+use App\Models\ord\OrdAccess;
 use Closure;
 use Illuminate\Http\Request;
 

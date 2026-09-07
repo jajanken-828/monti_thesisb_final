@@ -78,9 +78,11 @@ class CeoAccessController extends Controller
             'supplier' => 'Suppliers',
         ],
         'ORD' => [
+            'dashboard' => 'Dashboard',
             'orders' => 'Orders',
             'productions' => 'Productions',
             'delivery' => 'Delivery',
+            'returns' => 'Returns',
         ],
         'SCM' => [
             'procurement' => 'Procurement',
@@ -134,7 +136,6 @@ class CeoAccessController extends Controller
         'dyeing_fabric_softener' => 'Dyeing Fabric Softener Staff',
         'dyeing_squeezer' => 'Dyeing Squeezer Staff',
         'dyeing_ironing' => 'Dyeing Ironing Staff',
-        'dyeing_forming' => 'Dyeing Forming Staff',
         'dyeing_packaging' => 'Dyeing Packaging Staff',
         'maintenance_checker' => 'Maintenance Checker Staff',
     ];
@@ -541,46 +542,49 @@ class CeoAccessController extends Controller
         }
 
         $oldPosition = $user->position;
-        $user->position = $request->position;
-        $user->save();
 
-        // Handle module access cleanup/promotion
-        if ($request->position === 'staff') {
-            // Demoting from manager (or any higher role) to staff: remove all module access
-            $user->moduleAccess()->delete();
-            // Also remove any existing page permissions (they will be reassigned as default)
-            $user->pagePermissions()->delete();
-            // Assign default page permissions for the staff member's module
-            $this->assignDefaultStaffPagePermissions($user);
-        } elseif ($request->position === 'manager') {
-            // Demoting from secretary/GM to manager, or promoting from staff to manager?
-            if (in_array($oldPosition, ['secretary', 'general_manager'])) {
-                // Demotion: remove all module access (they will only get their core module if needed)
+        DB::transaction(function () use ($request, $user, $oldPosition) {
+            $user->position = $request->position;
+            $user->save();
+
+            // Handle module access cleanup/promotion
+            if ($request->position === 'staff') {
+                // Demoting from manager (or any higher role) to staff: remove all module access
                 $user->moduleAccess()->delete();
-            } elseif ($oldPosition === 'staff') {
-                // Promotion from staff to manager: remove page permissions (managers don't need page restrictions)
+                // Also remove any existing page permissions (they will be reassigned as default)
                 $user->pagePermissions()->delete();
+                // Assign default page permissions for the staff member's module
+                $this->assignDefaultStaffPagePermissions($user);
+            } elseif ($request->position === 'manager') {
+                // Demoting from secretary/GM to manager, or promoting from staff to manager?
+                if (in_array($oldPosition, ['secretary', 'general_manager'])) {
+                    // Demotion: remove all module access (they will only get their core module if needed)
+                    $user->moduleAccess()->delete();
+                } elseif ($oldPosition === 'staff') {
+                    // Promotion from staff to manager: remove page permissions (managers don't need page restrictions)
+                    $user->pagePermissions()->delete();
+                }
+                // If promotion from staff, we do not delete module access (they may have none anyway)
             }
-            // If promotion from staff, we do not delete module access (they may have none anyway)
-        }
 
-        // For promotions to secretary or general manager, ensure they have their root module access
-        if (in_array($request->position, ['secretary', 'general_manager'])) {
-            $rootModule = $this->getRootModuleForUser($user);
-            if ($rootModule) {
-                $exists = UserModuleAccess::where('user_id', $user->id)
-                    ->where('module', $rootModule)
-                    ->exists();
-                if (! $exists) {
-                    $moduleAccess = new UserModuleAccess;
-                    $moduleAccess->user_id = $user->id;
-                    $moduleAccess->module = $rootModule;
-                    $moduleAccess->permission_level = 'edit';
-                    $moduleAccess->granted_by = auth()->id();
-                    $moduleAccess->save();
+            // For promotions to secretary or general manager, ensure they have their root module access
+            if (in_array($request->position, ['secretary', 'general_manager'])) {
+                $rootModule = $this->getRootModuleForUser($user);
+                if ($rootModule) {
+                    $exists = UserModuleAccess::where('user_id', $user->id)
+                        ->where('module', $rootModule)
+                        ->exists();
+                    if (! $exists) {
+                        $moduleAccess = new UserModuleAccess;
+                        $moduleAccess->user_id = $user->id;
+                        $moduleAccess->module = $rootModule;
+                        $moduleAccess->permission_level = 'edit';
+                        $moduleAccess->granted_by = auth()->id();
+                        $moduleAccess->save();
+                    }
                 }
             }
-        }
+        });
 
         return back()->with('success', 'Position updated successfully.');
     }
@@ -617,17 +621,20 @@ class CeoAccessController extends Controller
         }
 
         $modules = array_unique(array_intersect($modules, $allowedModules));
+        $grantedBy = auth()->id();
 
-        $user->moduleAccess()->delete();
-        foreach ($modules as $module) {
-            // Direct assignment to bypass mass assignment protection
-            $moduleAccess = new UserModuleAccess;
-            $moduleAccess->user_id = $user->id;
-            $moduleAccess->module = $module;
-            $moduleAccess->permission_level = ($module === $rootModule) ? 'edit' : ($permissions[$module] ?? 'edit');
-            $moduleAccess->granted_by = auth()->id();
-            $moduleAccess->save();
-        }
+        DB::transaction(function () use ($user, $modules, $rootModule, $permissions, $grantedBy) {
+            $user->moduleAccess()->delete();
+            foreach ($modules as $module) {
+                // Direct assignment to bypass mass assignment protection
+                $moduleAccess = new UserModuleAccess;
+                $moduleAccess->user_id = $user->id;
+                $moduleAccess->module = $module;
+                $moduleAccess->permission_level = ($module === $rootModule) ? 'edit' : ($permissions[$module] ?? 'edit');
+                $moduleAccess->granted_by = $grantedBy;
+                $moduleAccess->save();
+            }
+        });
 
         return back()->with('success', 'Module permissions updated.');
     }
@@ -651,33 +658,38 @@ class CeoAccessController extends Controller
         }
 
         $allowedPages = array_keys($this->modulePages[$user->role] ?? []);
+        $submittedPages = $request->pages ?? [];
+        $userRole = $user->role;
+        $coreModules = $this->coreModules;
 
-        $user->pagePermissions()->delete();
+        DB::transaction(function () use ($user, $submittedPages, $allowedPages, $userRole, $coreModules) {
+            $user->pagePermissions()->delete();
 
-        foreach ($request->pages ?? [] as $pageData) {
-            if (! in_array($pageData['page'], $allowedPages)) {
-                continue;
+            foreach ($submittedPages as $pageData) {
+                if (! in_array($pageData['page'], $allowedPages)) {
+                    continue;
+                }
+
+                // Direct assignment to bypass mass assignment protection
+                $pagePerm = new PagePermission;
+                $pagePerm->user_id = $user->id;
+                $pagePerm->module = $userRole;
+                $pagePerm->page = $pageData['page'];
+                $pagePerm->permission_level = $pageData['permission'] ?? 'edit';
+                $pagePerm->save();
             }
 
-            // Direct assignment to bypass mass assignment protection
-            $pagePerm = new PagePermission;
-            $pagePerm->user_id = $user->id;
-            $pagePerm->module = $user->role;
-            $pagePerm->page = $pageData['page'];
-            $pagePerm->permission_level = $pageData['permission'] ?? 'edit';
-            $pagePerm->save();
-        }
-
-        // Ensure at least dashboard is present (fallback)
-        $hasDashboard = $user->pagePermissions()->where('page', 'dashboard')->exists();
-        if (! $hasDashboard && in_array($user->role, $this->coreModules)) {
-            $pagePerm = new PagePermission;
-            $pagePerm->user_id = $user->id;
-            $pagePerm->module = $user->role;
-            $pagePerm->page = 'dashboard';
-            $pagePerm->permission_level = 'view';
-            $pagePerm->save();
-        }
+            // Ensure at least dashboard is present (fallback)
+            $hasDashboard = $user->pagePermissions()->where('page', 'dashboard')->exists();
+            if (! $hasDashboard && in_array($userRole, $coreModules)) {
+                $pagePerm = new PagePermission;
+                $pagePerm->user_id = $user->id;
+                $pagePerm->module = $userRole;
+                $pagePerm->page = 'dashboard';
+                $pagePerm->permission_level = 'view';
+                $pagePerm->save();
+            }
+        });
 
         return back()->with('success', 'Page permissions updated.');
     }
@@ -689,7 +701,7 @@ class CeoAccessController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'manufacturing_role' => 'nullable|in:knitting_yarn,dyeing_color,dyeing_fabric_softener,dyeing_squeezer,dyeing_ironing,dyeing_forming,dyeing_packaging,maintenance_checker',
+            'manufacturing_role' => 'nullable|in:knitting_yarn,dyeing_color,dyeing_fabric_softener,dyeing_squeezer,dyeing_ironing,dyeing_packaging,maintenance_checker',
             'log_role' => 'nullable|in:driver,conductor',
             'supervisor_department' => 'nullable|in:knitting,dyeing,maintenance',
         ]);

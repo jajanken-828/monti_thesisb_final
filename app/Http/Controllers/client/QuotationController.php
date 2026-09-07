@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\client;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClientQuotation;
-use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
+use App\Models\client\ClientQuotation;
+use App\Models\ord\PurchaseOrder;
+use App\Models\ord\PurchaseOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

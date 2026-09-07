@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\Machine;
-use App\Models\MachineReport;
-use App\Models\SoftenerJob;
-use App\Models\SqueezerJob;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
+use App\Models\man\SoftenerJob;
+use App\Models\man\SqueezerJob;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -56,6 +56,10 @@ class DyeingSqueezerController extends ManufacturingStaffController
         $softenerJob = SoftenerJob::findOrFail($validated['softener_job_id']);
         $softenerJob->update(['status' => 'squeezed']);
 
+        // Auto-pass fabric to ironing stage (Option B: no checker gate between
+        // squeezer and ironing, matching iron -> forming flow).
+        $softenerJob->fabric()->update(['status' => 'iron']);
+
         SqueezerJob::create([
             'softener_job_id' => $validated['softener_job_id'],
             'machine_id' => $validated['machine_id'],
@@ -66,7 +70,6 @@ class DyeingSqueezerController extends ManufacturingStaffController
             'processed_at' => now(),
         ]);
 
-        // The fabric's status is updated by the checker later
         return redirect()->back()->with('message', 'Squeezing recorded successfully.');
     }
 

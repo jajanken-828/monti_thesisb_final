@@ -1,119 +1,131 @@
 <template>
     <Head title="Client Dashboard" />
     <AuthenticatedLayout>
-        <div class="min-h-screen bg-[#F8F9FA] dark:bg-gray-950 pb-20">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
 
-            <!-- Hero Section -->
-            <div class="relative bg-gradient-to-br from-slate-900 to-indigo-950 overflow-hidden text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 shadow-inner">
-                <div class="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
-                    <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-                    <div class="absolute top-48 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-                </div>
-
-                <div class="max-w-7xl mx-auto relative z-10">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div>
-                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-[10px] font-black tracking-widest uppercase text-indigo-200 mb-4">
-                                <Layers class="w-3.5 h-3.5" /> Partner Portal
-                            </div>
-                            <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-tight">
-                                Welcome back, <br />
-                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-300">{{ client?.company_name || 'Partner' }}</span>
-                            </h1>
-                            <p class="text-indigo-100/80 mt-2 font-medium max-w-lg">Track your orders, manage inquiries, and access quotations in one place.</p>
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <Layers class="h-7 w-7" />
                         </div>
-                        <div class="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-3xl text-center shadow-2xl">
-                            <p class="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-1">Account Status</p>
-                            <div class="flex items-center gap-2 justify-center text-emerald-400 font-bold">
-                                <span class="relative flex h-3 w-3">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                                </span>
-                                {{ client?.status || 'Active' }}
-                            </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> Partner Portal
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Welcome back, {{ client?.company_name || 'Partner' }}</h1>
+                            <p class="text-sm text-blue-100/90">Track your orders, manage inquiries, and access quotations in one place.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" /> {{ client?.status || 'Active' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Stat strip -->
+                    <div class="relative mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="animate-fade-up rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur p-4 hover:bg-white/20 hover:scale-[1.02] transition-all" style="animation-delay:80ms">
+                            <p class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-100"><Package class="h-3.5 w-3.5" /> Total orders</p>
+                            <p class="mt-1 text-lg font-black">{{ stats.totalOrders }}</p>
+                        </div>
+                        <div class="animate-fade-up rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur p-4 hover:bg-white/20 hover:scale-[1.02] transition-all" style="animation-delay:160ms">
+                            <p class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-100"><MessageSquare class="h-3.5 w-3.5" /> Active inquiries</p>
+                            <p class="mt-1 text-lg font-black">{{ stats.activeInquiries }}</p>
+                        </div>
+                        <div class="animate-fade-up rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur p-4 hover:bg-white/20 hover:scale-[1.02] transition-all" style="animation-delay:240ms">
+                            <p class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-100"><FileText class="h-3.5 w-3.5" /> Pending quotations</p>
+                            <p class="mt-1 text-lg font-black">{{ stats.pendingQuotations }}</p>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 space-y-8">
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 relative overflow-hidden transition-all hover:-translate-y-1">
-                        <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <ShoppingBag class="w-24 h-24 text-indigo-500" />
-                        </div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/50 flex items-center justify-center mb-6">
-                                <Package class="h-6 w-6 text-indigo-600" />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="animate-fade-up group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 p-5 overflow-hidden" style="animation-delay:80ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-600 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <Package class="h-6 w-6" />
                             </div>
-                            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Orders</p>
-                            <h3 class="text-4xl font-black text-gray-900 dark:text-white">{{ stats.totalOrders }}</h3>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Orders</p>
+                                <h3 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ stats.totalOrders }}</h3>
+                            </div>
+                            <ShoppingBag class="ml-auto h-8 w-8 text-indigo-200 dark:text-zinc-700 group-hover:scale-110 transition-transform" />
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-800 relative overflow-hidden transition-all hover:-translate-y-1">
-                        <div class="absolute top-0 right-0 p-6 opacity-10">
-                            <MessageSquare class="w-24 h-24 text-cyan-500" />
-                        </div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 rounded-2xl bg-cyan-50 dark:bg-cyan-900/50 flex items-center justify-center mb-6">
-                                <MessageSquare class="h-6 w-6 text-cyan-600" />
+                    <div class="animate-fade-up group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 p-5 overflow-hidden" style="animation-delay:160ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-cyan-400/20 to-blue-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-cyan-500 to-blue-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 via-sky-600 to-blue-700 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <MessageSquare class="h-6 w-6" />
                             </div>
-                            <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Active Inquiries</p>
-                            <h3 class="text-4xl font-black text-gray-900 dark:text-white">{{ stats.activeInquiries }}</h3>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Inquiries</p>
+                                <h3 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ stats.activeInquiries }}</h3>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-amber-500 to-orange-500 rounded-[2rem] p-6 shadow-xl shadow-amber-500/20 relative overflow-hidden transition-all hover:-translate-y-1 text-white">
-                        <div class="absolute top-0 right-0 p-6 opacity-20">
-                            <FileText class="w-24 h-24" />
-                        </div>
-                        <div class="relative z-10">
-                            <div class="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md mb-6">
-                                <FileText class="h-6 w-6 text-white" />
+                    <div class="animate-fade-up group relative flex flex-col rounded-3xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 p-5 text-white shadow-lg shadow-orange-500/20 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 overflow-hidden" style="animation-delay:240ms">
+                        <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl group-hover:scale-125 transition-transform duration-500" />
+                        <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                        <div class="relative flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/30 backdrop-blur group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <FileText class="h-6 w-6" />
                             </div>
-                            <p class="text-xs font-black text-amber-100 uppercase tracking-widest mb-1">Pending Quotations</p>
-                            <h3 class="text-4xl font-black leading-none">{{ stats.pendingQuotations }}</h3>
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-widest text-amber-100">Pending Quotations</p>
+                                <h3 class="text-3xl font-black leading-none">{{ stats.pendingQuotations }}</h3>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Recent Orders & Quick Actions -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                     <!-- Recent Orders Table -->
-                    <div class="lg:col-span-2 bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
-                                <Clock class="h-5 w-5 text-indigo-500" /> Recent Orders
-                            </h2>
-                            <Link :href="route('client.orders')" class="text-xs font-bold text-indigo-600 hover:underline">View All</Link>
+                    <div class="animate-fade-up lg:col-span-2 bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-xl transition-shadow duration-300" style="animation-delay:120ms">
+                        <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 flex items-center gap-2">
+                            <Clock class="h-5 w-5 text-indigo-600" />
+                            <h2 class="text-sm font-black uppercase tracking-widest">Recent Orders</h2>
+                            <Link :href="route('client.orders')" class="ml-auto text-xs font-bold text-indigo-600 hover:underline">View All</Link>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left">
-                                <thead class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                <thead class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-zinc-800">
                                     <tr>
-                                        <th class="pb-3">Order #</th>
-                                        <th class="pb-3">Date</th>
-                                        <th class="pb-3 text-right">Total</th>
-                                        <th class="pb-3 text-center">Status</th>
+                                        <th class="px-6 py-4">Order #</th>
+                                        <th class="px-6 py-4">Date</th>
+                                        <th class="px-6 py-4 text-right">Total</th>
+                                        <th class="px-6 py-4 text-center">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-50">
-                                    <tr v-for="order in recentOrders" :key="order.id" class="text-sm">
-                                        <td class="py-3 font-mono font-bold">{{ order.po_number }}</td>
-                                        <td class="py-3 text-gray-500">{{ formatDate(order.created_at) }}</td>
-                                        <td class="py-3 text-right font-black">₱{{ formatCurrency(order.total_amount) }}</td>
-                                        <td class="py-3 text-center">
-                                            <span :class="order.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
-                                                class="px-2 py-0.5 rounded text-[9px] font-black uppercase">
-                                                {{ order.status.replace('_', ' ') }}
+                                <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                    <tr v-for="order in recentOrders" :key="order.id" class="text-sm hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
+                                        <td class="px-6 py-3 font-mono font-bold text-gray-900 dark:text-white">{{ order.po_number }}</td>
+                                        <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(order.created_at) }}</td>
+                                        <td class="px-6 py-3 text-right font-black text-gray-900 dark:text-white">₱{{ formatCurrency(order.total_amount) }}</td>
+                                        <td class="px-6 py-3 text-center">
+                                            <span :class="order.status === 'approved' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' : 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'"
+                                                class="px-2.5 py-1 rounded-full ring-1 text-[9px] font-black uppercase inline-flex items-center gap-1">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {{ order.status.replace('_', ' ') }}
                                             </span>
                                         </td>
                                     </tr>
                                     <tr v-if="recentOrders.length === 0">
-                                        <td colspan="4" class="py-8 text-center text-gray-400">No orders yet.</td>
+                                        <td colspan="4" class="px-6 py-12 text-center">
+                                            <ShoppingBag class="mx-auto h-10 w-10 text-gray-200 dark:text-zinc-700" />
+                                            <p class="mt-2 text-sm font-bold text-gray-400">No orders yet.</p>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -121,52 +133,61 @@
                     </div>
 
                     <!-- Quick Actions Sidebar -->
-                    <div class="space-y-6">
-                        <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div class="space-y-5">
+                        <div class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 p-6 hover:shadow-xl transition-shadow duration-300" style="animation-delay:200ms">
                             <h3 class="text-sm font-black uppercase tracking-widest mb-4">Quick Actions</h3>
                             <div class="space-y-3">
-                                <Link :href="route('client.products')" class="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl hover:bg-indigo-100 transition">
-                                    <span class="font-bold text-indigo-700">Browse Products</span>
-                                    <ShoppingBag class="h-4 w-4 text-indigo-600" />
+                                <Link :href="route('client.products')" class="group flex items-center justify-between p-3 rounded-2xl border border-transparent bg-indigo-50/70 dark:bg-indigo-900/10 hover:border-indigo-200 dark:hover:border-indigo-800 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                                    <span class="font-bold text-sm text-indigo-700 dark:text-indigo-300">Browse Products</span>
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all"><ShoppingBag class="h-4 w-4" /></span>
                                 </Link>
-                                <Link :href="route('client.conversations')" class="flex items-center justify-between p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-xl hover:bg-cyan-100 transition">
-                                    <span class="font-bold text-cyan-700">View Conversations</span>
-                                    <MessageSquare class="h-4 w-4 text-cyan-600" />
+                                <Link :href="route('client.conversations')" class="group flex items-center justify-between p-3 rounded-2xl border border-transparent bg-cyan-50/70 dark:bg-cyan-900/10 hover:border-cyan-200 dark:hover:border-cyan-800 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                                    <span class="font-bold text-sm text-cyan-700 dark:text-cyan-300">View Conversations</span>
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 group-hover:bg-cyan-600 group-hover:text-white transition-all"><MessageSquare class="h-4 w-4" /></span>
                                 </Link>
-                                <Link :href="route('client.invoices')" class="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl hover:bg-emerald-100 transition">
-                                    <span class="font-bold text-emerald-700">Invoices & Payments</span>
-                                    <CreditCard class="h-4 w-4 text-emerald-600" />
+                                <Link :href="route('client.invoices')" class="group flex items-center justify-between p-3 rounded-2xl border border-transparent bg-emerald-50/70 dark:bg-emerald-900/10 hover:border-emerald-200 dark:hover:border-emerald-800 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                                    <span class="font-bold text-sm text-emerald-700 dark:text-emerald-300">Invoices &amp; Payments</span>
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 group-hover:bg-emerald-600 group-hover:text-white transition-all"><CreditCard class="h-4 w-4" /></span>
                                 </Link>
                             </div>
                         </div>
 
                         <!-- Support Widget -->
-                        <div class="bg-gradient-to-r from-gray-800 to-gray-900 rounded-[2rem] p-6 text-white shadow-lg">
-                            <h3 class="text-sm font-black uppercase tracking-widest mb-2">Need Help?</h3>
-                            <p class="text-xs text-gray-300 mb-4">Our support team is ready to assist you.</p>
-                            <Link :href="route('client.support')" class="inline-flex items-center gap-2 text-xs font-bold bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition">
+                        <div class="animate-fade-up bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-lg shadow-indigo-500/25 relative overflow-hidden group hover:scale-[1.01] transition-transform" style="animation-delay:280ms">
+                            <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl group-hover:scale-125 transition-transform duration-500" />
+                            <p class="relative text-[10px] font-black uppercase tracking-[0.2em] text-indigo-100">Need help?</p>
+                            <p class="relative text-xs text-indigo-100 mt-1">Our support team is ready to assist you.</p>
+                            <Link :href="route('client.support')" class="relative mt-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide bg-white text-indigo-700 px-4 py-2.5 rounded-xl hover:bg-indigo-50 active:scale-95 transition">
                                 Contact Support <ArrowRight class="h-3 w-3" />
                             </Link>
                         </div>
                     </div>
                 </div>
 
-                <!-- Upcoming Deliveries / Logistics (placeholder) -->
-                <div class="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h3 class="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <Truck class="h-4 w-4 text-indigo-500" /> Upcoming Deliveries
-                    </h3>
-                    <div v-if="pendingDeliveries.length === 0" class="text-center py-8 text-gray-400">
-                        No upcoming deliveries at the moment.
+                <!-- Upcoming Deliveries -->
+                <div class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden" style="animation-delay:160ms">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-2 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/10">
+                        <Truck class="h-5 w-5 text-blue-600" />
+                        <h3 class="text-sm font-black uppercase tracking-widest">Upcoming Deliveries</h3>
+                        <span class="ml-auto rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[11px] font-black px-2.5 py-1">{{ pendingDeliveries.length }}</span>
                     </div>
-                    <div v-else class="space-y-3">
-                        <div v-for="delivery in pendingDeliveries" :key="delivery.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                            <div>
-                                <p class="font-bold text-sm">{{ delivery.po_number }}</p>
-                                <p class="text-xs text-gray-500">Expected: {{ formatDate(delivery.expected_date) }}</p>
-                            </div>
-                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[9px] font-black">In Transit</span>
+                    <div class="p-6">
+                        <div v-if="pendingDeliveries.length === 0" class="text-center py-8">
+                            <Truck class="mx-auto h-10 w-10 text-gray-200 dark:text-zinc-700 animate-bounce-soft" />
+                            <p class="mt-2 text-sm font-bold text-gray-400">No upcoming deliveries at the moment.</p>
                         </div>
+                        <TransitionGroup v-else name="card" tag="div" class="space-y-3">
+                            <div v-for="(delivery, i) in pendingDeliveries" :key="delivery.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" class="group flex items-center justify-between rounded-2xl border border-gray-100 dark:border-zinc-800 p-4 hover:shadow-lg hover:-translate-y-0.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-lg shadow-blue-500/40 animate-pulse shrink-0" />
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-sm text-gray-900 dark:text-white truncate">{{ delivery.po_number }}</p>
+                                        <p class="text-xs text-gray-400">Expected: {{ formatDate(delivery.expected_date) }}</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 rounded-full ring-1 ring-blue-200 dark:ring-blue-500/30 text-[9px] font-black uppercase flex items-center gap-1 shrink-0 ml-2"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> In Transit</span>
+                            </div>
+                        </TransitionGroup>
                     </div>
                 </div>
             </div>
@@ -178,7 +199,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { Layers, ShoppingBag, Package, MessageSquare, FileText, Clock, CreditCard, ArrowRight, Truck } from 'lucide-vue-next';
+import { Layers, ShoppingBag, Package, MessageSquare, FileText, Clock, CreditCard, ArrowRight, Truck, Sparkles } from 'lucide-vue-next';
 
 const page = usePage();
 const client = computed(() => page.props.auth?.client);
@@ -207,12 +228,18 @@ const formatDate = (date) => new Date(date).toLocaleDateString('en-PH', { year: 
 </script>
 
 <style scoped>
-@keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
-}
-.animate-blob { animation: blob 7s infinite; }
-.animation-delay-2000 { animation-delay: 2s; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
 </style>

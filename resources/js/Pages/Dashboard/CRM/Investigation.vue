@@ -126,171 +126,240 @@ const getStatusClass = (status) => {
     <Head title="Investigation & Feedback" />
 
     <AuthenticatedLayout>
-        <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <div>
-                    <h1 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-                        Investigation <span class="text-blue-600">Center</span>
-                    </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Monitor client feedback, complaints, and assign staff.
-                    </p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="relative w-full sm:w-80">
-                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input v-model="searchQuery" type="text" placeholder="Search clients..."
-                            class="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <div v-if="!canEdit && permissions.investigation === 'view'" class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        View only
-                    </div>
-                    <div v-else-if="canEdit" class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-                        Full access
-                    </div>
-                </div>
-            </div>
-
-            <!-- Message (e.g., no assigned clients for staff) -->
-            <div v-if="message" class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 text-yellow-800 dark:text-yellow-300">
-                {{ message }}
-            </div>
-
-            <!-- Clients List -->
-            <div v-if="filteredClients.length === 0" class="text-center py-20 text-gray-500">
-                <AlertCircle class="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p class="text-lg font-medium">No clients found.</p>
-                <p class="text-sm">Try adjusting your search or check back later.</p>
-            </div>
-
-            <div v-for="client in filteredClients" :key="client.id" class="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden">
-                <!-- Client Header with clickable name -->
-                <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex flex-wrap justify-between items-center gap-4">
-                    <Link :href="route('crm.customerprofile.show', client.id)" class="group cursor-pointer">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <ShieldCheck class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Eye class="h-3.5 w-3.5" /> CRM · Oversight
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">
+                                Investigation <span class="text-blue-200">Center</span>
+                            </h1>
+                            <p class="text-sm text-blue-100/90">
+                                Monitor client feedback, complaints, and assign staff.
+                            </p>
+                        </div>
                         <div class="flex items-center gap-2">
-                            <h2 class="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition">
-                                {{ client.company_name }}
-                            </h2>
-                            <ExternalLink class="h-4 w-4 text-gray-400 group-hover:text-blue-500" />
+                            <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                                {{ filteredClients.length }} clients
+                            </span>
+                            <span v-if="!canEdit && permissions.investigation === 'view'" class="rounded-full bg-amber-300/90 px-3 py-1.5 text-xs font-black text-amber-950">View only</span>
+                            <span v-else-if="canEdit" class="rounded-full bg-emerald-400/90 px-3 py-1.5 text-xs font-black text-emerald-950">Full access</span>
                         </div>
-                        <p class="text-sm text-gray-500">{{ client.contact_person }} | {{ client.email }}</p>
-                    </Link>
-                    <div class="flex gap-2">
-                        <button v-if="canEdit" @click="openFeedbackModal(client)" class="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700">
-                            <MessageSquare class="w-4 w-4" /> Add Feedback
-                        </button>
-                        <button v-if="isManager && canEdit" @click="openAssignModal(client)" class="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700">
-                            <UserPlus class="w-4 w-4" /> Assign Staff
-                        </button>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="relative mt-6">
+                        <div class="relative max-w-xl">
+                            <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input v-model="searchQuery" type="text" placeholder="Search clients..."
+                                class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition" />
+                        </div>
                     </div>
                 </div>
 
-                <!-- Feedback/Complaints Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-zinc-800/50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
-                            <tr v-if="!client.feedback || client.feedback.length === 0">
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-400 italic">No feedback or complaints recorded.</td>
-                            </tr>
-                            <tr v-for="fb in client.feedback" :key="fb.id" class="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition">
-                                <td class="px-6 py-4">
-                                    <span :class="fb.type === 'complaint' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'" class="px-2 py-1 rounded-full text-[10px] font-bold uppercase">
-                                        {{ fb.type }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ fb.subject }}</td>
-                                <td class="px-6 py-4 text-gray-600 dark:text-gray-400 max-w-md truncate">{{ fb.message }}</td>
-                                <td class="px-6 py-4">
-                                    <span :class="getStatusClass(fb.status)" class="px-2 py-1 rounded-full text-[10px] font-bold uppercase">
-                                        {{ fb.status }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-500">{{ fb.assignee?.name || 'Unassigned' }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    <div v-if="canEdit" class="flex justify-end gap-1">
-                                        <button v-if="fb.status !== 'resolved'" @click="updateStatus(fb.id, 'resolved')" class="p-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200" title="Mark Resolved">
-                                            <CheckCircle class="w-4 h-4" />
-                                        </button>
-                                        <button v-if="fb.status === 'open'" @click="updateStatus(fb.id, 'in_progress')" class="p-1.5 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200" title="Mark In Progress">
-                                            <Clock class="w-4 h-4" />
-                                        </button>
+                <!-- Message (e.g., no assigned clients for staff) -->
+                <div v-if="message" class="animate-fade-up rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4 text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                    <AlertCircle class="w-4 h-4 shrink-0" /> {{ message }}
+                </div>
+
+                <!-- Clients List -->
+                <div v-if="filteredClients.length === 0"
+                    class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                    <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                        <AlertCircle class="h-9 w-9 text-indigo-400" />
+                    </div>
+                    <p class="text-sm font-black text-gray-700 dark:text-gray-200">No clients found.</p>
+                    <p class="text-xs text-gray-400 mt-1">Try adjusting your search or check back later.</p>
+                </div>
+
+                <div v-else class="space-y-4">
+                    <div v-for="(client, i) in filteredClients" :key="client.id"
+                        :style="{ animationDelay: `${Math.min(i * 70, 400)}ms` }"
+                        class="animate-fade-up group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 overflow-hidden">
+                        <!-- hover glow + accent -->
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <!-- Client Header with clickable name -->
+                        <div class="relative p-5 sm:p-6 border-b border-gray-100 dark:border-zinc-800 flex flex-wrap justify-between items-center gap-4">
+                            <Link :href="route('crm.customerprofile.show', client.id)" class="group/link cursor-pointer min-w-0">
+                                <div class="flex items-center gap-3">
+                                    <div :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl overflow-hidden text-white font-black shadow-lg uppercase group-hover/link:scale-110 group-hover/link:rotate-3 transition-transform duration-300', client.logo?.logo_url ? 'bg-white' : 'bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700']">
+                                        <img v-if="client.logo?.logo_url" :src="client.logo.logo_url" :alt="client.company_name" class="h-full w-full object-cover" />
+                                        <span v-else>{{ (client.company_name ?? '?').charAt(0) }}</span>
                                     </div>
-                                    <span v-else class="text-xs text-gray-400 italic">View only</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <h2 class="text-base font-black tracking-tight text-gray-900 dark:text-white group-hover/link:text-indigo-600 dark:group-hover/link:text-indigo-300 transition truncate">
+                                                {{ client.company_name }}
+                                            </h2>
+                                            <ExternalLink class="h-4 w-4 shrink-0 text-gray-400 group-hover/link:text-indigo-500 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-all" />
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">{{ client.contact_person }} | {{ client.email }}</p>
+                                    </div>
+                                </div>
+                            </Link>
+                            <div class="flex flex-wrap gap-2">
+                                <button v-if="canEdit" @click="openFeedbackModal(client)" class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
+                                    <MessageSquare class="w-4 h-4" /> Add Feedback
+                                </button>
+                                <button v-if="isManager && canEdit" @click="openAssignModal(client)" class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3.5 py-2 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-violet-500/25 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
+                                    <UserPlus class="w-4 h-4" /> Assign Staff
+                                </button>
+                            </div>
+                        </div>
 
-        <!-- Add Feedback Modal -->
-        <div v-if="showFeedbackModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showFeedbackModal = false">
-            <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
-                    <h2 class="text-lg font-black">Add Feedback / Complaint</h2>
-                    <button @click="showFeedbackModal = false" class="text-white/70 hover:text-white">&times;</button>
-                </div>
-                <form @submit.prevent="submitFeedback" class="p-6 space-y-4">
-                    <input type="hidden" v-model="feedbackForm.client_id" />
-                    <div>
-                        <label class="text-xs font-black text-gray-500 uppercase">Type</label>
-                        <div class="flex gap-4 mt-1">
-                            <label class="flex items-center gap-1"><input type="radio" value="feedback" v-model="feedbackForm.type" /> Feedback</label>
-                            <label class="flex items-center gap-1"><input type="radio" value="complaint" v-model="feedbackForm.type" /> Complaint</label>
+                        <!-- Feedback/Complaints Table -->
+                        <div class="relative overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50/80 dark:bg-zinc-800/50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Subject</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Message</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Assigned To</th>
+                                        <th class="px-6 py-3 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+                                    <tr v-if="!client.feedback || client.feedback.length === 0">
+                                        <td colspan="6" class="px-6 py-8 text-center text-gray-400 italic text-xs">No feedback or complaints recorded.</td>
+                                    </tr>
+                                    <tr v-for="fb in client.feedback" :key="fb.id" class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition">
+                                        <td class="px-6 py-4">
+                                            <span :class="fb.type === 'complaint' ? 'bg-rose-100 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30' : 'bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30'" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ring-1">
+                                                {{ fb.type }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">{{ fb.subject }}</td>
+                                        <td class="px-6 py-4 text-gray-600 dark:text-gray-400 max-w-md truncate">{{ fb.message }}</td>
+                                        <td class="px-6 py-4">
+                                            <span :class="getStatusClass(fb.status)" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ring-1 ring-black/5">
+                                                {{ fb.status }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-500 dark:text-gray-400 text-xs font-medium">
+                                            <span class="inline-flex items-center gap-1.5"><UserCheck class="w-3.5 h-3.5 text-slate-400" />{{ fb.assignee?.name || 'Unassigned' }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div v-if="canEdit" class="flex justify-end gap-1.5">
+                                                <button v-if="fb.status !== 'resolved'" @click="updateStatus(fb.id, 'resolved')" class="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 hover:scale-110 active:scale-95 transition-all" title="Mark Resolved">
+                                                    <CheckCircle class="w-4 h-4" />
+                                                </button>
+                                                <button v-if="fb.status === 'open'" @click="updateStatus(fb.id, 'in_progress')" class="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 hover:scale-110 active:scale-95 transition-all" title="Mark In Progress">
+                                                    <Clock class="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            <span v-else class="text-xs text-gray-400 italic">View only</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div>
-                        <label class="text-xs font-black text-gray-500 uppercase">Subject</label>
-                        <input type="text" v-model="feedbackForm.subject" required class="w-full mt-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-zinc-800 border-none" />
-                    </div>
-                    <div>
-                        <label class="text-xs font-black text-gray-500 uppercase">Message</label>
-                        <textarea v-model="feedbackForm.message" rows="3" required class="w-full mt-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-zinc-800 border-none"></textarea>
-                    </div>
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showFeedbackModal = false" class="flex-1 py-2 text-gray-500 font-bold">Cancel</button>
-                        <button type="submit" :disabled="feedbackForm.processing" class="flex-1 py-2 bg-blue-600 text-white rounded-xl font-bold">Submit</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Assign Staff Modal -->
-        <div v-if="showAssignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showAssignModal = false">
-            <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-purple-600 p-4 text-white flex justify-between items-center">
-                    <h2 class="text-lg font-black">Assign Staff to Client</h2>
-                    <button @click="showAssignModal = false" class="text-white/70 hover:text-white">&times;</button>
                 </div>
-                <form @submit.prevent="assignStaff" class="p-6 space-y-4">
-                    <input type="hidden" v-model="assignForm.client_id" />
-                    <div>
-                        <label class="text-xs font-black text-gray-500 uppercase">Select Staff</label>
-                        <select v-model="assignForm.staff_id" required class="w-full mt-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-zinc-800 border-none">
-                            <option value="">-- Choose staff --</option>
-                            <option v-for="staffMember in staff" :key="staffMember.id" :value="staffMember.id">
-                                {{ staffMember.name }} ({{ staffMember.email }})
-                            </option>
-                        </select>
-                    </div>
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showAssignModal = false" class="flex-1 py-2 text-gray-500 font-bold">Cancel</button>
-                        <button type="submit" :disabled="assignForm.processing" class="flex-1 py-2 bg-purple-600 text-white rounded-xl font-bold">Assign</button>
-                    </div>
-                </form>
             </div>
+
+            <!-- Add Feedback Modal -->
+            <Transition name="modal">
+                <div v-if="showFeedbackModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showFeedbackModal = false">
+                    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 p-5 text-white flex justify-between items-center relative overflow-hidden">
+                            <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl" />
+                            <h2 class="relative text-base font-black flex items-center gap-2"><MessageSquare class="w-4 h-4" /> Add Feedback / Complaint</h2>
+                            <button @click="showFeedbackModal = false" class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 hover:bg-white/35 hover:rotate-90 transition-all"><X class="w-4 h-4" /></button>
+                        </div>
+                        <form @submit.prevent="submitFeedback" class="p-6 space-y-4">
+                            <input type="hidden" v-model="feedbackForm.client_id" />
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</label>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <label :class="feedbackForm.type==='feedback' ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'bg-gray-50 dark:bg-zinc-800'"
+                                        class="flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-all active:scale-95">
+                                        <input type="radio" value="feedback" v-model="feedbackForm.type" class="hidden" /> Feedback
+                                    </label>
+                                    <label :class="feedbackForm.type==='complaint' ? 'ring-2 ring-rose-500 bg-rose-50 dark:bg-rose-900/20' : 'bg-gray-50 dark:bg-zinc-800'"
+                                        class="flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-all active:scale-95">
+                                        <input type="radio" value="complaint" v-model="feedbackForm.type" class="hidden" /> Complaint
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Subject</label>
+                                <input type="text" v-model="feedbackForm.subject" required placeholder="e.g. Delivery follow-up"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none text-sm transition" />
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Message</label>
+                                <textarea v-model="feedbackForm.message" rows="3" required placeholder="Write details..."
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-900 outline-none text-sm transition resize-none"></textarea>
+                            </div>
+                            <div class="flex gap-3 pt-1">
+                                <button type="button" @click="showFeedbackModal = false" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 font-bold text-sm hover:bg-gray-200 active:scale-95 transition">Cancel</button>
+                                <button type="submit" :disabled="feedbackForm.processing" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-60">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </Transition>
+
+            <!-- Assign Staff Modal -->
+            <Transition name="modal">
+                <div v-if="showAssignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showAssignModal = false">
+                    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-violet-700 via-purple-700 to-fuchsia-700 p-5 text-white flex justify-between items-center relative overflow-hidden">
+                            <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl" />
+                            <h2 class="relative text-base font-black flex items-center gap-2"><UserPlus class="w-4 h-4" /> Assign Staff to Client</h2>
+                            <button @click="showAssignModal = false" class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 hover:bg-white/35 hover:rotate-90 transition-all"><X class="w-4 h-4" /></button>
+                        </div>
+                        <form @submit.prevent="assignStaff" class="p-6 space-y-4">
+                            <input type="hidden" v-model="assignForm.client_id" />
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Select Staff</label>
+                                <select v-model="assignForm.staff_id" required
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-violet-400 focus:ring-2 focus:ring-violet-200 dark:focus:ring-violet-900 outline-none text-sm transition">
+                                    <option value="">-- Choose staff --</option>
+                                    <option v-for="staffMember in staff" :key="staffMember.id" :value="staffMember.id">
+                                        {{ staffMember.name }} ({{ staffMember.email }})
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="flex gap-3 pt-1">
+                                <button type="button" @click="showAssignModal = false" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 font-bold text-sm hover:bg-gray-200 active:scale-95 transition">Cancel</button>
+                                <button type="submit" :disabled="assignForm.processing" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-black text-sm shadow-lg shadow-violet-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-60">Assign</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </Transition>
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.modal-enter-active { transition: opacity 0.25s ease; }
+.modal-enter-active > div { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from { opacity: 0; }
+.modal-enter-from > div { transform: scale(0.92) translateY(14px); opacity: 0; }
+.modal-leave-active { transition: opacity 0.2s ease; }
+.modal-leave-to { opacity: 0; }
+</style>

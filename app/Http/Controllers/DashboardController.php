@@ -16,13 +16,11 @@ class DashboardController extends Controller
         $role = strtoupper($user->role);
         $position = strtolower($user->position);
 
-        // Redirect drivers and conductors to their dedicated portals
+        // ---- Redirect drivers and conductors to their portals ----
         if ($role === 'LOG' && $position === 'staff') {
-            // Check directly in the drivers/conductors tables
             $isDriver = DB::table('drivers')->where('user_id', $user->id)->exists();
             $isConductor = DB::table('conductors')->where('user_id', $user->id)->exists();
 
-            // Fallback to log_role column if it exists
             if (!$isDriver && !$isConductor && property_exists($user, 'log_role')) {
                 if ($user->log_role === 'driver') $isDriver = true;
                 if ($user->log_role === 'conductor') $isConductor = true;
@@ -46,7 +44,7 @@ class DashboardController extends Controller
             }
         }
 
-        // Trainees
+        // ---- Trainee redirection ----
         if ($position === 'trainee') {
             return Inertia::render('Dashboard/TRAINEE/index', [
                 'user' => $user,
@@ -58,32 +56,93 @@ class DashboardController extends Controller
             ]);
         }
 
-        // CEO
+        // ---- CEO redirect ----
         if ($role === 'CEO') {
             return redirect()->route('ceo.dashboard');
         }
 
-        // Map role to route name
+        // ---- Role & position to route mapping ----
+        // Define the route name for each combination of role and position.
+        // All route names must exist in web.php.
         $routeMap = [
-            'HRM' => 'hrm.dashboard',
-            'CRM' => 'crm.dashboard',
-            'SCM'  => 'scm.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'FIN'  => 'fin.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'MAN'  => 'man.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'INV'  => 'inv.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'ORD'  => 'ord.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'WAR'  => 'war.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'ECO'  => 'eco.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'PRO'  => 'pro.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'PROJ' => 'proj.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
-            'IT'   => 'it.' . ($position === 'manager' ? 'manager.dashboard' : 'employee.dashboard'),
+            'HRM' => [
+                'manager' => 'hrm.dashboard',
+                'staff'   => 'hrm.dashboard',
+                // secretaries/general managers are handled below
+            ],
+            'CRM' => [
+                'manager' => 'crm.dashboard',
+                'staff'   => 'crm.dashboard',
+            ],
+            'SCM' => [
+                'manager' => 'scm.sales-orders',   // No separate dashboard, use sales orders
+                'staff'   => 'scm.sales-orders',
+            ],
+            'FIN' => [
+                'manager' => 'fin.manager.dashboard',
+                'staff'   => 'fin.employee.dashboard',
+            ],
+            'MAN' => [
+                'manager' => 'man.manager.dashboard',
+                'staff'   => 'man.employee.dashboard', // this exists as a redirect to role-specific
+            ],
+            'INV' => [
+                'manager' => 'inv.dashboard',
+                'staff'   => 'inv.dashboard', // staff share the same dashboard
+            ],
+            'ORD' => [
+                'manager' => 'ord.orders',
+                'staff'   => 'ord.orders',
+            ],
+            'WAR' => [
+                'manager' => 'warehouse.index',
+                'staff'   => 'warehouse.index',
+            ],
+            'ECO' => [
+                'manager' => 'eco.dashboard',
+                'staff'   => 'eco.dashboard',
+            ],
+            'PRO' => [
+                'manager' => 'pro.manager.dashboard',
+                'staff'   => 'pro.manager.dashboard', // staff may not have a separate dashboard; adjust if needed
+            ],
+            'PROJ' => [
+                'manager' => 'proj.manager.dashboard',
+                'staff'   => 'proj.employee.dashboard',
+            ],
+            'IT' => [
+                'manager' => 'it.manager.dashboard',
+                'staff'   => 'it.employee.dashboard',
+            ],
+            'LOG' => [
+                'manager' => 'logistics.dashboard',
+                'staff'   => 'logistics.dashboard', // staff (non-driver/conductor) go to logistics dashboard
+            ],
         ];
 
-        if (isset($routeMap[$role])) {
-            return redirect()->route($routeMap[$role]);
+        // Check for secretary or general_manager positions – they might have granted modules,
+        // but we'll redirect to the dashboard of their primary role if set, else to the generic dashboard.
+        if (in_array($position, ['secretary', 'general_manager'])) {
+            // If the user has a module access grant, we could redirect to that module's main page.
+            // For simplicity, redirect to the root dashboard (or to a default).
+            // But we can also use the role mapping if they have a primary role.
+            if (isset($routeMap[$role])) {
+                $default = $routeMap[$role]['manager'] ?? $routeMap[$role]['staff'] ?? null;
+                if ($default) {
+                    return redirect()->route($default);
+                }
+            }
+            // Fallback for secretaries/GMs: go to CEO dashboard? Or generic dashboard view.
+            return redirect()->route('dashboard'); // This route may not exist; better to use a fallback view.
         }
 
-        // Fallback
+        // Normal manager/staff redirection
+        if (isset($routeMap[$role]) && isset($routeMap[$role][$position])) {
+            return redirect()->route($routeMap[$role][$position]);
+        }
+
+        // ---- Fallback if no mapping found ----
+        // Render a generic Inertia dashboard (if you have one) or redirect to home.
         return Inertia::render('Dashboard', [
             'stats' => [
                 'total_tasks' => 0,

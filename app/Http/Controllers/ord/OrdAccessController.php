@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\ord;
 
 use App\Http\Controllers\Controller;
-use App\Models\OrdAccess;
-use App\Models\User;
+use App\Models\ord\OrdAccess;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

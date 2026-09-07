@@ -1,113 +1,128 @@
 <template>
     <Head title="Logistics Access Control" />
     <AuthenticatedLayout>
-        <div class="max-w-4xl mx-auto space-y-10 p-4 lg:p-10">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
 
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em]">
-                        <ShieldCheck class="h-3.5 w-3.5" />
-                        Security & Permissions
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <ShieldCheck class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <ShieldCheck class="h-3.5 w-3.5" /> Logistics · Security &amp; Permissions
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Access Control</h1>
+                            <p class="text-sm text-blue-100/90">Grant or revoke Logistics module access for Secretary and General Managers.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" /> {{ users.length }} user{{ users.length !== 1 ? 's' : '' }}
+                            </span>
+                            <button @click="refreshData" class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95">
+                                Refresh
+                            </button>
+                        </div>
                     </div>
-                    <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">
-                        Logistics <span class="text-indigo-600">Access Control</span>
-                    </h1>
-                    <p class="text-sm font-medium text-gray-500 italic">
-                        Grant or revoke access to the Logistics module for Secretary and General Managers.
-                    </p>
-                </div>
-                <button @click="refreshData" class="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                    <RefreshCw class="h-4 w-4 text-gray-500" />
-                </button>
-            </div>
-
-            <!-- Info Card -->
-            <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl border border-blue-100 dark:border-blue-800 flex items-start gap-3">
-                <Info class="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div>
-                    <p class="text-sm font-bold text-blue-800 dark:text-blue-200">CEO‑Only Section</p>
-                    <p class="text-xs text-blue-600 dark:text-blue-300">
-                        Only the CEO can manage Logistics access. Secretary and General Managers need explicit permission to view the Logistics module.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Access Table -->
-            <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-                <div class="px-8 py-6 border-b border-gray-100 dark:border-gray-800">
-                    <h2 class="text-lg font-black text-gray-900 dark:text-white">User Permissions</h2>
-                    <p class="text-xs text-gray-500">Toggle access for the Logistics Dashboard, Load, Dispatch, Fleet, and all sub‑pages.</p>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50/50 dark:bg-gray-800/30 text-[10px] font-black uppercase text-gray-400 tracking-[0.15em]">
-                            <tr>
-                                <th class="px-8 py-5">User</th>
-                                <th class="px-8 py-5">Role / Position</th>
-                                <th class="px-8 py-5 text-center">Logistics Access</th>
-                                <th class="px-8 py-5 text-right"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                            <tr v-for="user in users" :key="user.id" class="group hover:bg-gray-50/50 transition-all">
-                                <td class="px-8 py-6">
-                                    <div class="flex items-center gap-3">
-                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-black">
-                                            {{ user.name.charAt(0) }}
+                <!-- Info Card -->
+                <div class="animate-fade-up group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-blue-100 dark:border-blue-800/50 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300 p-5 overflow-hidden flex items-start gap-3" style="animation-delay:80ms">
+                    <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-600 to-violet-700 text-white shadow-lg"><Info class="h-5 w-5" /></span>
+                    <div class="relative">
+                        <p class="text-sm font-black text-gray-900 dark:text-white">CEO‑Only Section</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Only the CEO can manage Logistics access. Secretary and General Managers need explicit permission to view the Logistics module.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Access Table -->
+                <div class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-xl transition-shadow duration-300" style="animation-delay:120ms">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 flex items-center gap-2">
+                        <ShieldCheck class="h-5 w-5 text-indigo-600" />
+                        <div>
+                            <h2 class="text-sm font-black uppercase tracking-widest">User Permissions</h2>
+                            <p class="text-xs text-gray-500">Toggle access for the Logistics Dashboard, Load, Dispatch, Fleet, and all sub‑pages.</p>
+                        </div>
+                        <span class="ml-auto rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[11px] font-black px-2.5 py-1">{{ users.length }}</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-zinc-800">
+                                <tr>
+                                    <th class="px-8 py-4">User</th>
+                                    <th class="px-8 py-4">Role / Position</th>
+                                    <th class="px-8 py-4 text-center">Logistics Access</th>
+                                    <th class="px-8 py-4 text-right"></th>
+                                </tr>
+                            </thead>
+                            <TransitionGroup name="card" tag="tbody" class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                <tr v-for="(user, i) in users" :key="user.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" class="group hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all">
+                                    <td class="px-8 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 flex items-center justify-center text-white text-sm font-black uppercase shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                                {{ user.name.charAt(0) }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="font-black text-gray-900 dark:text-white truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">{{ user.name }}</p>
+                                                <p class="text-[10px] text-gray-400 truncate">{{ user.email }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="font-black text-gray-900 dark:text-white">{{ user.name }}</p>
-                                            <p class="text-[10px] text-gray-400">{{ user.email }}</p>
+                                    </td>
+                                    <td class="px-8 py-6">
+                                        <span class="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 ring-1 ring-gray-200 dark:ring-zinc-700 text-[9px] font-black uppercase inline-flex items-center gap-1">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                                            {{ user.role }} · {{ user.position }}
+                                        </span>
+                                    </td>
+                                    <td class="px-8 py-6 text-center">
+                                        <div class="flex justify-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox"
+                                                    :checked="accessState[user.id] || false"
+                                                    @change="toggleAccess(user)"
+                                                    class="sr-only peer">
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-indigo-600"></div>
+                                                <span class="ml-3 text-xs font-bold" :class="accessState[user.id] ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'">
+                                                    {{ accessState[user.id] ? 'Enabled' : 'Disabled' }}
+                                                </span>
+                                            </label>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-8 py-6">
-                                    <span class="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[9px] font-black uppercase">
-                                        {{ user.role }} · {{ user.position }}
-                                    </span>
-                                </td>
-                                <td class="px-8 py-6 text-center">
-                                    <div class="flex justify-center">
-                                        <label class="relative inline-flex items-center cursor-pointer">
-                                            <input type="checkbox" 
-                                                :checked="accessState[user.id] || false"
-                                                @change="toggleAccess(user)"
-                                                class="sr-only peer">
-                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
-                                            <span class="ml-3 text-xs font-medium text-gray-500 dark:text-gray-400">
-                                                {{ accessState[user.id] ? 'Enabled' : 'Disabled' }}
-                                            </span>
-                                        </label>
-                                    </div>
-                                </td>
-                                <td class="px-8 py-6 text-right">
-                                    <div v-if="updatingUserId === user.id" class="flex justify-end">
-                                        <Loader2 class="h-4 w-4 animate-spin text-indigo-600" />
-                                    </div>
-                                </td>
-                             </tr>
-                            <tr v-if="users.length === 0">
-                                <td colspan="4" class="px-8 py-20 text-center text-gray-400 uppercase font-black italic">
-                                    <ShieldCheck class="h-12 w-12 mx-auto mb-3 opacity-30" />
-                                    No eligible users found.
-                                    <br>
-                                    <span class="text-xs">Only Secretary and General Manager accounts appear here.</span>
-                                </td>
-                             </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td class="px-8 py-6 text-right">
+                                        <div v-if="updatingUserId === user.id" class="flex justify-end">
+                                            <Loader2 class="h-4 w-4 animate-spin text-indigo-600" />
+                                        </div>
+                                    </td>
+                                 </tr>
+                            </TransitionGroup>
+                        </table>
+                        <div v-if="users.length === 0" class="px-8 py-20 text-center">
+                            <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 inline-flex animate-bounce-soft">
+                                <ShieldCheck class="h-9 w-9 text-indigo-400" />
+                            </div>
+                            <p class="text-sm font-black text-gray-700 dark:text-gray-200">No eligible users found.</p>
+                            <p class="text-xs text-gray-400 mt-1">Only Secretary and General Manager accounts appear here.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Toast Notification -->
-            <Transition name="toast">
-                <div v-if="toast.show" class="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-xl shadow-lg text-white font-bold text-sm"
-                    :class="toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'">
-                    {{ toast.message }}
-                </div>
-            </Transition>
+                <!-- Toast Notification -->
+                <Transition name="toast">
+                    <div v-if="toast.show" class="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-2xl shadow-lg text-white font-bold text-sm"
+                        :class="toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'">
+                        {{ toast.message }}
+                    </div>
+                </Transition>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -146,7 +161,7 @@ const refreshData = () => {
 const toggleAccess = async (user) => {
     const newValue = !accessState[user.id];
     updatingUserId.value = user.id;
-    
+
     try {
         await router.post(route('logistics.access.update'), {
             user_id: user.id,
@@ -175,6 +190,22 @@ const toggleAccess = async (user) => {
 </script>
 
 <style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: all 0.3s cubic-bezier(0.22,1,0.36,1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95) translateY(12px); }
 .toast-enter-active, .toast-leave-active {
     transition: all 0.3s ease;
 }

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\inv;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Warehouse;
+use App\Models\core\User;
+use App\Models\war\Warehouse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

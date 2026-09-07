@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\eco;
 
 use App\Http\Controllers\Controller;
-use App\Models\Supplier;
+use App\Models\pro\Supplier;
 use App\Models\SupplierConversation;
 use App\Models\SupplierMessage;
 use App\Models\SupplierRequest;
 use App\Models\SupplierRequestItem;
-use App\Models\CreditAccount;
+use App\Models\eco\CreditAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;

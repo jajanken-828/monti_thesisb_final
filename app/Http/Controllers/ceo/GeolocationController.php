@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use App\Models\CeoLocation;
+use App\Models\ceo\CeoLocation;
 use Exception;
 
 class GeolocationController extends Controller 
@@ -21,8 +21,15 @@ class GeolocationController extends Controller
             ->latest()
             ->first();
 
+        // Full archive history (latest first) for the logs table
+        $locationHistory = CeoLocation::where('user_id', auth()->id())
+            ->latest()
+            ->take(50)
+            ->get();
+
         return Inertia::render('Dashboard/CEO/Geolocation', [
-            'savedLocation' => $lastLocation
+            'savedLocation' => $lastLocation,
+            'locationHistory' => $locationHistory,
         ]);
     }
 
@@ -38,6 +45,7 @@ class GeolocationController extends Controller
             'longitude' => 'required|numeric',
             'range_radius' => 'required|integer|min:1',
             'label' => 'nullable|string|max:255',
+            'place_name' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -47,6 +55,7 @@ class GeolocationController extends Controller
                 'longitude' => $validated['longitude'],
                 'range_radius' => $validated['range_radius'],
                 'label' => $validated['label'] ?? 'Manual Log',
+                'place_name' => $validated['place_name'] ?? null,
             ]);
 
             // Log the success for auditing

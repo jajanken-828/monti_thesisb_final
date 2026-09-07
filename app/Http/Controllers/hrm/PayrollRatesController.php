@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\PayrollSet;
-use App\Models\GovernmentContributionRate;
+use App\Models\hrm\PayrollSet;
+use App\Models\hrm\GovernmentContributionRate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

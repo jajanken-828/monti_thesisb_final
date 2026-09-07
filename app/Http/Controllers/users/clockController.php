@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\users;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceLog;
-use App\Models\EmployeeShift;
-use App\Models\CeoLocation; 
+use App\Models\hrm\AttendanceLog;
+use App\Models\hrm\EmployeeShift;
+use App\Models\ceo\CeoLocation; 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

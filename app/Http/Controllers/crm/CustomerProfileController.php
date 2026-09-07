@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CrmClientAssignment;
-use App\Models\CrmMeeting;
-use App\Models\CrmFeedback;
+use App\Models\crm\Client;
+use App\Models\crm\CrmClientAssignment;
+use App\Models\crm\CrmMeeting;
+use App\Models\crm\CrmFeedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -29,7 +29,7 @@ class CustomerProfileController extends Controller
 
         if ($user->role === 'CRM' && $user->position === 'staff') {
             // Staff sees only assigned clients
-            $assignments = CrmClientAssignment::with('client')->where('staff_id', $user->id)->get();
+            $assignments = CrmClientAssignment::with('client.logo')->where('staff_id', $user->id)->get();
             $clients = $assignments->pluck('client');
             if ($clients->isEmpty()) {
                 return Inertia::render('Dashboard/CRM/CustomerProfilesList', [
@@ -42,12 +42,12 @@ class CustomerProfileController extends Controller
             if ($request->query('assigned') == 1) {
                 // Get clients that have at least one assignment (any staff)
                 $assignedClientIds = CrmClientAssignment::distinct()->pluck('client_id');
-                $clients = Client::whereIn('id', $assignedClientIds)
+                $clients = Client::with('logo')->whereIn('id', $assignedClientIds)
                     ->where('status', 'active')
                     ->get();
             } else {
                 // Show all active clients
-                $clients = Client::where('status', 'active')->get();
+                $clients = Client::with('logo')->where('status', 'active')->get();
             }
         }
 
@@ -65,7 +65,7 @@ class CustomerProfileController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        $client = Client::with(['feedback.assignee'])->findOrFail($id);
+        $client = Client::with(['feedback.assignee', 'logo'])->findOrFail($id);
 
         // Restrict staff to only their assigned clients
         if ($user->role === 'CRM' && $user->position === 'staff') {

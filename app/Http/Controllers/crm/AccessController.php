@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\PagePermission;
+use App\Models\core\User;
+use App\Models\core\PagePermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

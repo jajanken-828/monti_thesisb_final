@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Position;
+use App\Models\hrm\Position;
 use Illuminate\Http\Request;
 
 class PositionController extends Controller

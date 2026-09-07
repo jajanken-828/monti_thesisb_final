@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\trainee;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceLog;
+use App\Models\hrm\AttendanceLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

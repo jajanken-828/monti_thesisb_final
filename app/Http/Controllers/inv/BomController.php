@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\inv;
 
 use App\Http\Controllers\Controller;
-use App\Models\BomRecord;
-use App\Models\Client;
+use App\Models\man\BomRecord;
+use App\Models\crm\Client;
 use App\Models\inv\Material;
 use App\Models\inv\Product;
 use Illuminate\Http\Request;

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Traits\HasPagePermissions;

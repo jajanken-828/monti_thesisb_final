@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\Fabric;
-use App\Models\Package;
+use App\Models\man\Fabric;
+use App\Models\man\Package;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DyeingPackagingController extends ManufacturingStaffController
@@ -12,7 +13,11 @@ class DyeingPackagingController extends ManufacturingStaffController
     public function index()
     {
         $pendingCount = Fabric::where('status', 'packed')
-            ->whereDoesntHave('packages')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('packages')
+                    ->whereColumn('packages.fabric_id', 'fabrics.id');
+            })
             ->count();
 
         $recentPackages = Package::with('fabric')
@@ -34,7 +39,11 @@ class DyeingPackagingController extends ManufacturingStaffController
     {
         $fabrics = Fabric::with('salesOrder', 'machine', 'operator')
             ->where('status', 'packed')
-            ->whereDoesntHave('packages')  // Exclude fabrics that already have a package
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('packages')
+                    ->whereColumn('packages.fabric_id', 'fabrics.id');
+            })  // Exclude fabrics that already have a package
             ->get();
 
         return Inertia::render('Dashboard/MAN/Employee/DyeingPackaging/DyeingPackaging', [

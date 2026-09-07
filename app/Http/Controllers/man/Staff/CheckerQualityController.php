@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\DyeJob;
-use App\Models\Fabric;
-use App\Models\IronJob;
-use App\Models\ManufacturingOrder;
-use App\Models\Package;
-use App\Models\SoftenerJob;
-use App\Models\SqueezerJob;
-use App\Models\WarehousePackage;
+use App\Models\man\DyeJob;
+use App\Models\man\Fabric;
+use App\Models\man\IronJob;
+use App\Models\man\ManufacturingOrder;
+use App\Models\man\Package;
+use App\Models\man\SoftenerJob;
+use App\Models\man\SqueezerJob;
+use App\Models\war\WarehousePackage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -23,7 +23,6 @@ class CheckerQualityController extends ManufacturingStaffController
             'fabrics_pending' => Fabric::where('status', 'pending')->count(),
             'dye_pending' => DyeJob::whereHas('fabric', fn($q) => $q->where('status', 'dyeing'))->count(),
             'softener_pending' => SoftenerJob::whereHas('fabric', fn($q) => $q->where('status', 'softener'))
-                ->where('status', 'softened')
                 ->count(),
             'squeezer_pending' => SqueezerJob::whereHas('softenerJob.fabric', fn($q) => $q->where('status', 'squeezer'))->count(),
             'iron_pending' => IronJob::whereHas('squeezerJob.softenerJob.fabric', fn($q) => $q->where('status', 'iron'))->count(),
@@ -75,7 +74,6 @@ class CheckerQualityController extends ManufacturingStaffController
 
         $softenerJobs = SoftenerJob::with('fabric.salesOrder', 'machine', 'operator', 'squeezerJob')
             ->whereHas('fabric', fn($q) => $q->where('status', 'softener'))
-            ->where('status', 'softened')
             ->get();
 
         $squeezerJobs = SqueezerJob::with('softenerJob.fabric.salesOrder', 'machine', 'operator', 'ironJob')
@@ -218,8 +216,22 @@ class CheckerQualityController extends ManufacturingStaffController
             'action' => 'required|in:pack',
         ]);
 
-        $iron = IronJob::findOrFail($ironId);
-        $fabric = $iron->squeezerJob->softenerJob->fabric;
+        $iron = IronJob::with('squeezerJob.softenerJob.fabric')->findOrFail($ironId);
+
+        $squeezerJob = $iron->squeezerJob;
+        if (!$squeezerJob) {
+            return back()->with('error', 'This iron job has no linked squeezer job — cannot pack.');
+        }
+
+        $softenerJob = $squeezerJob->softenerJob;
+        if (!$softenerJob) {
+            return back()->with('error', 'This iron job has no linked softener job — cannot pack.');
+        }
+
+        $fabric = $softenerJob->fabric;
+        if (!$fabric) {
+            return back()->with('error', 'This iron job has no linked fabric — cannot pack.');
+        }
 
         if ($validated['action'] === 'pack') {
             $fabric->update(['status' => 'packed']);

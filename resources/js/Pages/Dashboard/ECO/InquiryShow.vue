@@ -1,281 +1,300 @@
 <template>
     <Head :title="`Inquiry #${inquiry.id} — ${inquiry.client?.company_name}`" />
     <AuthenticatedLayout>
-        <div class="h-[calc(100vh-64px)] flex flex-col overflow-hidden bg-white">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="h-[calc(100vh-64px)] flex flex-col overflow-hidden max-w-7xl mx-auto p-4 sm:p-6 gap-4">
 
-            <!-- ── Header ──────────────────────────────────────────── -->
-            <div class="flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-100 flex-shrink-0">
-                <Link href="/dashboard/eco/inquiries"
-                    class="p-2 rounded-xl hover:bg-gray-100 transition text-gray-400 hover:text-gray-700 flex-shrink-0">
-                    <ArrowLeft class="h-4 w-4" />
-                </Link>
-                <div class="flex-1 min-w-0">
-                    <h1 class="text-sm sm:text-base font-bold text-gray-900 truncate leading-tight">
-                        {{ inquiry.client?.company_name }}
-                        <span class="text-gray-300 mx-1">·</span>
-                        <span class="text-blue-600">
-                            {{ isBulkInquiry ? `${parsedProducts.length} Products` : inquiry.product?.name }}
+                <!-- ── Hero Header ──────────────────────────────────────────── -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 px-5 sm:px-6 py-4 text-white shadow-xl shadow-indigo-500/20 flex-shrink-0">
+                    <div class="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex items-center gap-2 sm:gap-3">
+                        <Link href="/dashboard/eco/inquiries"
+                            class="p-2 rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 hover:scale-105 active:scale-95 transition text-white flex-shrink-0">
+                            <ArrowLeft class="h-4 w-4" />
+                        </Link>
+                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop flex-shrink-0 font-black text-lg">
+                            {{ (inquiry.client?.company_name ?? '?').charAt(0) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h1 class="text-sm sm:text-base font-black tracking-tight truncate leading-tight">
+                                {{ inquiry.client?.company_name }}
+                                <span class="text-blue-200 mx-1">·</span>
+                                <span class="text-blue-100">
+                                    {{ isBulkInquiry ? `${parsedProducts.length} Products` : inquiry.product?.name }}
+                                </span>
+                            </h1>
+                            <p class="text-[10px] text-blue-100/80 font-bold uppercase tracking-widest mt-0.5 truncate">
+                                {{ isBulkInquiry ? 'Bulk Inquiry' : `SKU: ${inquiry.product?.sku}` }}
+                                · {{ inquiry.client?.email }}
+                            </p>
+                        </div>
+                        <span :class="statusBadge(inquiry.status)" class="flex-shrink-0 hidden sm:inline-flex !bg-white/15 !text-white ring-1 ring-white/25 backdrop-blur items-center gap-1.5">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" /> {{ formatStatus(inquiry.status) }}
                         </span>
-                    </h1>
-                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5 truncate">
-                        {{ isBulkInquiry ? 'Bulk Inquiry' : `SKU: ${inquiry.product?.sku}` }}
-                        · {{ inquiry.client?.email }}
-                    </p>
+                        <button @click="openRejectModal"
+                            class="flex items-center gap-1.5 px-3 py-2 bg-white/15 ring-1 ring-white/25 backdrop-blur text-white rounded-xl text-xs font-bold uppercase hover:bg-red-500/80 transition flex-shrink-0 active:scale-95">
+                            <XCircle class="h-3.5 w-3.5" />
+                            <span class="hidden sm:inline">Reject</span>
+                        </button>
+                    </div>
                 </div>
-                <span :class="statusBadge(inquiry.status)" class="flex-shrink-0 hidden sm:inline-flex">
-                    {{ formatStatus(inquiry.status) }}
-                </span>
-                <button @click="openRejectModal"
-                    class="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-500 rounded-xl text-xs font-semibold uppercase hover:bg-red-50 transition flex-shrink-0">
-                    <XCircle class="h-3.5 w-3.5" />
-                    <span class="hidden sm:inline">Reject</span>
-                </button>
-            </div>
 
-            <!-- ── Mobile Tab Bar ──────────────────────────────────── -->
-            <div class="flex lg:hidden border-b border-gray-100 bg-white flex-shrink-0">
-                <button @click="mobilePanel = 'chat'"
-                    :class="mobilePanel === 'chat' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-400 hover:text-gray-600'"
-                    class="flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition">
-                    Conversation
-                </button>
-                <button @click="mobilePanel = 'actions'"
-                    :class="mobilePanel === 'actions' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-400 hover:text-gray-600'"
-                    class="flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition">
-                    Actions
-                </button>
-            </div>
+                <!-- ── Mobile Tab Bar ──────────────────────────────────── -->
+                <div class="animate-fade-up flex lg:hidden rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 p-1 flex-shrink-0" style="animation-delay:80ms">
+                    <button @click="mobilePanel = 'chat'"
+                        :class="mobilePanel === 'chat' ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-lg' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'"
+                        class="flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+                        Conversation
+                    </button>
+                    <button @click="mobilePanel = 'actions'"
+                        :class="mobilePanel === 'actions' ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-lg' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600'"
+                        class="flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all">
+                        Actions
+                    </button>
+                </div>
 
-            <!-- ── Main Layout ─────────────────────────────────────── -->
-            <div class="flex flex-1 overflow-hidden">
+                <!-- ── Main Layout ─────────────────────────────────────── -->
+                <div class="flex flex-1 overflow-hidden gap-4 min-h-0">
 
-                <!-- Left: Conversation ─────────────────────────────── -->
-                <div :class="mobilePanel !== 'chat' ? 'hidden lg:flex' : 'flex'"
-                    class="flex-1 flex-col overflow-hidden border-r border-gray-100 bg-white min-w-0">
+                    <!-- Left: Conversation ─────────────────────────────── -->
+                    <div :class="mobilePanel !== 'chat' ? 'hidden lg:flex' : 'flex'"
+                        class="animate-fade-up flex-1 flex-col overflow-hidden rounded-3xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 shadow-sm min-w-0" style="animation-delay:120ms">
 
-                    <!-- Messages -->
-                    <div ref="messagesContainer"
-                        class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-gray-50/40">
-                        <div v-for="msg in inquiry.messages" :key="msg.id"
-                            class="flex flex-col"
-                            :class="msg.sender_type === 'client' ? 'items-end' : 'items-start'">
+                        <!-- Messages -->
+                        <div ref="messagesContainer"
+                            class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+                            <TransitionGroup name="card" tag="div" class="space-y-3">
+                                <div v-for="msg in inquiry.messages" :key="msg.id"
+                                    class="flex flex-col"
+                                    :class="msg.sender_type === 'client' ? 'items-end' : 'items-start'">
 
-                            <!-- System event pill -->
-                            <div v-if="msg.is_system_event" class="w-full flex justify-center my-3">
-                                <div class="bg-blue-50 border border-blue-100 px-4 py-2 rounded-xl max-w-[90%] sm:max-w-[80%] shadow-sm">
-                                    <p class="text-[9px] font-semibold uppercase tracking-wide text-blue-600 text-center whitespace-pre-wrap leading-relaxed">
-                                        {{ msg.message }}
-                                    </p>
-                                    <!-- Attachments in system event -->
-                                    <div v-if="msg.attachments?.length" class="mt-2 space-y-1.5">
-                                        <div v-for="file in msg.attachments" :key="file.id" class="relative">
-                                            <img v-if="file.file_type?.startsWith('image/')"
-                                                :src="getFullUrl(file.file_path)"
-                                                class="max-w-full rounded-lg cursor-pointer border border-blue-100"
-                                                @click="openImagePreview(file)" />
-                                            <a v-else :href="getFullUrl(file.file_path)" target="_blank"
-                                                class="flex items-center gap-2 p-2 bg-white/60 rounded-lg text-xs font-medium hover:bg-white transition">
-                                                <FileText class="h-3.5 w-3.5 text-blue-400 flex-shrink-0" />
-                                                <span class="truncate text-blue-700">{{ file.file_name }}</span>
-                                            </a>
-                                            <div class="absolute bottom-1 right-1 flex gap-1">
-                                                <button v-if="file.approved_by_client && !file.is_po"
-                                                    @click="openRecipeModal(file)"
-                                                    class="px-2 py-1 bg-blue-600 text-white rounded-lg text-[8px] font-bold uppercase shadow-sm hover:bg-blue-700 transition">
-                                                    Create Recipe
-                                                </button>
-                                                <button v-if="file.is_po"
-                                                    @click="openJobOrderModal(file)"
-                                                    class="px-2 py-1 bg-amber-400 text-amber-900 rounded-lg text-[8px] font-bold uppercase shadow-sm hover:bg-amber-500 transition">
-                                                    Create Job Order
-                                                </button>
+                                    <!-- System event pill -->
+                                    <div v-if="msg.is_system_event" class="w-full flex justify-center my-2">
+                                        <div class="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-4 py-2.5 rounded-2xl max-w-[90%] sm:max-w-[80%] shadow-sm">
+                                            <p class="text-[9px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-300 text-center whitespace-pre-wrap leading-relaxed">
+                                                {{ msg.message }}
+                                            </p>
+                                            <!-- Attachments in system event -->
+                                            <div v-if="msg.attachments?.length" class="mt-2 space-y-1.5">
+                                                <div v-for="file in msg.attachments" :key="file.id" class="relative">
+                                                    <img v-if="file.file_type?.startsWith('image/')"
+                                                        :src="getFullUrl(file.file_path)"
+                                                        class="max-w-full rounded-2xl cursor-pointer border border-indigo-100 dark:border-indigo-500/20 hover:scale-[1.01] transition-transform"
+                                                        @click="openImagePreview(file)" />
+                                                    <a v-else :href="getFullUrl(file.file_path)" target="_blank"
+                                                        class="flex items-center gap-2 p-2 bg-white/60 dark:bg-zinc-800/60 rounded-xl text-xs font-medium hover:bg-white dark:hover:bg-zinc-800 transition">
+                                                        <FileText class="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
+                                                        <span class="truncate text-indigo-700 dark:text-indigo-300">{{ file.file_name }}</span>
+                                                    </a>
+                                                    <div class="absolute bottom-1 right-1 flex gap-1">
+                                                        <button v-if="file.approved_by_client && !file.is_po"
+                                                            @click="openRecipeModal(file)"
+                                                            class="px-2 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-[8px] font-black uppercase shadow-sm hover:scale-105 transition">
+                                                            Create Recipe
+                                                        </button>
+                                                        <button v-if="file.is_po"
+                                                            @click="openJobOrderModal(file)"
+                                                            class="px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-[8px] font-black uppercase shadow-sm hover:scale-105 transition">
+                                                            Create Job Order
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <!-- Regular message -->
-                            <div v-else
-                                :class="msg.sender_type === 'client'
-                                    ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm'
-                                    : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-tl-sm shadow-sm'"
-                                class="max-w-[80%] sm:max-w-[65%] px-4 py-3">
-                                <p class="text-[9px] font-semibold uppercase tracking-wide opacity-60 mb-1">
-                                    {{ msg.sender_type === 'client' ? inquiry.client?.company_name : 'ECO Team' }}
-                                </p>
-                                <p class="text-xs whitespace-pre-wrap leading-relaxed">{{ msg.message }}</p>
-                                <!-- Attachments -->
-                                <div v-if="msg.attachments?.length" class="mt-2 space-y-1.5">
-                                    <div v-for="file in msg.attachments" :key="file.id" class="relative">
-                                        <img v-if="file.file_type?.startsWith('image/')"
-                                            :src="getFullUrl(file.file_path)"
-                                            class="max-w-full rounded-lg cursor-pointer border border-white/20"
-                                            @click="openImagePreview(file)" />
-                                        <a v-else :href="getFullUrl(file.file_path)" target="_blank"
-                                            class="flex items-center gap-2 p-2 bg-white/10 rounded-lg text-xs font-medium hover:bg-white/20 transition">
-                                            <FileText class="h-3.5 w-3.5 flex-shrink-0" />
-                                            <span class="truncate">{{ file.file_name }}</span>
-                                        </a>
-                                        <div class="absolute bottom-1 right-1 flex gap-1">
-                                            <button v-if="file.approved_by_client && !file.is_po"
-                                                @click="openRecipeModal(file)"
-                                                class="px-2 py-1 bg-blue-600 text-white rounded-lg text-[8px] font-bold uppercase shadow-sm hover:bg-blue-700 transition">
-                                                Create Recipe
-                                            </button>
-                                            <button v-if="file.is_po"
-                                                @click="openJobOrderModal(file)"
-                                                class="px-2 py-1 bg-amber-400 text-amber-900 rounded-lg text-[8px] font-bold uppercase shadow-sm hover:bg-amber-500 transition">
-                                                Create Job Order
-                                            </button>
+                                    <!-- Regular message -->
+                                    <div v-else
+                                        :class="msg.sender_type === 'client'
+                                            ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white rounded-3xl rounded-tr-lg shadow-lg shadow-indigo-500/20'
+                                            : 'bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-zinc-700 rounded-3xl rounded-tl-lg shadow-sm hover:shadow-lg hover:shadow-indigo-500/15 transition-shadow'"
+                                        class="max-w-[80%] sm:max-w-[65%] px-4 py-3">
+                                        <p class="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">
+                                            {{ msg.sender_type === 'client' ? inquiry.client?.company_name : 'ECO Team' }}
+                                        </p>
+                                        <p class="text-xs whitespace-pre-wrap leading-relaxed font-medium">{{ msg.message }}</p>
+                                        <!-- Attachments -->
+                                        <div v-if="msg.attachments?.length" class="mt-2 space-y-1.5">
+                                            <div v-for="file in msg.attachments" :key="file.id" class="relative">
+                                                <img v-if="file.file_type?.startsWith('image/')"
+                                                    :src="getFullUrl(file.file_path)"
+                                                    class="max-w-full rounded-2xl cursor-pointer border border-white/20 hover:scale-[1.01] transition-transform"
+                                                    @click="openImagePreview(file)" />
+                                                <a v-else :href="getFullUrl(file.file_path)" target="_blank"
+                                                    class="flex items-center gap-2 p-2 bg-white/10 rounded-xl text-xs font-medium hover:bg-white/20 transition">
+                                                    <FileText class="h-3.5 w-3.5 flex-shrink-0" />
+                                                    <span class="truncate">{{ file.file_name }}</span>
+                                                </a>
+                                                <div class="absolute bottom-1 right-1 flex gap-1">
+                                                    <button v-if="file.approved_by_client && !file.is_po"
+                                                        @click="openRecipeModal(file)"
+                                                        class="px-2 py-1 bg-blue-600 text-white rounded-lg text-[8px] font-black uppercase shadow-sm hover:bg-blue-700 transition">
+                                                        Create Recipe
+                                                    </button>
+                                                    <button v-if="file.is_po"
+                                                        @click="openJobOrderModal(file)"
+                                                        class="px-2 py-1 bg-amber-400 text-amber-900 rounded-lg text-[8px] font-black uppercase shadow-sm hover:bg-amber-500 transition">
+                                                        Create Job Order
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
+                                        <p class="text-[9px] opacity-50 mt-1.5 text-right font-bold">{{ formatTime(msg.created_at) }}</p>
                                     </div>
                                 </div>
-                                <p class="text-[9px] opacity-50 mt-1.5 text-right">{{ formatTime(msg.created_at) }}</p>
-                            </div>
+                            </TransitionGroup>
                         </div>
-                    </div>
 
-                    <!-- Reply box -->
-                    <div class="flex-shrink-0 border-t border-gray-100 p-3 sm:p-4 bg-white">
-                        <!-- File previews -->
-                        <div v-if="selectedFiles.length" class="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
-                            <div v-for="(file, i) in selectedFiles" :key="i"
-                                class="relative h-12 w-12 flex-shrink-0 bg-gray-100 rounded-xl border border-gray-200 overflow-hidden">
-                                <img v-if="file.type.startsWith('image/')" :src="objectUrl(file)"
-                                    class="h-full w-full object-cover" />
-                                <div v-else class="h-full w-full flex items-center justify-center">
-                                    <FileText class="h-5 w-5 text-gray-400" />
+                        <!-- Reply box -->
+                        <div class="flex-shrink-0 border-t border-gray-100 dark:border-zinc-800 p-3 sm:p-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur">
+                            <!-- File previews -->
+                            <div v-if="selectedFiles.length" class="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
+                                <div v-for="(file, i) in selectedFiles" :key="i"
+                                    class="relative h-12 w-12 flex-shrink-0 bg-gray-100 dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden">
+                                    <img v-if="file.type.startsWith('image/')" :src="objectUrl(file)"
+                                        class="h-full w-full object-cover" />
+                                    <div v-else class="h-full w-full flex items-center justify-center">
+                                        <FileText class="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <button @click="selectedFiles.splice(i, 1)"
+                                        class="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 shadow hover:scale-110 transition">
+                                        <X class="h-2.5 w-2.5" />
+                                    </button>
                                 </div>
-                                <button @click="selectedFiles.splice(i, 1)"
-                                    class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow">
-                                    <X class="h-2.5 w-2.5" />
+                            </div>
+                            <!-- Input row -->
+                            <div class="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/60 rounded-2xl px-3 py-2 border border-gray-200 dark:border-zinc-700 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/10 transition">
+                                <input v-model="newMessage" type="text"
+                                    placeholder="Reply to client…"
+                                    class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
+                                    @keydown.enter.prevent="sendMessage" />
+                                <button type="button" @click="$refs.fileInput.click()"
+                                    class="p-1.5 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <Paperclip class="h-4 w-4" />
+                                </button>
+                                <input ref="fileInput" type="file" class="hidden" multiple
+                                    @change="e => { selectedFiles.push(...Array.from(e.target.files)); e.target.value = ''; }" />
+                                <button type="button" @click="sendMessage"
+                                    :disabled="sending || (!newMessage.trim() && !selectedFiles.length)"
+                                    class="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl disabled:opacity-40 transition hover:scale-105 active:scale-95 shadow-lg shadow-indigo-500/25">
+                                    <Send v-if="!sending" class="h-4 w-4" />
+                                    <Loader2 v-else class="h-4 w-4 animate-spin" />
                                 </button>
                             </div>
                         </div>
-                        <!-- Input row -->
-                        <div class="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10 transition">
-                            <input v-model="newMessage" type="text"
-                                placeholder="Reply to client…"
-                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 placeholder:text-gray-400"
-                                @keydown.enter.prevent="sendMessage" />
-                            <button type="button" @click="$refs.fileInput.click()"
-                                class="p-1.5 hover:bg-gray-200 rounded-lg transition text-gray-400 hover:text-gray-600">
-                                <Paperclip class="h-4 w-4" />
-                            </button>
-                            <input ref="fileInput" type="file" class="hidden" multiple
-                                @change="e => { selectedFiles.push(...Array.from(e.target.files)); e.target.value = ''; }" />
-                            <button type="button" @click="sendMessage"
-                                :disabled="sending || (!newMessage.trim() && !selectedFiles.length)"
-                                class="p-2 bg-blue-600 text-white rounded-xl disabled:opacity-40 transition hover:bg-blue-700">
-                                <Send v-if="!sending" class="h-4 w-4" />
-                                <Loader2 v-else class="h-4 w-4 animate-spin" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Actions Panel ──────────────────────────── -->
-                <div :class="mobilePanel !== 'actions' ? 'hidden lg:block' : 'block'"
-                    class="w-full lg:w-[440px] xl:w-[500px] flex-shrink-0 overflow-y-auto bg-gray-50 p-4 space-y-4">
-
-                    <!-- ── Quick Actions ──────────────────────────── -->
-                    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                        <div class="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100">
-                            <ClipboardList class="h-4 w-4 text-amber-500 flex-shrink-0" />
-                            <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Actions</h3>
-                        </div>
-                        <div class="p-4 space-y-2.5">
-                            <button @click="openQuotationModal"
-                                class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-sm">
-                                <FileText class="h-4 w-4" /> Issue Quotation
-                            </button>
-                            <button @click="openMeetingModal"
-                                class="w-full py-3 bg-amber-400 text-amber-900 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-amber-500 transition flex items-center justify-center gap-2 shadow-sm">
-                                <Calendar class="h-4 w-4" /> Set Meeting
-                            </button>
-                        </div>
                     </div>
 
-                    <!-- ── Recipes ─────────────────────────────────── -->
-                    <template v-if="recipes.length > 0">
-                        <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-1">
-                            Recipes ({{ recipes.length }})
-                        </p>
-                        <div v-for="recipe in recipes" :key="recipe.id"
-                            class="bg-white rounded-xl border border-gray-100 p-3.5 shadow-sm">
-                            <p class="text-xs font-bold text-gray-900">{{ recipe.product?.name }}</p>
-                            <p class="text-xs text-gray-500 mt-0.5">{{ recipe.yarn_type }} · {{ recipe.dye_color }}</p>
-                            <p class="text-[10px] text-gray-400 mt-0.5">{{ recipe.weave_design }}</p>
-                        </div>
-                    </template>
+                    <!-- Right: Actions Panel ──────────────────────────── -->
+                    <div :class="mobilePanel !== 'actions' ? 'hidden lg:block' : 'block'"
+                        class="animate-fade-up w-full lg:w-[440px] xl:w-[500px] flex-shrink-0 overflow-y-auto space-y-4 pr-0.5" style="animation-delay:200ms">
 
-                    <!-- ── Previous Quotations ────────────────────── -->
-                    <template v-if="quotations.length > 0">
-                        <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-1">
-                            Quotations ({{ quotations.length }})
-                        </p>
-
-                        <div v-for="q in quotations" :key="q.id"
-                            class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-                            <!-- Status bar -->
-                            <div class="flex items-center justify-between px-4 py-2.5"
-                                :class="q.status === 'accepted' ? 'bg-emerald-500'
-                                    : q.status === 'rejected' ? 'bg-red-500'
-                                    : 'bg-blue-600'">
-                                <span class="font-mono text-[10px] font-semibold text-white">
-                                    {{ q.quotation_number }}
-                                </span>
-                                <span class="text-[9px] font-bold uppercase text-white/80 bg-black/15 px-2 py-0.5 rounded-full">
-                                    {{ q.status }}
-                                </span>
+                        <!-- ── Quick Actions ──────────────────────────── -->
+                        <div class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300">
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20">
+                                <ClipboardList class="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                                <h3 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Actions</h3>
+                                <span class="ml-auto h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                             </div>
-                            <div class="p-3 space-y-2.5">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="text-[9px] font-semibold rounded-full px-2 py-0.5"
-                                        :class="q.vat_type === 'inclusive'
-                                            ? 'bg-blue-50 text-blue-600 border border-blue-100'
-                                            : 'bg-gray-100 text-gray-500'">
-                                        {{ q.vat_type === 'inclusive' ? 'VAT Inclusive (+12%)' : 'VAT Exclusive' }}
-                                    </span>
-                                    <span class="text-[9px] text-gray-400 font-medium uppercase">
-                                        {{ q.payment_terms }}
-                                    </span>
+                            <div class="p-4 space-y-2.5">
+                                <button @click="openQuotationModal"
+                                    class="w-full py-3 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white rounded-2xl text-xs font-black uppercase tracking-wide hover:scale-[1.01] hover:shadow-xl hover:shadow-indigo-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
+                                    <FileText class="h-4 w-4" /> Issue Quotation
+                                </button>
+                                <button @click="openMeetingModal"
+                                    class="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-2xl text-xs font-black uppercase tracking-wide hover:scale-[1.01] hover:shadow-xl hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
+                                    <Calendar class="h-4 w-4" /> Set Meeting
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ── Recipes ─────────────────────────────────── -->
+                        <template v-if="recipes.length > 0">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 px-1 flex items-center gap-1.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Recipes ({{ recipes.length }})
+                            </p>
+                            <TransitionGroup name="card" tag="div" class="space-y-3">
+                                <div v-for="(recipe, i) in recipes" :key="recipe.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                                    class="group bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 p-4 shadow-sm hover:shadow-xl hover:shadow-indigo-500/15 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300">
+                                    <p class="text-xs font-black text-gray-900 dark:text-white tracking-tight">{{ recipe.product?.name }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">{{ recipe.yarn_type }} · {{ recipe.dye_color }}</p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">{{ recipe.weave_design }}</p>
                                 </div>
-                                <div v-for="(group, fabric) in groupItemsByFabric(q.items)" :key="fabric"
-                                    class="border border-gray-100 rounded-xl overflow-hidden">
-                                    <div class="bg-gray-50 px-3 py-2 flex items-center gap-2">
-                                        <Package class="h-3 w-3 text-blue-500 flex-shrink-0" />
-                                        <p class="text-[10px] font-semibold text-blue-700 uppercase tracking-wider truncate flex-1">
-                                            {{ fabric }}
-                                        </p>
-                                        <span class="text-[9px] text-gray-400 font-medium">{{ group[0]?.kilos }}kg MOQ</span>
+                            </TransitionGroup>
+                        </template>
+
+                        <!-- ── Previous Quotations ────────────────────── -->
+                        <template v-if="quotations.length > 0">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 px-1 flex items-center gap-1.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" /> Quotations ({{ quotations.length }})
+                            </p>
+
+                            <TransitionGroup name="card" tag="div" class="space-y-3">
+                                <div v-for="(q, i) in quotations" :key="q.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                                    class="group bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300">
+                                    <!-- Status bar -->
+                                    <div class="relative overflow-hidden flex items-center justify-between px-4 py-2.5"
+                                        :class="q.status === 'accepted' ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
+                                            : q.status === 'rejected' ? 'bg-gradient-to-r from-red-500 to-rose-600'
+                                            : 'bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800'">
+                                        <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 16px 16px;" />
+                                        <span class="relative font-mono text-[10px] font-bold text-white">
+                                            {{ q.quotation_number }}
+                                        </span>
+                                        <span class="relative text-[9px] font-black uppercase text-white/90 bg-black/15 ring-1 ring-white/25 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {{ q.status }}
+                                        </span>
                                     </div>
-                                    <div class="divide-y divide-gray-50">
-                                        <div v-for="item in group" :key="item.id"
-                                            class="px-3 py-2 flex items-center justify-between">
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-2.5 h-2.5 rounded-full border flex-shrink-0"
-                                                    :style="colorDotStyle(item.color)"></div>
-                                                <span class="text-[9px] font-semibold text-gray-700 uppercase">
-                                                    {{ item.color }}
-                                                </span>
-                                            </div>
-                                            <p class="text-[10px] font-bold text-blue-600">
-                                                ₱{{ formatPeso(item.unit_price) }}/kg
-                                                <span v-if="q.vat_type === 'inclusive'"
-                                                    class="text-[8px] text-gray-400 ml-1">inc. VAT</span>
-                                            </p>
+                                    <div class="p-3.5 space-y-2.5">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-[9px] font-black rounded-full px-2 py-0.5 ring-1"
+                                                :class="q.vat_type === 'inclusive'
+                                                    ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20'
+                                                    : 'bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-gray-400 dark:border-zinc-700 border'">
+                                                {{ q.vat_type === 'inclusive' ? 'VAT Inclusive (+12%)' : 'VAT Exclusive' }}
+                                            </span>
+                                            <span class="text-[9px] text-gray-400 font-bold uppercase">
+                                                {{ q.payment_terms }}
+                                            </span>
                                         </div>
+                                        <div v-for="(group, fabric) in groupItemsByFabric(q.items)" :key="fabric"
+                                            class="border border-gray-100 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                                            <div class="bg-gray-50 dark:bg-zinc-800/60 px-3 py-2 flex items-center gap-2">
+                                                <Package class="h-3 w-3 text-indigo-500 flex-shrink-0" />
+                                                <p class="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider truncate flex-1">
+                                                    {{ fabric }}
+                                                </p>
+                                                <span class="text-[9px] text-gray-400 font-bold">{{ group[0]?.kilos }}kg MOQ</span>
+                                            </div>
+                                            <div class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                                <div v-for="item in group" :key="item.id"
+                                                    class="px-3 py-2 flex items-center justify-between">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-2.5 h-2.5 rounded-full border flex-shrink-0"
+                                                            :style="colorDotStyle(item.color)"></div>
+                                                        <span class="text-[9px] font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                                            {{ item.color }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">
+                                                        ₱{{ formatPeso(item.unit_price) }}/kg
+                                                        <span v-if="q.vat_type === 'inclusive'"
+                                                            class="text-[8px] text-gray-400 ml-1">inc. VAT</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p v-if="q.notes"
+                                            class="text-[9px] text-gray-400 italic border-t border-gray-100 dark:border-zinc-800 pt-2">
+                                            {{ q.notes }}
+                                        </p>
                                     </div>
                                 </div>
-                                <p v-if="q.notes"
-                                    class="text-[9px] text-gray-400 italic border-t border-gray-50 pt-2">
-                                    {{ q.notes }}
-                                </p>
-                            </div>
-                        </div>
-                    </template>
+                            </TransitionGroup>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
@@ -284,529 +303,562 @@
              IMAGE PREVIEW MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="imagePreviewModal.show"
-                class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md"
-                @click.self="imagePreviewModal.show = false">
-                <button @click="imagePreviewModal.show = false"
-                    class="absolute top-5 right-5 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition z-[210]">
-                    <X class="h-5 w-5 text-white" />
-                </button>
-                <div class="w-full max-w-5xl h-[88vh] flex items-center justify-center">
-                    <img v-if="imagePreviewModal.file"
-                        :src="getFullUrl(imagePreviewModal.file.file_path)"
-                        class="max-w-full max-h-full object-contain rounded-xl shadow-2xl" />
+            <Transition name="modal">
+                <div v-if="imagePreviewModal.show"
+                    class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+                    @click.self="imagePreviewModal.show = false">
+                    <button @click="imagePreviewModal.show = false"
+                        class="absolute top-5 right-5 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition z-[210] active:scale-95">
+                        <X class="h-5 w-5 text-white" />
+                    </button>
+                    <div class="w-full max-w-5xl h-[88vh] flex items-center justify-center animate-pop">
+                        <img v-if="imagePreviewModal.file"
+                            :src="getFullUrl(imagePreviewModal.file.file_path)"
+                            class="max-w-full max-h-full object-contain rounded-3xl shadow-2xl ring-1 ring-white/20" />
+                    </div>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              ISSUE QUOTATION MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="showQuotationModal"
-                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
-                @click.self="showQuotationModal = false">
-                <div class="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[95vh]">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 flex-shrink-0">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Issue Quotation</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">{{ inquiry.client?.company_name }}</p>
-                        </div>
-                        <button @click="showQuotationModal = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
-                            <X class="h-4 w-4" />
-                        </button>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="p-5 sm:p-6 overflow-y-auto flex-1">
-                        <form @submit.prevent="submitQuotation" class="space-y-5">
-
-                            <!-- VAT Type Toggle -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                                    VAT Type
-                                </label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button type="button" @click="form.vat_type = 'exclusive'"
-                                        :class="form.vat_type === 'exclusive'
-                                            ? 'bg-gray-900 text-white border-gray-900'
-                                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'"
-                                        class="py-2.5 rounded-xl border-2 text-xs font-bold uppercase tracking-wide transition">
-                                        VAT Exclusive
-                                    </button>
-                                    <button type="button" @click="form.vat_type = 'inclusive'"
-                                        :class="form.vat_type === 'inclusive'
-                                            ? 'bg-blue-600 text-white border-blue-600'
-                                            : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300'"
-                                        class="py-2.5 rounded-xl border-2 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 transition">
-                                        VAT Inclusive
-                                        <span v-if="form.vat_type === 'inclusive'"
-                                            class="bg-white/20 px-1.5 py-0.5 rounded text-[10px]">+12%</span>
-                                    </button>
+            <Transition name="modal">
+                <div v-if="showQuotationModal"
+                    class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="showQuotationModal = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-gray-100 dark:border-zinc-800">
+                        <!-- Gradient Header -->
+                        <div class="relative overflow-hidden px-5 sm:px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex-shrink-0">
+                            <div class="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl animate-float" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-black tracking-tight">Issue Quotation</h3>
+                                    <p class="text-xs text-blue-100 mt-0.5">{{ inquiry.client?.company_name }}</p>
                                 </div>
+                                <button @click="showQuotationModal = false"
+                                    class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
+                                    <X class="h-4 w-4" />
+                                </button>
                             </div>
+                        </div>
 
-                            <!-- Product rows -->
-                            <div class="space-y-3">
-                                <div v-for="(item, idx) in form.items" :key="idx"
-                                    class="border border-gray-200 rounded-2xl overflow-hidden">
-                                    <!-- Fabric name row -->
-                                    <div class="flex items-center gap-2 bg-gray-50 px-3 py-2.5 border-b border-gray-200">
-                                        <Package class="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-                                        <input v-model="item.fabric"
-                                            class="flex-1 bg-transparent border-none p-0 text-xs font-bold text-gray-900 focus:ring-0 uppercase tracking-wide min-w-0"
-                                            placeholder="Fabric / Product Name" required />
-                                        <button v-if="!item.isDefault" type="button" @click="removeItem(idx)"
-                                            class="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 transition">
-                                            <Trash2 class="h-3.5 w-3.5" />
+                        <!-- Body -->
+                        <div class="p-5 sm:p-6 overflow-y-auto flex-1">
+                            <form @submit.prevent="submitQuotation" class="space-y-5">
+
+                                <!-- VAT Type Toggle -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2">
+                                        VAT Type
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button type="button" @click="form.vat_type = 'exclusive'"
+                                            :class="form.vat_type === 'exclusive'
+                                                ? 'bg-gray-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg scale-[1.02]'
+                                                : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-700 hover:border-gray-400'"
+                                            class="py-2.5 rounded-2xl border-2 text-xs font-black uppercase tracking-wide transition-all active:scale-95">
+                                            VAT Exclusive
+                                        </button>
+                                        <button type="button" @click="form.vat_type = 'inclusive'"
+                                            :class="form.vat_type === 'inclusive'
+                                                ? 'bg-gradient-to-r from-blue-700 to-indigo-700 text-white shadow-lg shadow-indigo-500/25 scale-[1.02]'
+                                                : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-700 hover:border-indigo-300'"
+                                            class="py-2.5 rounded-2xl border-2 text-xs font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                                            VAT Inclusive
+                                            <span v-if="form.vat_type === 'inclusive'"
+                                                class="bg-white/20 px-1.5 py-0.5 rounded text-[10px]">+12%</span>
                                         </button>
                                     </div>
+                                </div>
 
-                                    <!-- MOQ + Design -->
-                                    <div class="grid grid-cols-2 gap-3 px-3 pt-3 pb-2">
-                                        <div>
-                                            <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1">
-                                                MOQ (kg)
-                                            </label>
-                                            <input v-model.number="item.kilos" type="number" min="0" step="0.01"
-                                                class="w-full rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
-                                                placeholder="0.00" />
+                                <!-- Product rows -->
+                                <div class="space-y-3">
+                                    <div v-for="(item, idx) in form.items" :key="idx"
+                                        class="border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 rounded-3xl overflow-hidden shadow-sm hover:shadow-lg hover:shadow-indigo-500/15 transition-shadow">
+                                        <!-- Fabric name row -->
+                                        <div class="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 px-3 py-2.5 border-b border-gray-100 dark:border-zinc-800">
+                                            <Package class="h-3.5 w-3.5 text-indigo-500 flex-shrink-0" />
+                                            <input v-model="item.fabric"
+                                                class="flex-1 bg-transparent border-none p-0 text-xs font-black text-gray-900 dark:text-white focus:ring-0 uppercase tracking-wide min-w-0 placeholder:text-gray-400"
+                                                placeholder="Fabric / Product Name" required />
+                                            <button v-if="!item.isDefault" type="button" @click="removeItem(idx)"
+                                                class="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 transition hover:scale-110">
+                                                <Trash2 class="h-3.5 w-3.5" />
+                                            </button>
                                         </div>
-                                        <div>
-                                            <label class="block text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1">
-                                                Design <span class="normal-case font-normal">(opt.)</span>
-                                            </label>
-                                            <input v-model="item.design" type="text"
-                                                class="w-full rounded-xl border border-gray-200 bg-gray-50 text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
-                                                placeholder="e.g. Standard" />
-                                        </div>
-                                    </div>
 
-                                    <!-- Prices per kg -->
-                                    <div class="px-3 pb-3 space-y-2">
-                                        <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">
-                                            Price per kg
-                                            <span v-if="form.vat_type === 'inclusive'" class="text-blue-500 ml-1">(VAT inclusive)</span>
-                                        </p>
-                                        <!-- White -->
-                                        <div class="flex items-center gap-2 bg-gray-50 rounded-xl p-2.5 border border-gray-100">
-                                            <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-300 bg-white shadow-sm flex-shrink-0"></div>
-                                            <span class="text-xs font-semibold text-gray-600 uppercase w-16 flex-shrink-0">White</span>
-                                            <div class="flex-1 relative">
-                                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">₱</span>
-                                                <input v-model.number="item.price_white" type="number" min="0" step="0.01"
-                                                    class="w-full pl-6 pr-2 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
-                                                    placeholder="0.00" required />
+                                        <!-- MOQ + Design -->
+                                        <div class="grid grid-cols-2 gap-3 px-3 pt-3 pb-2">
+                                            <div>
+                                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                    MOQ (kg)
+                                                </label>
+                                                <input v-model.number="item.kilos" type="number" min="0" step="0.01"
+                                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-sm font-bold py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"
+                                                    placeholder="0.00" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                    Design <span class="normal-case font-normal">(opt.)</span>
+                                                </label>
+                                                <input v-model="item.design" type="text"
+                                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-sm py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"
+                                                    placeholder="e.g. Standard" />
                                             </div>
                                         </div>
-                                        <!-- Light -->
-                                        <div class="flex items-center gap-2 bg-amber-50/60 rounded-xl p-2.5 border border-amber-100">
-                                            <div class="w-3.5 h-3.5 rounded-full border-2 border-amber-300 bg-amber-100 shadow-sm flex-shrink-0"></div>
-                                            <span class="text-xs font-semibold text-gray-600 uppercase w-16 flex-shrink-0">Light</span>
-                                            <div class="flex-1 relative">
-                                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">₱</span>
-                                                <input v-model.number="item.price_light" type="number" min="0" step="0.01"
-                                                    class="w-full pl-6 pr-2 py-1.5 rounded-lg border border-amber-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition"
-                                                    placeholder="0.00" required />
+
+                                        <!-- Prices per kg -->
+                                        <div class="px-3 pb-3 space-y-2">
+                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                Price per kg
+                                                <span v-if="form.vat_type === 'inclusive'" class="text-indigo-500 ml-1">(VAT inclusive)</span>
+                                            </p>
+                                            <!-- White -->
+                                            <div class="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/60 rounded-2xl p-2.5 border border-gray-100 dark:border-zinc-800">
+                                                <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-300 bg-white shadow-sm flex-shrink-0"></div>
+                                                <span class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase w-16 flex-shrink-0">White</span>
+                                                <div class="flex-1 relative">
+                                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">₱</span>
+                                                    <input v-model.number="item.price_white" type="number" min="0" step="0.01"
+                                                        class="w-full pl-6 pr-2 py-1.5 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"
+                                                        placeholder="0.00" required />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <!-- Dark -->
-                                        <div class="flex items-center gap-2 bg-gray-800/5 rounded-xl p-2.5 border border-gray-200">
-                                            <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-500 bg-gray-700 shadow-sm flex-shrink-0"></div>
-                                            <span class="text-xs font-semibold text-gray-600 uppercase w-16 flex-shrink-0">Dark</span>
-                                            <div class="flex-1 relative">
-                                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">₱</span>
-                                                <input v-model.number="item.price_dark" type="number" min="0" step="0.01"
-                                                    class="w-full pl-6 pr-2 py-1.5 rounded-lg border border-gray-300 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-gray-500/20 focus:border-gray-400 transition"
-                                                    placeholder="0.00" required />
+                                            <!-- Light -->
+                                            <div class="flex items-center gap-2 bg-amber-50/60 dark:bg-amber-500/5 rounded-2xl p-2.5 border border-amber-100 dark:border-amber-500/20">
+                                                <div class="w-3.5 h-3.5 rounded-full border-2 border-amber-300 bg-amber-100 shadow-sm flex-shrink-0"></div>
+                                                <span class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase w-16 flex-shrink-0">Light</span>
+                                                <div class="flex-1 relative">
+                                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">₱</span>
+                                                    <input v-model.number="item.price_light" type="number" min="0" step="0.01"
+                                                        class="w-full pl-6 pr-2 py-1.5 rounded-xl border border-amber-200 dark:border-amber-500/20 bg-white dark:bg-zinc-900 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition"
+                                                        placeholder="0.00" required />
+                                                </div>
+                                            </div>
+                                            <!-- Dark -->
+                                            <div class="flex items-center gap-2 bg-gray-800/5 dark:bg-zinc-800/60 rounded-2xl p-2.5 border border-gray-200 dark:border-zinc-700">
+                                                <div class="w-3.5 h-3.5 rounded-full border-2 border-gray-500 bg-gray-700 shadow-sm flex-shrink-0"></div>
+                                                <span class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase w-16 flex-shrink-0">Dark</span>
+                                                <div class="flex-1 relative">
+                                                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">₱</span>
+                                                    <input v-model.number="item.price_dark" type="number" min="0" step="0.01"
+                                                        class="w-full pl-6 pr-2 py-1.5 rounded-xl border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-500/20 focus:border-gray-400 transition"
+                                                        placeholder="0.00" required />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Add product -->
-                            <button type="button" @click="addItem"
-                                class="w-full py-2.5 border-2 border-dashed border-blue-200 text-blue-600 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                                <Plus class="h-3.5 w-3.5" /> Add Another Product
-                            </button>
+                                <!-- Add product -->
+                                <button type="button" @click="addItem"
+                                    class="w-full py-2.5 border-2 border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-black uppercase tracking-wide hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                                    <Plus class="h-3.5 w-3.5" /> Add Another Product
+                                </button>
 
-                            <!-- Payment Terms -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                                    Payment Terms *
-                                </label>
-                                <select v-model="form.payment_terms" required
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition">
-                                    <option value="">Select payment terms…</option>
-                                    <option value="Cash on Delivery">Cash on Delivery</option>
-                                    <option value="30 Days">30 Days</option>
-                                    <option value="60 Days">60 Days</option>
-                                    <option value="90 Days">90 Days</option>
-                                    <option value="120 Days">120 Days</option>
-                                    <option value="150 Days">150 Days</option>
-                                </select>
-                            </div>
+                                <!-- Payment Terms -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                        Payment Terms *
+                                    </label>
+                                    <select v-model="form.payment_terms" required
+                                        class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-sm py-2.5 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                        <option value="">Select payment terms…</option>
+                                        <option value="Cash on Delivery">Cash on Delivery</option>
+                                        <option value="30 Days">30 Days</option>
+                                        <option value="60 Days">60 Days</option>
+                                        <option value="90 Days">90 Days</option>
+                                        <option value="120 Days">120 Days</option>
+                                        <option value="150 Days">150 Days</option>
+                                    </select>
+                                </div>
 
-                            <!-- Notes -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                                    Notes <span class="normal-case font-normal">(optional)</span>
-                                </label>
-                                <textarea v-model="form.notes" rows="2"
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 text-sm p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"
-                                    placeholder="Additional terms, delivery requirements…"></textarea>
-                            </div>
+                                <!-- Notes -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                        Notes <span class="normal-case font-normal">(optional)</span>
+                                    </label>
+                                    <textarea v-model="form.notes" rows="2"
+                                        class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-sm p-3 text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"
+                                        placeholder="Additional terms, delivery requirements…"></textarea>
+                                </div>
 
-                            <!-- Submit -->
-                            <button type="submit" :disabled="submitting || !form.payment_terms"
-                                class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:bg-blue-700 disabled:opacity-40 transition shadow-sm">
-                                <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
-                                <Send v-else class="h-4 w-4" />
-                                Send Quotation
-                            </button>
-                        </form>
+                                <!-- Submit -->
+                                <button type="submit" :disabled="submitting || !form.payment_terms"
+                                    class="w-full py-3 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white rounded-2xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:scale-[1.01] hover:shadow-xl hover:shadow-indigo-500/25 disabled:opacity-40 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
+                                    <Loader2 v-if="submitting" class="h-4 w-4 animate-spin" />
+                                    <Send v-else class="h-4 w-4" />
+                                    Send Quotation
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              SET MEETING MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="showMeetingModal"
-                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
-                @click.self="showMeetingModal = false">
-                <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Schedule Meeting</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">{{ inquiry.client?.company_name }}</p>
+            <Transition name="modal">
+                <div v-if="showMeetingModal"
+                    class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="showMeetingModal = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+                        <!-- Gradient Header -->
+                        <div class="relative overflow-hidden px-5 py-5 bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 text-white">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-black tracking-tight">Schedule Meeting</h3>
+                                    <p class="text-xs text-amber-100 mt-0.5">{{ inquiry.client?.company_name }}</p>
+                                </div>
+                                <button @click="showMeetingModal = false"
+                                    class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
-                        <button @click="showMeetingModal = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
-                            <X class="h-4 w-4" />
-                        </button>
+                        <form @submit.prevent="submitMeeting" class="p-5 space-y-4">
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Date & Time *
+                                </label>
+                                <input v-model="meetingData.scheduled_at" type="datetime-local" required
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Location *
+                                </label>
+                                <input v-model="meetingData.location" type="text"
+                                    placeholder="e.g., Zoom, Office, Google Meet" required
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Meeting Type *
+                                </label>
+                                <select v-model="meetingData.type" required
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition">
+                                    <option value="onsite">On‑site</option>
+                                    <option value="video">Video Call</option>
+                                    <option value="phone">Phone Call</option>
+                                </select>
+                            </div>
+                            <button type="submit" :disabled="scheduling"
+                                class="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:scale-[1.01] hover:shadow-xl disabled:opacity-50 transition-all shadow-lg active:scale-95">
+                                <Loader2 v-if="scheduling" class="h-4 w-4 animate-spin" />
+                                <Calendar v-else class="h-4 w-4" />
+                                Send Invite
+                            </button>
+                        </form>
                     </div>
-                    <form @submit.prevent="submitMeeting" class="p-5 space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                                Date & Time *
-                            </label>
-                            <input v-model="meetingData.scheduled_at" type="datetime-local" required
-                                class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                                Location *
-                            </label>
-                            <input v-model="meetingData.location" type="text"
-                                placeholder="e.g., Zoom, Office, Google Meet" required
-                                class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                                Meeting Type *
-                            </label>
-                            <select v-model="meetingData.type" required
-                                class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition">
-                                <option value="onsite">On‑site</option>
-                                <option value="video">Video Call</option>
-                                <option value="phone">Phone Call</option>
-                            </select>
-                        </div>
-                        <button type="submit" :disabled="scheduling"
-                            class="w-full py-3 bg-amber-400 text-amber-900 rounded-xl font-bold text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:bg-amber-500 disabled:opacity-50 transition shadow-sm">
-                            <Loader2 v-if="scheduling" class="h-4 w-4 animate-spin" />
-                            <Calendar v-else class="h-4 w-4" />
-                            Send Invite
-                        </button>
-                    </form>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              REJECT INQUIRY MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="rejectModal.show"
-                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
-                @click.self="rejectModal.show = false">
-                <div class="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Reject Inquiry</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">This action cannot be undone</p>
+            <Transition name="modal">
+                <div v-if="rejectModal.show"
+                    class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="rejectModal.show = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+                        <!-- Gradient Header -->
+                        <div class="relative overflow-hidden px-5 py-5 bg-gradient-to-br from-red-600 via-rose-600 to-pink-700 text-white">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-black tracking-tight">Reject Inquiry</h3>
+                                    <p class="text-xs text-red-100 mt-0.5">This action cannot be undone</p>
+                                </div>
+                                <button @click="rejectModal.show = false"
+                                    class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
-                        <button @click="rejectModal.show = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
-                            <X class="h-4 w-4" />
-                        </button>
+                        <form @submit.prevent="submitReject" class="p-5 space-y-4">
+                            <textarea v-model="rejectModal.reason" rows="3" required
+                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-3 text-sm text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition"
+                                placeholder="Reason for rejection…"></textarea>
+                            <div class="flex gap-3">
+                                <button type="button" @click="rejectModal.show = false"
+                                    class="flex-1 py-2.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 rounded-2xl text-xs font-bold uppercase hover:bg-gray-50 dark:hover:bg-zinc-700 transition active:scale-95">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="flex-1 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-2xl text-xs font-black uppercase hover:scale-[1.02] transition-all shadow-lg active:scale-95">
+                                    Confirm Reject
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <form @submit.prevent="submitReject" class="p-5 space-y-4">
-                        <textarea v-model="rejectModal.reason" rows="3" required
-                            class="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition"
-                            placeholder="Reason for rejection…"></textarea>
-                        <div class="flex gap-3">
-                            <button type="button" @click="rejectModal.show = false"
-                                class="flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold uppercase hover:bg-gray-50 transition">
-                                Cancel
-                            </button>
-                            <button type="submit"
-                                class="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:bg-red-600 transition">
-                                Confirm Reject
-                            </button>
-                        </div>
-                    </form>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              CREATE RECIPE MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="recipeModal.show"
-                class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
-                @click.self="recipeModal.show = false">
-                <div class="bg-white w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[92vh]">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Create Recipe</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">{{ inquiry.client?.company_name }}</p>
+            <Transition name="modal">
+                <div v-if="recipeModal.show"
+                    class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="recipeModal.show = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-gray-100 dark:border-zinc-800">
+                        <!-- Gradient Header -->
+                        <div class="relative overflow-hidden px-5 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex-shrink-0">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-black tracking-tight">Create Recipe</h3>
+                                    <p class="text-xs text-blue-100 mt-0.5">{{ inquiry.client?.company_name }}</p>
+                                </div>
+                                <button @click="recipeModal.show = false"
+                                    class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
-                        <button @click="recipeModal.show = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
-                            <X class="h-4 w-4" />
-                        </button>
-                    </div>
 
-                    <div class="p-5 overflow-y-auto flex-1">
-                        <form @submit.prevent="submitRecipe" class="space-y-4">
-                            <!-- Client (readonly) -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Business Client</label>
-                                <input type="text" :value="inquiry.client?.company_name" disabled
-                                    class="w-full rounded-xl border border-gray-100 bg-gray-50 p-2.5 text-sm text-gray-500 cursor-not-allowed" />
-                            </div>
-                            <!-- Product -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Product *</label>
-                                <select v-model="recipeForm.product_id" required
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition">
-                                    <option value="" disabled>Select product</option>
-                                    <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
-                                </select>
-                            </div>
-                            <!-- Yarn Type -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Yarn Type *</label>
-                                <input v-model="recipeForm.yarn_type" type="text" required
-                                    placeholder="e.g. 50% Cotton 50% Silk"
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                            </div>
-                            <!-- Dye Color -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Dye Color *</label>
-                                <input v-model="recipeForm.dye_color" type="text" required
-                                    placeholder="e.g. 30% White 70% Blue"
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                            </div>
-                            <!-- Weave Design -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Weave Design *</label>
-                                <input v-model="recipeForm.weave_design" type="text" required
-                                    placeholder="e.g. Twill 2/1"
-                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                            </div>
-                            <!-- Raw Materials -->
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Raw Materials *</label>
-                                <div class="relative">
-                                    <button type="button" @click="showMaterialsDropdown = !showMaterialsDropdown"
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition">
-                                        <span class="text-gray-700">{{ selectedMaterialsCount }} material(s) selected</span>
-                                        <ChevronDown class="h-4 w-4 text-gray-400" />
-                                    </button>
-                                    <div v-if="showMaterialsDropdown"
-                                        class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
-                                        <div class="p-2">
-                                            <div v-for="mat in materials" :key="mat.id"
-                                                class="flex items-center gap-2.5 py-2 px-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition"
-                                                @click="toggleMaterial(mat.id)">
-                                                <input type="checkbox" :checked="recipeForm.materials.includes(mat.id)"
-                                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                                <span class="text-sm text-gray-700">{{ mat.mat_id }} – {{ mat.name }}</span>
+                        <div class="p-5 overflow-y-auto flex-1">
+                            <form @submit.prevent="submitRecipe" class="space-y-4">
+                                <!-- Client (readonly) -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Business Client</label>
+                                    <input type="text" :value="inquiry.client?.company_name" disabled
+                                        class="w-full rounded-2xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed" />
+                                </div>
+                                <!-- Product -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Product *</label>
+                                    <select v-model="recipeForm.product_id" required
+                                        class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                        <option value="" disabled>Select product</option>
+                                        <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
+                                    </select>
+                                </div>
+                                <!-- Yarn Type -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Yarn Type *</label>
+                                    <input v-model="recipeForm.yarn_type" type="text" required
+                                        placeholder="e.g. 50% Cotton 50% Silk"
+                                        class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                </div>
+                                <!-- Dye Color -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Dye Color *</label>
+                                    <input v-model="recipeForm.dye_color" type="text" required
+                                        placeholder="e.g. 30% White 70% Blue"
+                                        class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                </div>
+                                <!-- Weave Design -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Weave Design *</label>
+                                    <input v-model="recipeForm.weave_design" type="text" required
+                                        placeholder="e.g. Twill 2/1"
+                                        class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                </div>
+                                <!-- Raw Materials -->
+                                <div>
+                                    <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Raw Materials *</label>
+                                    <div class="relative">
+                                        <button type="button" @click="showMaterialsDropdown = !showMaterialsDropdown"
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-left flex justify-between items-center text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                            <span>{{ selectedMaterialsCount }} material(s) selected</span>
+                                            <ChevronDown class="h-4 w-4 text-gray-400" />
+                                        </button>
+                                        <div v-if="showMaterialsDropdown"
+                                            class="absolute z-50 mt-1 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-2xl max-h-52 overflow-y-auto">
+                                            <div class="p-2">
+                                                <div v-for="mat in materials" :key="mat.id"
+                                                    class="flex items-center gap-2.5 py-2 px-2.5 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl cursor-pointer transition"
+                                                    @click="toggleMaterial(mat.id)">
+                                                    <input type="checkbox" :checked="recipeForm.materials.includes(mat.id)"
+                                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ mat.mat_id }} – {{ mat.name }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <p class="text-[10px] text-gray-400 mt-1">Click to select or deselect materials</p>
                                 </div>
-                                <p class="text-[10px] text-gray-400 mt-1">Click to select or deselect materials</p>
-                            </div>
 
-                            <!-- Error -->
-                            <div v-if="recipeModal.error"
-                                class="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs">
-                                {{ recipeModal.error }}
-                            </div>
+                                <!-- Error -->
+                                <div v-if="recipeModal.error"
+                                    class="p-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl text-xs font-bold">
+                                    {{ recipeModal.error }}
+                                </div>
 
-                            <!-- Submit -->
-                            <button type="submit" :disabled="recipeModal.submitting"
-                                class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition shadow-sm">
-                                <Loader2 v-if="recipeModal.submitting" class="h-4 w-4 animate-spin" />
-                                {{ recipeModal.submitting ? 'Saving…' : 'Create Recipe' }}
-                            </button>
-                        </form>
+                                <!-- Submit -->
+                                <button type="submit" :disabled="recipeModal.submitting"
+                                    class="w-full py-3 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white rounded-2xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:scale-[1.01] hover:shadow-xl disabled:opacity-50 transition-all shadow-lg active:scale-95">
+                                    <Loader2 v-if="recipeModal.submitting" class="h-4 w-4 animate-spin" />
+                                    {{ recipeModal.submitting ? 'Saving…' : 'Create Recipe' }}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              CREATE JOB ORDER MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="jobOrderModal.show"
-                class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
-                @click.self="jobOrderModal.show = false">
-                <div class="bg-white w-full sm:max-w-5xl rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[92vh]">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 flex-shrink-0">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Create Job Order</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">
-                                {{ recipes.length }} recipe(s) available · {{ inquiry.client?.company_name }}
-                            </p>
-                        </div>
-                        <button @click="jobOrderModal.show = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
-                            <X class="h-4 w-4" />
-                        </button>
-                    </div>
-
-                    <div class="flex flex-col lg:flex-row flex-1 overflow-hidden">
-                        <!-- Left: PO Preview -->
-                        <div class="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-100 p-4 overflow-auto bg-gray-50 max-h-60 lg:max-h-none">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Purchase Order</p>
-                            <div v-if="jobOrderModal.attachment">
-                                <img v-if="jobOrderModal.attachment.file_type?.startsWith('image/')"
-                                    :src="getFullUrl(jobOrderModal.attachment.file_path)"
-                                    class="max-w-full border border-gray-200 rounded-xl shadow-sm" />
-                                <div v-else class="p-6 bg-white rounded-xl border border-gray-200 flex flex-col items-center gap-3 shadow-sm">
-                                    <FileText class="h-10 w-10 text-gray-300" />
-                                    <a :href="getFullUrl(jobOrderModal.attachment.file_path)" target="_blank"
-                                        class="text-blue-600 text-sm font-semibold hover:underline">View PDF</a>
+            <Transition name="modal">
+                <div v-if="jobOrderModal.show"
+                    class="fixed inset-0 z-[110] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="jobOrderModal.show = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-5xl rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-gray-100 dark:border-zinc-800">
+                        <!-- Gradient Header -->
+                        <div class="relative overflow-hidden px-5 sm:px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex-shrink-0">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-black tracking-tight">Create Job Order</h3>
+                                    <p class="text-xs text-blue-100 mt-0.5">
+                                        {{ recipes.length }} recipe(s) available · {{ inquiry.client?.company_name }}
+                                    </p>
                                 </div>
+                                <button @click="jobOrderModal.show = false"
+                                    class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
+                                    <X class="h-4 w-4" />
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Right: Form -->
-                        <div class="w-full lg:w-1/2 p-4 sm:p-5 overflow-auto">
-                            <form @submit.prevent="submitJobOrder" class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                                        PO Number *
-                                    </label>
-                                    <input v-model="jobOrderForm.po_number" type="text" required
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                                </div>
-
-                                <!-- Product items -->
-                                <div v-for="(item, idx) in jobOrderForm.items" :key="idx"
-                                    class="border border-gray-200 rounded-2xl p-4 space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                                            Product {{ idx + 1 }}
-                                        </span>
-                                        <button v-if="jobOrderForm.items.length > 1" type="button"
-                                            @click="removeJobOrderItem(idx)"
-                                            class="text-xs text-red-400 hover:text-red-600 font-semibold transition">
-                                            Remove
-                                        </button>
+                        <div class="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                            <!-- Left: PO Preview -->
+                            <div class="w-full lg:w-1/2 border-b lg:border-b-0 lg:border-r border-gray-100 dark:border-zinc-800 p-4 overflow-auto bg-gray-50 dark:bg-zinc-800/40 max-h-60 lg:max-h-none">
+                                <p class="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Purchase Order</p>
+                                <div v-if="jobOrderModal.attachment">
+                                    <img v-if="jobOrderModal.attachment.file_type?.startsWith('image/')"
+                                        :src="getFullUrl(jobOrderModal.attachment.file_path)"
+                                        class="max-w-full border border-gray-200 dark:border-zinc-700 rounded-2xl shadow-sm" />
+                                    <div v-else class="p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 flex flex-col items-center gap-3 shadow-sm">
+                                        <FileText class="h-10 w-10 text-gray-300 dark:text-zinc-600" />
+                                        <a :href="getFullUrl(jobOrderModal.attachment.file_path)" target="_blank"
+                                            class="text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline">View PDF</a>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <select v-model="item.product_id" required
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition">
-                                        <option value="">Select Product</option>
-                                        <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
-                                    </select>
-
-                                    <input v-model="item.color" type="text" placeholder="Color" required
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-
+                            <!-- Right: Form -->
+                            <div class="w-full lg:w-1/2 p-4 sm:p-5 overflow-auto">
+                                <form @submit.prevent="submitJobOrder" class="space-y-4">
                                     <div>
-                                        <select v-model="item.recipe_id"
-                                            class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition">
-                                            <option :value="null">
-                                                {{ !item.product_id
-                                                    ? '— Select a product first —'
-                                                    : recipesForProduct(item.product_id).length === 0
-                                                        ? '— No recipes found —'
-                                                        : '— Select Recipe (optional) —'
-                                                }}
-                                            </option>
-                                            <option v-for="r in recipesForProduct(item.product_id)" :key="r.id" :value="r.id">
-                                                {{ r.yarn_type }} — {{ r.dye_color }}
-                                                <template v-if="r.weave_design"> ({{ r.weave_design }})</template>
-                                            </option>
+                                        <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                            PO Number *
+                                        </label>
+                                        <input v-model="jobOrderForm.po_number" type="text" required
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                    </div>
+
+                                    <!-- Product items -->
+                                    <div v-for="(item, idx) in jobOrderForm.items" :key="idx"
+                                        class="border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 rounded-3xl p-4 space-y-3 shadow-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-black text-gray-700 dark:text-gray-200 uppercase tracking-widest">
+                                                Product {{ idx + 1 }}
+                                            </span>
+                                            <button v-if="jobOrderForm.items.length > 1" type="button"
+                                                @click="removeJobOrderItem(idx)"
+                                                class="text-xs text-red-400 hover:text-red-600 font-bold transition">
+                                                Remove
+                                            </button>
+                                        </div>
+
+                                        <select v-model="item.product_id" required
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                            <option value="">Select Product</option>
+                                            <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
                                         </select>
-                                        <p v-if="item.product_id && recipesForProduct(item.product_id).length > 0"
-                                            class="text-[9px] text-emerald-600 font-semibold mt-1">
-                                            {{ recipesForProduct(item.product_id).length }} recipe(s) available
-                                        </p>
-                                        <p v-else-if="item.product_id && recipesForProduct(item.product_id).length === 0"
-                                            class="text-[9px] text-amber-500 font-semibold mt-1">
-                                            No recipe yet — create one via "Create Recipe" first.
-                                        </p>
+
+                                        <input v-model="item.color" type="text" placeholder="Color" required
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+
+                                        <div>
+                                            <select v-model="item.recipe_id"
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                                <option :value="null">
+                                                    {{ !item.product_id
+                                                        ? '— Select a product first —'
+                                                        : recipesForProduct(item.product_id).length === 0
+                                                            ? '— No recipes found —'
+                                                            : '— Select Recipe (optional) —'
+                                                    }}
+                                                </option>
+                                                <option v-for="r in recipesForProduct(item.product_id)" :key="r.id" :value="r.id">
+                                                    {{ r.yarn_type }} — {{ r.dye_color }}
+                                                    <template v-if="r.weave_design"> ({{ r.weave_design }})</template>
+                                                </option>
+                                            </select>
+                                            <p v-if="item.product_id && recipesForProduct(item.product_id).length > 0"
+                                                class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 flex items-center gap-1">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                                                {{ recipesForProduct(item.product_id).length }} recipe(s) available
+                                            </p>
+                                            <p v-else-if="item.product_id && recipesForProduct(item.product_id).length === 0"
+                                                class="text-[9px] text-amber-500 font-bold mt-1">
+                                                No recipe yet — create one via "Create Recipe" first.
+                                            </p>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <input v-model.number="item.kilos" type="number" placeholder="Kilos" required
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                            <input v-model.number="item.unit_price" type="number" step="0.01"
+                                                placeholder="Price per kg" required
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                        </div>
+
+                                        <div class="flex justify-end">
+                                            <span class="text-xs font-black text-indigo-600 dark:text-indigo-400">
+                                                Total: ₱{{ ((item.kilos || 0) * (item.unit_price || 0)).toFixed(2) }}
+                                            </span>
+                                        </div>
+
+                                        <textarea v-model="item.description" placeholder="Description (optional)" rows="2"
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"></textarea>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <input v-model.number="item.kilos" type="number" placeholder="Kilos" required
-                                            class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
-                                        <input v-model.number="item.unit_price" type="number" step="0.01"
-                                            placeholder="Price per kg" required
-                                            class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition" />
+                                    <button type="button" @click="addJobOrderItem"
+                                        class="w-full py-2.5 border-2 border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-black uppercase tracking-wide hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition flex items-center justify-center gap-2">
+                                        + Add Product
+                                    </button>
+
+                                    <!-- Error -->
+                                    <div v-if="jobOrderModal.error"
+                                        class="p-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl text-xs font-bold">
+                                        {{ jobOrderModal.error }}
                                     </div>
 
-                                    <div class="flex justify-end">
-                                        <span class="text-xs font-bold text-blue-600">
-                                            Total: ₱{{ ((item.kilos || 0) * (item.unit_price || 0)).toFixed(2) }}
-                                        </span>
-                                    </div>
-
-                                    <textarea v-model="item.description" placeholder="Description (optional)" rows="2"
-                                        class="w-full rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition"></textarea>
-                                </div>
-
-                                <button type="button" @click="addJobOrderItem"
-                                    class="w-full py-2.5 border-2 border-dashed border-blue-200 text-blue-600 rounded-xl text-xs font-bold uppercase tracking-wide hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                                    + Add Product
-                                </button>
-
-                                <!-- Error -->
-                                <div v-if="jobOrderModal.error"
-                                    class="p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs">
-                                    {{ jobOrderModal.error }}
-                                </div>
-
-                                <!-- Submit -->
-                                <button type="submit" :disabled="jobOrderModal.submitting"
-                                    class="w-full py-3 bg-amber-400 text-amber-900 rounded-xl font-bold text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:bg-amber-500 disabled:opacity-50 transition shadow-sm">
-                                    <Loader2 v-if="jobOrderModal.submitting" class="h-4 w-4 animate-spin" />
-                                    {{ jobOrderModal.submitting ? 'Creating…' : 'Create Job Order' }}
-                                </button>
-                            </form>
+                                    <!-- Submit -->
+                                    <button type="submit" :disabled="jobOrderModal.submitting"
+                                        class="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:scale-[1.01] disabled:opacity-50 transition-all shadow-lg active:scale-95">
+                                        <Loader2 v-if="jobOrderModal.submitting" class="h-4 w-4 animate-spin" />
+                                        {{ jobOrderModal.submitting ? 'Creating…' : 'Create Job Order' }}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
     </AuthenticatedLayout>
 </template>
@@ -1133,3 +1185,24 @@ const submitJobOrder = () => {
 
 onMounted(() => scrollToBottom());
 </script>
+
+<style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22,1,0.36,1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: translateY(16px) scale(0.98); }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { scrollbar-width: none; }
+</style>

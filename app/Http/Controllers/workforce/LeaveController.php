@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\workforce;
 
 use App\Http\Controllers\Controller;
-use App\Models\LeaveRequest;
-use App\Models\User;
+use App\Models\hrm\LeaveRequest;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

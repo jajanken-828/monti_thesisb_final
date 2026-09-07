@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CreditAccount;
-use App\Models\CrmApproval;
-use App\Models\CrmLead;
-use App\Models\CrmLeadNote;
-use App\Models\CrmLeadInterview;
-use App\Models\CrmLeadApprovalFile;
+use App\Models\crm\Client;
+use App\Models\eco\CreditAccount;
+use App\Models\crm\CrmApproval;
+use App\Models\crm\CrmLead;
+use App\Models\crm\CrmLogoPartner;
+use App\Models\crm\LeadNote;
+use App\Models\crm\LeadInterview;
+use App\Models\crm\LeadApprovalFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,8 @@ class LeadController extends Controller
             'notes.user',
             'interviews.user',
             'approvalFiles.user',
-            'assignedStaff'
+            'assignedStaff',
+            'logo'
         ])
             ->whereNotIn('status', ['Converted', 'Archived'])
             ->orderBy('created_at', 'asc')
@@ -56,9 +58,10 @@ class LeadController extends Controller
             'phone' => 'required|string|max:20',
             'interest_fabric' => 'required|string',
             'estimated_value' => 'required|numeric|min:0',
+            'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 
-        CrmLead::create([
+        $lead = CrmLead::create([
             'company_name' => $validated['company_name'],
             'contact_person' => $validated['contact_person'],
             'email' => $validated['email'],
@@ -68,6 +71,16 @@ class LeadController extends Controller
             'status' => 'Inquiry',
             'assigned_staff_id' => Auth::id(),
         ]);
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('crm-logos', 'public');
+            CrmLogoPartner::create([
+                'crm_lead_id' => $lead->id,
+                'logo_path' => $path,
+                'original_name' => $request->file('logo')->getClientOriginalName(),
+                'uploaded_by' => Auth::id(),
+            ]);
+        }
 
         return back()->with('message', 'New lead created.');
     }
@@ -98,6 +111,7 @@ class LeadController extends Controller
             'phone' => 'required|string',
             'company_address' => 'required|string',
             'password' => 'required|string|min:8',
+            'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 
         try {
@@ -114,6 +128,20 @@ class LeadController extends Controller
                 'password' => bcrypt($validated['password']),
                 'status' => 'active',
             ]);
+
+            if ($request->hasFile('logo')) {
+                $path = $request->file('logo')->store('crm-logos', 'public');
+                CrmLogoPartner::create([
+                    'client_id' => $client->id,
+                    'logo_path' => $path,
+                    'original_name' => $request->file('logo')->getClientOriginalName(),
+                    'uploaded_by' => Auth::id(),
+                ]);
+            } else {
+                // Carry over the lead's logo, if any
+                CrmLogoPartner::where('crm_lead_id', $validated['lead_id'])
+                    ->update(['client_id' => $client->id, 'crm_lead_id' => null]);
+            }
 
             CreditAccount::create([
                 'client_id' => $client->id,

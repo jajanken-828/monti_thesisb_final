@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\ceo;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CrmClientAssignment;
-use App\Models\PagePermission;
-use App\Models\User;
-use App\Models\UserModuleAccess;
+use App\Models\crm\Client;
+use App\Models\crm\CrmClientAssignment;
+use App\Models\core\PagePermission;
+use App\Models\core\User;
+use App\Models\core\UserModuleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;

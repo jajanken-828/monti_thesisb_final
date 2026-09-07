@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\warehouse;
 
 use App\Http\Controllers\Controller;
-use App\Models\ManufacturingInventoryItem;
-use App\Models\Warehouse;
-use App\Models\WarehouseSection;
-use App\Models\WarehouseShelf;
-use App\Models\WarehouseStockItem;
+use App\Models\man\ManufacturingInventoryItem;
+use App\Models\war\Warehouse;
+use App\Models\war\WarehouseSection;
+use App\Models\war\WarehouseShelf;
+use App\Models\war\WarehouseStockItem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\eco;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CreditAccount;
-use App\Models\PurchaseOrder;
+use App\Models\crm\Client;
+use App\Models\eco\CreditAccount;
+use App\Models\ord\PurchaseOrder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;

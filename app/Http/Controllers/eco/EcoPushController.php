@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\eco;
 
 use App\Http\Controllers\Controller;
-use App\Models\OrderQueue;
-use App\Models\PurchaseOrder;
-use App\Models\Client;
-use App\Models\SalesOrder;
+use App\Models\ord\OrderQueue;
+use App\Models\ord\PurchaseOrder;
+use App\Models\crm\Client;
+use App\Models\ord\SalesOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

@@ -31,7 +31,7 @@ class Material extends Model
     public function receivingItems(): HasMany
     {
         // This links to the items inside the WarehouseReceiving records
-        return $this->hasMany(\App\Models\WarehouseReceivingItem::class, 'material_id');
+        return $this->hasMany(\App\Models\war\WarehouseReceivingItem::class, 'material_id');
     }
 
     /**
@@ -47,7 +47,7 @@ class Material extends Model
      */
     public function stockItems(): HasMany
     {
-        return $this->hasMany(\App\Models\WarehouseStockItem::class, 'material_id');
+        return $this->hasMany(\App\Models\war\WarehouseStockItem::class, 'material_id');
     }
 
     /**
@@ -55,7 +55,7 @@ class Material extends Model
      */
     public function productBoms(): HasMany
     {
-        return $this->hasMany(\App\Models\ProductBom::class, 'material_id');
+        return $this->hasMany(\App\Models\inv\ProductBom::class, 'material_id');
     }
 
     /**
@@ -71,7 +71,7 @@ class Material extends Model
      */
     public function warehouses(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Warehouse::class, 'warehouse_materials')
+        return $this->belongsToMany(\App\Models\war\Warehouse::class, 'warehouse_materials')
             ->withPivot('quantity')
             ->withTimestamps();
     }

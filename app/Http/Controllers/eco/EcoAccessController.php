@@ -4,7 +4,7 @@ namespace App\Http\Controllers\eco;
 
 use App\Http\Controllers\Controller;
 use App\Models\eco\EcoAccess;
-use App\Models\User;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

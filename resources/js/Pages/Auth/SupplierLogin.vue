@@ -44,26 +44,34 @@ const submit = () => {
         style="background-image: url('/images/threads.jpg');">
         <div class="absolute inset-0 bg-black/35"></div>
 
-        <nav class="relative z-30 px-6 py-5 flex items-center">
-            <Link href="/" class="flex items-center gap-3 group">
-                <div
-                    class="size-10 sm:size-11 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-full w-full object-contain" />
+        <!-- HEADER -->
+        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
+            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
+                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
+                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
+                            MONTI<span class="text-emerald-400">TEXTILE</span>
+                        </span>
+                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
+                            Manufacturing ERP
+                        </span>
+                    </div>
                 </div>
-                <span class="font-black text-2xl tracking-tight text-white drop-shadow-md">
-                    Monti<span class="text-emerald-400">Textile</span>
-                </span>
-            </Link>
-        </nav>
+                <nav class="flex items-center gap-3">
+                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
+                        Home
+                    </Link>
+                </nav>
+            </div>
+        </header>
 
         <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
             <div class="w-full max-w-md">
-
-                <div
-                    class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-
+                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
                     <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-
                         <Head title="Supplier Portal Login | Monti Textile" />
 
                         <div class="text-center mb-10">
@@ -82,7 +90,6 @@ const submit = () => {
                         </div>
 
                         <form @submit.prevent="submit" class="space-y-6">
-
                             <div>
                                 <InputLabel for="email" value="Business Email" class="text-white/90" />
                                 <TextInput id="email" type="email"
@@ -144,8 +151,7 @@ const submit = () => {
                                 </label>
                             </div>
 
-                            <div
-                                class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
                                 <div class="text-sm font-medium text-slate-300">
                                     Not registered?
                                     <Link :href="route('supplier.register')"
@@ -161,9 +167,7 @@ const submit = () => {
                                     <span v-else>Sign In</span>
                                 </PrimaryButton>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>
@@ -172,6 +176,8 @@ const submit = () => {
 </template>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -179,10 +185,20 @@ input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
     -webkit-text-fill-color: white !important;
 }
-
-input,
-select,
-textarea {
+input, select, textarea {
     @apply transition-all duration-300 ease-in-out;
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(16, 185, 129, 0.5);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(16, 185, 129, 0.7);
 }
 </style>

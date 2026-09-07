@@ -1,227 +1,243 @@
 <template>
     <Head title="Driver Portal" />
     <AuthenticatedLayout>
-        <div class="max-w-[1600px] mx-auto space-y-8 p-4 lg:p-10">
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em]">
-                        <Truck class="h-3.5 w-3.5" />
-                        Driver Portal
-                    </div>
-                    <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">
-                        My <span class="text-indigo-600">Dashboard</span>
-                    </h1>
-                    <p class="text-sm font-medium text-gray-500 italic">
-                        View assigned trips, track routes, and manage your profile.
-                    </p>
-                </div>
-            </div>
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
 
-            <!-- Tabs -->
-            <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-1">
-                <button @click="activeTab = 'trip'"
-                    :class="[
-                        'px-6 py-2.5 rounded-t-xl text-[10px] font-black uppercase tracking-widest transition',
-                        activeTab === 'trip'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    ]">
-                    Active Trip
-                </button>
-                <button @click="activeTab = 'profile'"
-                    :class="[
-                        'px-6 py-2.5 rounded-t-xl text-[10px] font-black uppercase tracking-widest transition',
-                        activeTab === 'profile'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    ]">
-                    My Profile
-                </button>
-            </div>
-
-            <!-- Active Trip Tab -->
-            <div v-if="activeTab === 'trip'" class="space-y-6">
-                <!-- Map Card -->
-                <div v-if="activeDelivery" class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                                <MapPin class="h-4 w-4 text-indigo-600" />
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Your Route</p>
-                                <p class="text-sm font-black text-gray-900 dark:text-white">
-                                    {{ activeDelivery.route?.name || 'Delivery Route' }}
-                                </p>
-                            </div>
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <Truck class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> Logistics · Driver Portal
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">My Dashboard</h1>
+                            <p class="text-sm text-blue-100/90">View assigned trips, track routes, and manage your profile.</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span v-if="simulating" class="text-amber-600 text-xs font-black animate-pulse">Simulating...</span>
-                            <span :class="statusBadge(activeDelivery.status)" class="px-3 py-1 rounded-full text-[9px] font-black uppercase">
-                                {{ formatStatus(activeDelivery.status) }}
+                            <span v-if="activeDelivery" class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" /> {{ formatStatus(activeDelivery.status) }}
                             </span>
+                            <span v-else class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">No active trip</span>
                         </div>
                     </div>
-                    <div class="relative p-3">
-                        <div id="driver-map" class="w-full rounded-3xl z-0" style="height: 400px;"></div>
+
+                    <!-- Tabs -->
+                    <div class="relative mt-6 flex gap-2">
+                        <button @click="activeTab = 'trip'"
+                            :class="activeTab === 'trip' ? 'bg-white text-indigo-700 shadow-lg scale-105' : 'bg-white/15 text-white hover:bg-white/25'"
+                            class="rounded-2xl px-5 py-2.5 text-xs font-black uppercase tracking-wide backdrop-blur transition-all duration-200 active:scale-95">
+                            Active Trip
+                        </button>
+                        <button @click="activeTab = 'profile'"
+                            :class="activeTab === 'profile' ? 'bg-white text-indigo-700 shadow-lg scale-105' : 'bg-white/15 text-white hover:bg-white/25'"
+                            class="rounded-2xl px-5 py-2.5 text-xs font-black uppercase tracking-wide backdrop-blur transition-all duration-200 active:scale-95">
+                            My Profile
+                        </button>
                     </div>
                 </div>
 
-                <!-- No Active Delivery -->
-                <div v-else class="bg-white dark:bg-gray-900 rounded-[2.5rem] p-12 text-center border border-gray-100 dark:border-gray-800">
-                    <Truck class="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                    <p class="text-gray-500 font-bold">No active delivery assigned.</p>
-                    <p class="text-xs text-gray-400">You will see your trip here once dispatched.</p>
-                </div>
-
-                <!-- Delivery Details & Actions -->
-                <div v-if="activeDelivery" class="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 text-white">
-                        <p class="text-[10px] font-black opacity-80">DELIVERY #</p>
-                        <p class="font-mono text-xl font-bold">{{ activeDelivery.delivery_number }}</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <!-- Trip Info -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="flex items-start gap-3">
-                                <Users class="h-5 w-5 text-indigo-500 mt-0.5" />
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase">Driver</p>
-                                    <p class="font-medium">{{ activeDelivery.driver?.user?.name || '—' }}</p>
-                                    <p class="text-xs text-gray-500">License: {{ activeDelivery.driver?.license_number }}</p>
+                <!-- Active Trip Tab -->
+                <div v-if="activeTab === 'trip'" class="space-y-6">
+                    <!-- Map Card -->
+                    <div v-if="activeDelivery" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                                    <MapPin class="h-5 w-5 text-indigo-600" />
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Your Route</p>
+                                    <p class="text-sm font-black text-gray-900 dark:text-white truncate">
+                                        {{ activeDelivery.route?.name || 'Delivery Route' }}
+                                    </p>
                                 </div>
                             </div>
-                            <div class="flex items-start gap-3">
-                                <Navigation class="h-5 w-5 text-emerald-500 mt-0.5" />
-                                <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase">Route</p>
-                                    <p class="font-medium">{{ activeDelivery.route?.name || '—' }}</p>
-                                    <p class="text-xs text-gray-500">{{ activeDelivery.route?.origin }} → {{ activeDelivery.route?.destination }}</p>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <span v-if="simulating" class="rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 px-3 py-1 text-[10px] font-black uppercase animate-pulse">Simulating...</span>
+                                <span :class="statusBadge(activeDelivery.status)" class="px-3 py-1 rounded-full ring-1 text-[9px] font-black uppercase inline-flex items-center gap-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                                    {{ formatStatus(activeDelivery.status) }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="relative p-3">
+                            <div id="driver-map" class="w-full rounded-3xl z-0" style="height: 400px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- No Active Delivery -->
+                    <div v-else
+                        class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Truck class="h-9 w-9 text-indigo-400" />
+                        </div>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No active delivery assigned.</p>
+                        <p class="text-xs text-gray-400 mt-1">You will see your trip here once dispatched.</p>
+                    </div>
+
+                    <!-- Delivery Details & Actions -->
+                    <div v-if="activeDelivery" class="animate-fade-up group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300 overflow-hidden" style="animation-delay:120ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 px-6 py-4 text-white">
+                            <div class="absolute -top-10 -right-10 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
+                            <p class="relative text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">Delivery #</p>
+                            <p class="relative font-mono text-xl font-black">{{ activeDelivery.delivery_number }}</p>
+                        </div>
+                        <div class="relative p-6 space-y-4">
+                            <!-- Trip Info -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex items-start gap-3 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4">
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex-shrink-0"><Users class="h-4 w-4 text-indigo-500" /></span>
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Driver</p>
+                                        <p class="font-bold text-sm text-gray-900 dark:text-white">{{ activeDelivery.driver?.user?.name || '—' }}</p>
+                                        <p class="text-xs text-gray-500">License: {{ activeDelivery.driver?.license_number }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4">
+                                    <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex-shrink-0"><Navigation class="h-4 w-4 text-emerald-500" /></span>
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Route</p>
+                                        <p class="font-bold text-sm text-gray-900 dark:text-white">{{ activeDelivery.route?.name || '—' }}</p>
+                                        <p class="text-xs text-gray-500">{{ activeDelivery.route?.origin }} → {{ activeDelivery.route?.destination }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Packages Summary -->
-                        <div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                            <p class="text-[10px] font-black text-gray-400 uppercase">Packages on Board</p>
-                            <p class="text-sm">{{ activeDelivery.packages?.length || 0 }} package(s) · {{ totalQuantity(activeDelivery) }} pcs total</p>
-                        </div>
+                            <!-- Packages Summary -->
+                            <div class="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl border border-gray-100 dark:border-zinc-800">
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Packages on Board</p>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ activeDelivery.packages?.length || 0 }} package(s) · {{ totalQuantity(activeDelivery) }} pcs total</p>
+                            </div>
 
-                        <!-- Action Buttons -->
-                        <div class="flex flex-wrap gap-3 pt-2">
-                            <button v-if="activeDelivery.status === 'dispatched' && !simulating"
-                                @click="markInTransit(activeDelivery)"
-                                class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-700 transition flex items-center justify-center gap-2">
-                                <Play class="h-4 w-4" /> Start Trip
-                            </button>
-                            <button v-if="activeDelivery.status === 'in_transit' && !simulating"
-                                @click="openProofModal(activeDelivery)"
-                                class="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-emerald-700 transition flex items-center justify-center gap-2">
-                                <Camera class="h-4 w-4" /> Upload Proof & Complete
-                            </button>
-                            <!-- Simulate Delivery Button -->
-                            <button v-if="!simulating && activeDelivery.status !== 'delivered'"
-                                @click="startSimulation"
-                                :disabled="!routeGeometry || routeGeometry.length < 2"
-                                class="flex-1 py-3 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-amber-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                                <FlaskConical class="h-4 w-4" /> Simulate Delivery
-                            </button>
-                            <button v-if="simulating"
-                                disabled
-                                class="flex-1 py-3 bg-gray-400 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
-                                <Loader2 class="h-4 w-4 animate-spin" /> Simulating...
-                            </button>
+                            <!-- Action Buttons -->
+                            <div class="flex flex-wrap gap-3 pt-2">
+                                <button v-if="activeDelivery.status === 'dispatched' && !simulating"
+                                    @click="markInTransit(activeDelivery)"
+                                    class="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                    <Play class="h-4 w-4" /> Start Trip
+                                </button>
+                                <button v-if="activeDelivery.status === 'in_transit' && !simulating"
+                                    @click="openProofModal(activeDelivery)"
+                                    class="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-2">
+                                    <Camera class="h-4 w-4" /> Upload Proof &amp; Complete
+                                </button>
+                                <!-- Simulate Delivery Button -->
+                                <button v-if="!simulating && activeDelivery.status !== 'delivered'"
+                                    @click="startSimulation"
+                                    :disabled="!routeGeometry || routeGeometry.length < 2"
+                                    class="flex-1 py-3 bg-amber-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2">
+                                    <FlaskConical class="h-4 w-4" /> Simulate Delivery
+                                </button>
+                                <button v-if="simulating"
+                                    disabled
+                                    class="flex-1 py-3 bg-gray-400 text-white rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2">
+                                    <Loader2 class="h-4 w-4 animate-spin" /> Simulating...
+                                </button>
+                            </div>
+                            <p v-if="!routeGeometry || routeGeometry.length < 2" class="text-xs text-amber-600 text-center">
+                                Route geometry not available – simulation disabled.
+                            </p>
                         </div>
-                        <p v-if="!routeGeometry || routeGeometry.length < 2" class="text-xs text-amber-600 text-center">
-                            Route geometry not available – simulation disabled.
-                        </p>
                     </div>
                 </div>
-            </div>
 
-            <!-- My Profile Tab -->
-            <div v-if="activeTab === 'profile'" class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm p-8">
-                <h2 class="text-xl font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                    <User class="h-5 w-5 text-indigo-500" /> Personal Information
-                </h2>
-                <form @submit.prevent="submitProfile" class="max-w-2xl space-y-5">
-                    <!-- Profile Photo -->
-                    <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <img v-if="userPhotoPreview" :src="userPhotoPreview" class="h-16 w-16 rounded-full object-cover border-2 border-indigo-200" />
-                            <div v-else class="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl font-black">
-                                {{ profileForm.name?.charAt(0) || user.name?.charAt(0) || '?' }}
+                <!-- My Profile Tab -->
+                <div v-if="activeTab === 'profile'" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 flex items-center gap-2">
+                        <User class="h-5 w-5 text-indigo-600" />
+                        <h2 class="text-sm font-black uppercase tracking-widest">Personal Information</h2>
+                    </div>
+                    <form @submit.prevent="submitProfile" class="p-6 max-w-2xl space-y-5">
+                        <!-- Profile Photo -->
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <img v-if="userPhotoPreview" :src="userPhotoPreview" class="h-16 w-16 rounded-2xl object-cover ring-2 ring-indigo-200 shadow-lg" />
+                                <div v-else class="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-fuchsia-600 flex items-center justify-center text-white text-xl font-black shadow-lg">
+                                    {{ profileForm.name?.charAt(0) || user.name?.charAt(0) || '?' }}
+                                </div>
+                                <label class="absolute -bottom-1 -right-1 p-1.5 bg-white dark:bg-zinc-800 rounded-full shadow-lg ring-1 ring-gray-100 dark:ring-zinc-700 cursor-pointer hover:scale-110 transition-transform">
+                                    <Camera class="h-3.5 w-3.5 text-gray-600 dark:text-gray-300" />
+                                    <input type="file" @change="handlePhotoUpload" accept="image/*" class="hidden" />
+                                </label>
                             </div>
-                            <label class="absolute bottom-0 right-0 p-1 bg-white rounded-full shadow cursor-pointer">
-                                <Camera class="h-3.5 w-3.5 text-gray-600" />
-                                <input type="file" @change="handlePhotoUpload" accept="image/*" class="hidden" />
-                            </label>
+                            <div class="text-xs text-gray-500">Click the camera icon to change photo</div>
                         </div>
-                        <div class="text-xs text-gray-500">Click the camera icon to change photo</div>
-                    </div>
 
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
-                        <input v-model="profileForm.name" type="text" required
-                            class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Email</label>
-                        <input v-model="profileForm.email" type="email" required
-                            class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">New Password (optional)</label>
-                        <input v-model="profileForm.password" type="password"
-                            class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Confirm Password</label>
-                        <input v-model="profileForm.password_confirmation" type="password"
-                            class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm">
-                    </div>
-                    <button type="submit" :disabled="profileForm.processing"
-                        class="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition disabled:opacity-50 flex items-center gap-2">
-                        <Loader2 v-if="profileForm.processing" class="h-4 w-4 animate-spin" />
-                        Save Changes
-                    </button>
-                </form>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
+                            <input v-model="profileForm.name" type="text" required
+                                class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Email</label>
+                            <input v-model="profileForm.email" type="email" required
+                                class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">New Password (optional)</label>
+                            <input v-model="profileForm.password" type="password"
+                                class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Confirm Password</label>
+                            <input v-model="profileForm.password_confirmation" type="password"
+                                class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <button type="submit" :disabled="profileForm.processing"
+                            class="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2">
+                            <Loader2 v-if="profileForm.processing" class="h-4 w-4 animate-spin" />
+                            Save Changes
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
         <!-- Proof Upload Modal -->
         <Teleport to="body">
-            <div v-if="showProofModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="closeProofModal">
-                <div class="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-                    <div class="px-6 py-4 bg-emerald-600 text-white flex justify-between items-center">
-                        <h3 class="font-black text-lg">Complete Delivery</h3>
-                        <button @click="closeProofModal" class="p-1 hover:bg-white/20 rounded-lg"><X class="h-5 w-5" /></button>
+            <Transition name="modal">
+                <div v-if="showProofModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="closeProofModal">
+                    <div class="modal-panel bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+                        <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white flex justify-between items-center">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
+                            <h3 class="relative font-black text-lg">Complete Delivery</h3>
+                            <button @click="closeProofModal" class="relative p-1.5 hover:bg-white/20 rounded-xl transition"><X class="h-5 w-5" /></button>
+                        </div>
+                        <form @submit.prevent="submitProof" class="p-6 space-y-5">
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Proof Photo *</label>
+                                <input type="file" @change="handleProofImage" accept="image/*" required class="text-sm text-gray-500 dark:text-gray-400" />
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Notes (Optional)</label>
+                                <textarea v-model="proofForm.notes" rows="3"
+                                    class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Any additional notes..."></textarea>
+                            </div>
+                            <button type="submit" :disabled="proofForm.processing"
+                                class="w-full py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                                <Loader2 v-if="proofForm.processing" class="h-4 w-4 animate-spin" />
+                                Submit &amp; Complete
+                            </button>
+                        </form>
                     </div>
-                    <form @submit.prevent="submitProof" class="p-6 space-y-5">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Proof Photo *</label>
-                            <input type="file" @change="handleProofImage" accept="image/*" required class="text-sm" />
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2">Notes (Optional)</label>
-                            <textarea v-model="proofForm.notes" rows="3"
-                                class="w-full rounded-xl border-gray-200 dark:border-gray-700 bg-gray-50 px-4 py-3 text-sm"
-                                placeholder="Any additional notes..."></textarea>
-                        </div>
-                        <button type="submit" :disabled="proofForm.processing"
-                            class="w-full py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-emerald-700 transition flex items-center justify-center gap-2">
-                            <Loader2 v-if="proofForm.processing" class="h-4 w-4 animate-spin" />
-                            Submit & Complete
-                        </button>
-                    </form>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
 
         <!-- Toast Notification -->
         <Transition name="toast">
-            <div v-if="toast.show" class="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-xl shadow-lg text-white font-bold text-sm"
+            <div v-if="toast.show" class="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-2xl shadow-lg text-white font-bold text-sm"
                 :class="toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'">
                 {{ toast.message }}
             </div>
@@ -233,7 +249,7 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Truck, MapPin, Users, Navigation, Camera, Play, FlaskConical, X, Loader2, User } from 'lucide-vue-next';
+import { Truck, MapPin, Users, Navigation, Camera, Play, FlaskConical, X, Loader2, User, Sparkles } from 'lucide-vue-next';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -284,11 +300,11 @@ const montiLng = props.montiLocation ? Number(props.montiLocation.longitude) : 1
 
 const statusBadge = (status) => {
     const map = {
-        dispatched: 'bg-amber-100 text-amber-700',
-        in_transit: 'bg-blue-100 text-blue-700',
-        delivered: 'bg-emerald-100 text-emerald-700'
+        dispatched: 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
+        in_transit: 'bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30',
+        delivered: 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30'
     };
-    return map[status] || 'bg-gray-100 text-gray-600';
+    return map[status] || 'bg-gray-100 text-gray-600 ring-gray-200 dark:bg-zinc-800 dark:text-gray-300 dark:ring-zinc-700';
 };
 
 const formatStatus = (status) => {
@@ -552,11 +568,26 @@ watch(activeTab, (newTab) => {
 </script>
 
 <style scoped>
-.toast-enter-active, .toast-leave-active {
-    transition: all 0.3s ease;
-}
-.toast-enter-from, .toast-leave-to {
-    opacity: 0;
-    transform: translateY(20px);
-}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
+.modal-enter-active .modal-panel, .modal-leave-active .modal-panel { transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from .modal-panel { opacity: 0; transform: translateY(24px) scale(0.97); }
+.modal-leave-to .modal-panel { opacity: 0; transform: translateY(12px) scale(0.98); }
+.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
+#driver-map { background: #eef2ff; }
 </style>

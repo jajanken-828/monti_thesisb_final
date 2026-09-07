@@ -12,11 +12,18 @@ class CheckPagePermission
     /**
      * Handle an incoming request.
      *
+     * NOTE: The old "view" vs "edit" permission-level distinction has been
+     * removed. Any user who has been granted access to a page (or who
+     * qualifies via one of the role-based shortcuts below) now gets full
+     * access to that page — they can view AND make changes.
+     *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      * @param  string  $page  The page identifier (e.g., 'dashboard', 'employees')
-     * @param  string  $requiredLevel  Required permission level: 'view' or 'edit'
+     * @param  string|null  $requiredLevel  Deprecated / unused — kept only so existing
+     *                                      route definitions that still pass a second
+     *                                      middleware parameter (e.g. 'edit') don't break.
      */
-    public function handle(Request $request, Closure $next, string $page, string $requiredLevel = 'view'): Response
+    public function handle(Request $request, Closure $next, string $page, ?string $requiredLevel = null): Response
     {
         $user = Auth::user();
 
@@ -29,49 +36,50 @@ class CheckPagePermission
             return $next($request);
         }
 
-        // Secretaries and General Managers have full access to their root module
-        if (in_array($user->position, ['secretary', 'general_manager'])) {
-            $module = $this->detectModule($request);
-            $rootModule = $this->getRootModuleForUser($user);
+        // Determine the module from the route name or URI
+        $module = $this->detectModule($request);
 
-            if ($module && $rootModule && strtoupper($module) === $rootModule) {
-                // Allow full access to all pages within their root module
+        // Module-native managers and staff automatically have full access
+        if ($module && strtoupper($user->role) === $module) {
+            if (in_array($user->position, ['manager', 'staff'])) {
                 return $next($request);
             }
         }
 
-        // Fallback: HRM staff can always view the dashboard (legacy support)
+        // Secretaries and General Managers have full access to their root module
+        if (in_array($user->position, ['secretary', 'general_manager'])) {
+            $rootModule = $this->getRootModuleForUser($user);
+            if ($module && $rootModule && strtoupper($module) === $rootModule) {
+                return $next($request);
+            }
+        }
+
+        // Fallback: HRM staff can always view the dashboard (legacy)
         if ($page === 'dashboard' && $user->role === 'HRM' && $user->position === 'staff') {
             return $next($request);
         }
 
-        // Determine the module from the route name or URI
-        $module = $this->detectModule($request);
-
-        // If no module could be detected, deny access (safety)
         if (!$module) {
             abort(403, 'Could not determine module for permission check.');
         }
 
-        // Get the user's permission for this page (from page_permissions table)
-        $permission = $user->pagePermissions()
-            ->where('module', $module)
-            ->where('page', $page)
-            ->first();
-
-        $level = $permission ? $permission->permission_level : null;
-
-        // If no permission, deny access
-        if (!$level) {
-            abort(403, "You do not have permission to access the '{$page}' page in the {$module} module.");
+        // Check whether the user has ANY permission record for this page.
+        // Any granted permission (regardless of the old level field) now
+        // means full access — view and edit.
+        if (method_exists($user, 'pagePermissions')) {
+            $hasPermission = $user->pagePermissions()
+                ->where('module', $module)
+                ->where('page', $page)
+                ->exists();
+        } else {
+            $hasPermission = false;
         }
 
-        // Check required level
-        if ($requiredLevel === 'edit' && $level !== 'edit') {
-            abort(403, "You need edit permission for the '{$page}' page in the {$module} module.");
+        if ($hasPermission) {
+            return $next($request);
         }
 
-        return $next($request);
+        abort(403, "You do not have permission to access the '{$page}' page in the {$module} module.");
     }
 
     /**

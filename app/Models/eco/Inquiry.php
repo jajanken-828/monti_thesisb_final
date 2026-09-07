@@ -2,7 +2,7 @@
 
 namespace App\Models\eco;
 
-use App\Models\Client;
+use App\Models\crm\Client;
 use App\Models\inv\Product;
 use Illuminate\Database\Eloquent\Model;
 

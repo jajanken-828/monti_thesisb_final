@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\scm;
 
 use App\Http\Controllers\Controller;
-use App\Models\ScmAccessPermission;
-use App\Models\User;
+use App\Models\Scm\ScmAccessPermission;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

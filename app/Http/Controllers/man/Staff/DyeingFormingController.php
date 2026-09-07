@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\FormJob;
-use App\Models\IronJob;
-use App\Models\Machine;
-use App\Models\MachineReport;
+use App\Models\man\FormJob;
+use App\Models\man\IronJob;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -55,6 +55,8 @@ class DyeingFormingController extends ManufacturingStaffController
             'remarks' => 'nullable|string',
         ]);
 
+        $ironJob = IronJob::with('squeezerJob.softenerJob.fabric')->findOrFail($validated['iron_job_id']);
+
         FormJob::create([
             'iron_job_id' => $validated['iron_job_id'],
             'machine_id' => $validated['machine_id'],
@@ -66,6 +68,13 @@ class DyeingFormingController extends ManufacturingStaffController
             'code' => $this->generateCode('FORM', FormJob::class),
             'processed_at' => now(),
         ]);
+
+        // Auto-pass fabric to packaging stage (Option B: no checker gate between
+        // forming and packaging, matching squeezer -> iron auto-flow).
+        $fabric = $ironJob->squeezerJob?->softenerJob?->fabric;
+        if ($fabric) {
+            $fabric->update(['status' => 'packed']);
+        }
 
         return redirect()->back()->with('message', 'Forming recorded successfully.');
     }

@@ -20,7 +20,16 @@ const form = useForm({
     password: '',
     password_confirmation: '',
     company_address: '',
+    logo: null,
 });
+
+const logoPreview = ref(null);
+
+const handleLogoChange = (e) => {
+    const file = e.target.files[0] || null;
+    form.logo = file;
+    logoPreview.value = file ? URL.createObjectURL(file) : null;
+};
 
 const isLoaded = ref(false);
 const showPassword = ref(false);
@@ -57,7 +66,6 @@ const triggerWarning = (field, message) => {
     }, 3000);
 };
 
-// Keypress blocks
 const blockNumbersAndSpecial = (e, field) => {
     if (e.key.length === 1 && !/^[a-zA-Z\s]$/.test(e.key)) {
         e.preventDefault();
@@ -86,7 +94,6 @@ const blockSpecialForEmail = (e) => {
     }
 };
 
-// Paste sanitization watchers
 watch(() => form.company_name, (val) => {
     const filtered = val.replace(/[^a-zA-Z\s]/g, '');
     if (val !== filtered) form.company_name = filtered;
@@ -123,6 +130,7 @@ const submit = () => {
     form.phone = form.phone_country + form.phone_raw;
 
     form.post(route('client.register.store'), {
+        forceFormData: true,
         onSuccess: () => {
             toast.success('Registration submitted successfully! Please wait for approval.');
         },
@@ -138,31 +146,36 @@ const submit = () => {
 <template>
     <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
         style="background-image: url('/images/threads.jpg');">
-        <!-- Overlay for better text readability -->
         <div class="absolute inset-0 bg-black/35"></div>
 
-        <!-- Top navigation with logo -->
-        <nav class="relative z-30 px-6 py-5 flex items-center">
-            <Link href="/" class="flex items-center gap-3 group">
-                <div
-                    class="size-10 sm:size-11 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-full w-full object-contain" />
+        <!-- HEADER -->
+        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
+            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
+                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
+                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
+                            MONTI<span class="text-blue-400">TEXTILE</span>
+                        </span>
+                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
+                            Manufacturing ERP
+                        </span>
+                    </div>
                 </div>
-                <span class="font-black text-2xl tracking-tight text-white drop-shadow-md">
-                    Monti<span class="text-blue-300">Textile</span>
-                </span>
-            </Link>
-        </nav>
+                <nav class="flex items-center gap-3">
+                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
+                        Home
+                    </Link>
+                </nav>
+            </div>
+        </header>
 
-        <!-- Main content area -->
         <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
             <div class="w-full max-w-3xl">
-
-                <div
-                    class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-
+                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
                     <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-
                         <Head title="Monti Textile - Partner Registration" />
 
                         <div class="text-center mb-10">
@@ -176,9 +189,7 @@ const submit = () => {
                         </div>
 
                         <form @submit.prevent="submit" class="space-y-6">
-
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                                 <div>
                                     <InputLabel for="company_name" value="Company Name" class="text-white/90" />
                                     <TextInput id="company_name" type="text"
@@ -255,10 +266,23 @@ const submit = () => {
                                     <InputError class="mt-1 text-red-300" :message="form.errors.company_address" />
                                 </div>
 
+                                <div class="md:col-span-2">
+                                    <InputLabel for="logo" value="Company Logo (optional)" class="text-white/90" />
+                                    <div class="mt-1 flex items-center gap-4">
+                                        <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 border border-white/30">
+                                            <img v-if="logoPreview" :src="logoPreview" alt="Logo preview" class="h-full w-full object-cover" />
+                                            <span v-else class="text-xs font-bold text-slate-300">Logo</span>
+                                        </div>
+                                        <input id="logo" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                                            @change="handleLogoChange"
+                                            class="block w-full text-sm text-slate-200 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-600 file:px-4 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-blue-700 file:transition" />
+                                    </div>
+                                    <p class="mt-1 text-xs text-slate-300">PNG, JPG, WEBP or SVG · max 5MB. Shown on your partner profile across MontiERP.</p>
+                                    <InputError class="mt-1 text-red-300" :message="form.errors.logo" />
+                                </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-
                                 <div>
                                     <InputLabel for="password" value="Password" class="text-white/90" />
                                     <div class="relative">
@@ -309,11 +333,9 @@ const submit = () => {
                                     <InputError class="mt-1 text-red-300"
                                         :message="form.errors.password_confirmation" />
                                 </div>
-
                             </div>
 
-                            <div
-                                class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
                                 <Link :href="route('client.login')"
                                     class="group text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center">
                                     <svg class="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform"
@@ -331,9 +353,7 @@ const submit = () => {
                                     <span v-else>Apply for Partnership</span>
                                 </PrimaryButton>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>
@@ -342,9 +362,22 @@ const submit = () => {
 </template>
 
 <style scoped>
-input,
-select,
-textarea {
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+input, select, textarea {
     @apply transition-all duration-300 ease-in-out;
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.7);
 }
 </style>

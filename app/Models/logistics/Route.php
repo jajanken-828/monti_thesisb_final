@@ -3,7 +3,7 @@
 namespace App\Models\logistics;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Client;
+use App\Models\crm\Client;
 
 class Route extends Model
 {

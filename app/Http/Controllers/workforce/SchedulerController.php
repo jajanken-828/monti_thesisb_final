@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\workforce;
 
 use App\Http\Controllers\Controller;
-use App\Models\EmployeeShift;
-use App\Models\Holiday;
-use App\Models\User;
-use App\Models\CeoPlanner;
+use App\Models\hrm\EmployeeShift;
+use App\Models\hrm\Holiday;
+use App\Models\core\User;
+use App\Models\ceo\CeoPlanner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

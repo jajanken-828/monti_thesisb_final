@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Applicant;
-use App\Models\AuditLog;
-use App\Models\User;
+use App\Models\hrm\Applicant;
+use App\Models\hrm\AuditLog;
+use App\Models\core\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

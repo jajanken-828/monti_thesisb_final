@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Applicant;
+use App\Models\hrm\Applicant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;

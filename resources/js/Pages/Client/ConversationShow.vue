@@ -1,68 +1,78 @@
 <template>
     <Head :title="`Conversation: ${inquiry.product?.name || 'Bulk Inquiry'}`" />
     <AuthenticatedLayout>
-        <div class="w-full h-[calc(100vh-64px)] flex flex-col overflow-hidden bg-white">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
 
-            <!-- ── Header ─────────────────────────────────────────── -->
-            <div class="flex items-center gap-3 px-4 sm:px-6 py-3 bg-white border-b border-gray-100 flex-shrink-0">
-                <Link :href="route('client.conversations')"
-                    class="p-2 rounded-xl hover:bg-gray-100 transition text-gray-400 hover:text-gray-700 flex-shrink-0">
-                    <ArrowLeft class="h-4 w-4" />
-                </Link>
-                <div class="flex-1 min-w-0">
-                    <h1 class="text-sm sm:text-base font-bold text-gray-900 leading-tight truncate">
-                        {{ inquiry.product?.name || 'Multiple Products' }}
-                    </h1>
-                    <p class="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">
-                        {{ inquiry.product?.sku ? `SKU: ${inquiry.product.sku} · ` : '' }}{{ formatStatus(inquiry.status) }}
-                    </p>
+            <!-- ── Hero Header ─────────────────────────────────────── -->
+            <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                <div class="relative flex flex-wrap items-center gap-3">
+                    <Link :href="route('client.conversations')"
+                        class="group flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/30 hover:-translate-x-0.5 transition-all active:scale-95 flex-shrink-0">
+                        <ArrowLeft class="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+                    </Link>
+                    <div class="flex-1 min-w-0">
+                        <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                            <Sparkles class="h-3.5 w-3.5" /> Client conversation
+                        </p>
+                        <h1 class="text-xl sm:text-2xl font-black tracking-tight leading-tight truncate">
+                            {{ inquiry.product?.name || 'Multiple Products' }}
+                        </h1>
+                        <p class="text-xs text-blue-100/90 font-medium uppercase tracking-wider mt-0.5 flex items-center gap-1.5">
+                            {{ inquiry.product?.sku ? `SKU: ${inquiry.product.sku} · ` : '' }}
+                            <span class="inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ formatStatus(inquiry.status) }}</span>
+                        </p>
+                    </div>
+                    <button
+                        @click="openPoModal"
+                        :disabled="!hasAcceptedQuotation"
+                        :class="hasAcceptedQuotation
+                            ? 'bg-amber-400 hover:bg-amber-300 text-amber-950 cursor-pointer shadow-lg hover:scale-105'
+                            : 'bg-white/15 text-white/50 cursor-not-allowed ring-1 ring-white/20'"
+                        class="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex-shrink-0 backdrop-blur">
+                        <FileText class="h-3.5 w-3.5" />
+                        <span class="hidden sm:inline">Send P.O.</span>
+                        <span class="sm:hidden">P.O.</span>
+                    </button>
                 </div>
-                <button
-                    @click="openPoModal"
-                    :disabled="!hasAcceptedQuotation"
-                    :class="hasAcceptedQuotation
-                        ? 'bg-amber-400 hover:bg-amber-500 text-amber-900 cursor-pointer shadow-sm'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'"
-                    class="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition flex-shrink-0">
-                    <FileText class="h-3.5 w-3.5" />
-                    <span class="hidden sm:inline">Send P.O.</span>
-                    <span class="sm:hidden">P.O.</span>
-                </button>
             </div>
 
             <!-- ── Mobile Tab Bar ───────────────────────────────────── -->
-            <div class="flex lg:hidden border-b border-gray-100 bg-white flex-shrink-0">
+            <div class="flex lg:hidden gap-2">
                 <button @click="mobilePanel = 'chat'"
-                    :class="mobilePanel === 'chat' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-400 hover:text-gray-600'"
-                    class="flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition">
+                    :class="mobilePanel === 'chat' ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-300 shadow-lg scale-[1.02]' : 'bg-white/60 dark:bg-zinc-900/60 text-gray-400 hover:text-gray-600'"
+                    class="flex-1 py-2.5 rounded-2xl border border-gray-100 dark:border-zinc-800 text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">
                     Chat
                 </button>
                 <button @click="mobilePanel = 'proposals'"
-                    :class="mobilePanel === 'proposals' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-400 hover:text-gray-600'"
-                    class="flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition">
+                    :class="mobilePanel === 'proposals' ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-300 shadow-lg scale-[1.02]' : 'bg-white/60 dark:bg-zinc-900/60 text-gray-400 hover:text-gray-600'"
+                    class="flex-1 py-2.5 rounded-2xl border border-gray-100 dark:border-zinc-800 text-[11px] font-black uppercase tracking-wider transition-all active:scale-95">
                     Proposals
                 </button>
             </div>
 
             <!-- ── Main Layout ──────────────────────────────────────── -->
-            <div class="flex flex-1 overflow-hidden">
+            <div class="animate-fade-up flex flex-col lg:flex-row gap-4 lg:h-[calc(100vh-340px)] lg:min-h-[560px]" style="animation-delay:120ms">
 
                 <!-- Left: Messages ──────────────────────────────────── -->
                 <div :class="mobilePanel !== 'chat' ? 'hidden lg:flex' : 'flex'"
-                    class="flex-1 flex-col overflow-hidden border-r border-gray-100 bg-white min-w-0">
+                    class="flex-1 flex-col overflow-hidden rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm hover:shadow-xl transition-shadow duration-300 min-w-0 min-h-[540px] lg:min-h-0">
 
                     <!-- Messages area -->
                     <div ref="messagesContainer"
-                        class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-gray-50/40">
+                        class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-gradient-to-b from-indigo-50/40 via-transparent to-transparent dark:from-indigo-950/20">
                         <div v-for="msg in inquiry.messages" :key="msg.id"
-                            class="flex flex-col"
+                            class="animate-fade-up flex flex-col"
                             :class="msg.sender_type === 'client' ? 'items-end' : 'items-start'">
 
                             <!-- System event pill -->
                             <div v-if="msg.is_system_event" class="w-full flex justify-center my-3">
-                                <div class="bg-blue-50 border border-blue-100 px-4 py-1.5 rounded-full max-w-[85%]">
-                                    <p class="text-[9px] font-semibold uppercase tracking-wide text-blue-500 text-center">
-                                        {{ msg.message }}
+                                <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 px-4 py-1.5 rounded-full max-w-[85%] shadow-sm">
+                                    <p class="text-[9px] font-black uppercase tracking-wide text-indigo-500 dark:text-indigo-300 text-center flex items-center gap-1.5 justify-center">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ msg.message }}
                                     </p>
                                 </div>
                             </div>
@@ -70,8 +80,8 @@
                             <!-- Regular message bubble -->
                             <div v-else
                                 :class="msg.sender_type === 'client'
-                                    ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm'
-                                    : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-tl-sm shadow-sm'"
+                                    ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white rounded-3xl rounded-tr-xl shadow-lg shadow-indigo-500/25'
+                                    : 'bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-zinc-700 rounded-3xl rounded-tl-xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all'"
                                 class="max-w-[80%] sm:max-w-[65%] px-4 py-3">
 
                                 <p class="text-xs leading-relaxed whitespace-pre-wrap">{{ msg.message }}</p>
@@ -122,7 +132,7 @@
                     </div>
 
                     <!-- Reply box -->
-                    <div class="flex-shrink-0 border-t border-gray-100 p-3 sm:p-4 bg-white">
+                    <div class="flex-shrink-0 border-t border-gray-100 dark:border-zinc-800 p-3 sm:p-4 bg-white/70 dark:bg-zinc-900/70 backdrop-blur rounded-b-3xl">
                         <!-- File previews -->
                         <div v-if="selectedFiles.length" class="flex gap-2 mb-3 overflow-x-auto pb-1">
                             <div v-for="(file, i) in selectedFiles" :key="i"
@@ -139,19 +149,19 @@
                             </div>
                         </div>
                         <!-- Input row -->
-                        <div class="flex items-center gap-2 bg-gray-50 rounded-2xl px-3 py-2 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10 transition">
+                        <div class="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800 rounded-2xl px-3 py-2 border border-transparent focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-900 transition">
                             <input v-model="newMessage" type="text"
                                 placeholder="Type a message…"
-                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 placeholder:text-gray-400"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400"
                                 @keydown.enter.prevent="handleSend" />
                             <button type="button" @click="triggerFileUpload"
-                                class="p-1.5 hover:bg-gray-200 rounded-lg transition text-gray-400 hover:text-gray-600">
+                                class="p-1.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-xl transition text-gray-400 hover:text-indigo-600">
                                 <Paperclip class="h-4 w-4" />
                             </button>
                             <input ref="fileInput" type="file" class="hidden" multiple @change="onFilesSelected" />
                             <button type="button" @click="handleSend"
                                 :disabled="sending || (!newMessage.trim() && !selectedFiles.length)"
-                                class="p-2 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700 disabled:opacity-40 transition">
+                                class="p-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 transition-all">
                                 <Send v-if="!sending" class="h-4 w-4" />
                                 <Loader2 v-else class="h-4 w-4 animate-spin" />
                             </button>
@@ -161,43 +171,48 @@
 
                 <!-- Right: Proposals ────────────────────────────────── -->
                 <div :class="mobilePanel !== 'proposals' ? 'hidden lg:block' : 'block'"
-                    class="w-full lg:w-80 xl:w-96 flex-shrink-0 overflow-y-auto bg-gray-50 p-4 space-y-3">
+                    class="w-full lg:w-80 xl:w-96 flex-shrink-0 overflow-y-auto rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm p-4 space-y-3 min-h-[300px]">
 
-                    <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-1 pt-1">Proposals</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 px-1 pt-1 flex items-center gap-1.5">
+                        <Sparkles class="h-3.5 w-3.5 text-indigo-400" /> Proposals
+                        <span class="ml-auto rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[11px] font-black px-2.5 py-0.5">{{ quotations.length }}</span>
+                    </p>
 
-                    <div v-for="quotation in quotations" :key="quotation.id"
-                        class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                    <div v-for="(quotation, qi) in quotations" :key="quotation.id"
+                        :style="{ animationDelay: `${Math.min(qi * 70, 350)}ms` }"
+                        class="group animate-fade-up relative bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300">
+                        <div class="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                         <!-- Status bar -->
-                        <div class="flex items-center justify-between px-4 py-2.5"
-                            :class="quotation.status === 'accepted' ? 'bg-emerald-500'
-                                : quotation.status === 'rejected' ? 'bg-red-500'
-                                : 'bg-blue-600'">
-                            <span class="font-mono text-[10px] font-semibold text-white">
+                        <div class="relative flex items-center justify-between px-4 py-2.5"
+                            :class="quotation.status === 'accepted' ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                                : quotation.status === 'rejected' ? 'bg-gradient-to-r from-rose-500 to-red-600'
+                                : 'bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700'">
+                            <span class="font-mono text-[10px] font-bold text-white">
                                 {{ quotation.quotation_number }}
                             </span>
-                            <span class="text-[9px] font-bold uppercase text-white/80 bg-black/15 px-2 py-0.5 rounded-full">
-                                {{ quotation.status }}
+                            <span class="text-[9px] font-black uppercase text-white/90 bg-black/15 px-2 py-0.5 rounded-full ring-1 ring-white/25 flex items-center gap-1">
+                                <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ quotation.status }}
                             </span>
                         </div>
 
                         <div class="p-3 space-y-2.5">
                             <!-- VAT badge -->
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="text-[9px] font-semibold rounded-full px-2 py-0.5"
+                            <div class="relative flex items-center gap-2 flex-wrap">
+                                <span class="text-[9px] font-black rounded-full px-2 py-0.5 ring-1"
                                     :class="quotation.vat_type === 'inclusive'
-                                        ? 'bg-blue-50 text-blue-600 border border-blue-100'
-                                        : 'bg-gray-100 text-gray-500'">
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800'
+                                        : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400'">
                                     {{ quotation.vat_type === 'inclusive' ? 'VAT Incl. +12%' : 'VAT Excl.' }}
                                 </span>
                             </div>
 
                             <!-- Fabric groups -->
                             <div v-for="(group, fabric) in groupItemsByFabric(quotation.items)" :key="fabric"
-                                class="border border-gray-100 rounded-xl overflow-hidden">
-                                <div class="bg-gray-50 px-3 py-2 flex items-center gap-1.5">
-                                    <Package class="h-3 w-3 text-blue-500 flex-shrink-0" />
-                                    <span class="text-[10px] font-semibold text-blue-700 uppercase truncate flex-1">
+                                class="relative border border-gray-100 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                                <div class="bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 px-3 py-2 flex items-center gap-1.5">
+                                    <Package class="h-3 w-3 text-indigo-500 flex-shrink-0" />
+                                    <span class="text-[10px] font-black text-indigo-700 dark:text-indigo-300 uppercase truncate flex-1">
                                         {{ fabric }}
                                     </span>
                                     <span class="text-[9px] text-gray-400 font-medium">{{ group[0]?.kilos }}kg</span>
@@ -224,21 +239,21 @@
                             </div>
 
                             <!-- Sent: Accept / Reject -->
-                            <div v-if="quotation.status === 'sent'" class="flex gap-2 pt-1">
+                            <div v-if="quotation.status === 'sent'" class="relative flex gap-2 pt-1">
                                 <button @click="openRejectModal(quotation)"
-                                    class="flex-1 py-2 border border-red-200 text-red-500 rounded-xl text-[9px] font-semibold uppercase hover:bg-red-50 transition">
+                                    class="flex-1 py-2 border border-red-200 dark:border-red-900 text-red-500 rounded-xl text-[9px] font-black uppercase hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition">
                                     Reject
                                 </button>
                                 <button @click="openAcceptModal(quotation)"
-                                    class="flex-1 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-semibold uppercase shadow-sm hover:bg-blue-700 transition">
+                                    class="flex-1 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                                     Accept
                                 </button>
                             </div>
 
                             <!-- Accepted: Preview / Download -->
-                            <div v-if="quotation.status === 'accepted'" class="pt-1">
+                            <div v-if="quotation.status === 'accepted'" class="relative pt-1">
                                 <button @click="openQuotationPreview(quotation)"
-                                    class="w-full py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[9px] font-semibold uppercase flex items-center justify-center gap-2 hover:bg-blue-100 transition">
+                                    class="w-full py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:scale-[1.01] active:scale-95 transition-all">
                                     <Download class="h-3 w-3" /> Preview & Download
                                 </button>
                             </div>
@@ -246,24 +261,27 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
 
         <!-- ════════════════════════════════════════════
              SEND P.O. MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="poModal.show"
-                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+                class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
                 @click.self="poModal.show = false">
-                <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Send Purchase Order</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">Attach your PO files below</p>
+                    <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 px-5 py-4 flex items-center justify-between relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl animate-float" />
+                        <div class="relative">
+                            <h3 class="text-sm font-black text-white tracking-tight">Send Purchase Order</h3>
+                            <p class="text-xs text-blue-100/90 mt-0.5">Attach your PO files below</p>
                         </div>
                         <button @click="poModal.show = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400 hover:text-gray-600">
+                            class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
                             <X class="h-4 w-4" />
                         </button>
                     </div>
@@ -300,7 +318,7 @@
                         </div>
                         <button type="submit"
                             :disabled="poModal.submitting || poModal.files.length === 0"
-                            class="w-full py-3 bg-amber-400 text-amber-900 rounded-xl font-bold text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:bg-amber-500 disabled:opacity-40 transition shadow-sm">
+                            class="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-amber-950 rounded-xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-40 transition-all shadow-lg">
                             <Loader2 v-if="poModal.submitting" class="h-4 w-4 animate-spin" />
                             <Send v-else class="h-4 w-4" />
                             Send Purchase Order
@@ -308,15 +326,17 @@
                     </form>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              DIALOG MODAL (info / confirm / error)
              ════════════════════════════════════════════ -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="dialog.show"
-                class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                <div class="bg-white w-full max-w-xs rounded-2xl shadow-xl overflow-hidden">
+                class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <div class="bg-white dark:bg-zinc-900 w-full max-w-xs rounded-3xl shadow-2xl overflow-hidden">
                     <div class="p-6 text-center">
                         <div class="h-14 w-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                             :class="dialog.type === 'error' ? 'bg-red-100'
@@ -329,38 +349,40 @@
                         <h3 class="text-sm font-bold text-gray-900 mb-1">{{ dialog.title }}</h3>
                         <p class="text-xs text-gray-500 leading-relaxed">{{ dialog.message }}</p>
                     </div>
-                    <div class="flex border-t border-gray-100">
+                    <div class="flex border-t border-gray-100 dark:border-zinc-800">
                         <button v-if="dialog.type === 'confirm'"
                             @click="dialog.show = false"
-                            class="flex-1 py-3.5 text-xs font-semibold text-gray-400 hover:bg-gray-50 transition border-r border-gray-100">
+                            class="flex-1 py-3.5 text-xs font-semibold text-gray-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition border-r border-gray-100 dark:border-zinc-800">
                             Cancel
                         </button>
                         <button @click="handleDialogAction"
                             class="flex-1 py-3.5 text-xs font-bold uppercase"
-                            :class="dialog.type === 'error' ? 'text-red-500 hover:bg-red-50' : 'text-blue-600 hover:bg-blue-50'">
+                            :class="dialog.type === 'error' ? 'text-red-500 hover:bg-red-50' : 'text-indigo-600 hover:bg-indigo-50'">
                             {{ dialog.type === 'confirm' ? 'Confirm' : 'Got it' }}
                         </button>
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              FILE PREVIEW MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="previewModal.show"
                 class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md"
                 @click.self="previewModal.show = false">
                 <button @click="previewModal.show = false"
-                    class="absolute top-5 right-5 p-2 bg-white/10 hover:bg-white/20 rounded-xl transition z-[80]">
+                    class="absolute top-5 right-5 p-2 bg-white/10 hover:bg-white/20 hover:rotate-90 rounded-2xl transition-all z-[80]">
                     <X class="h-5 w-5 text-white" />
                 </button>
                 <div class="w-full max-w-5xl h-[88vh] flex flex-col gap-3">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-white/60 px-1">
+                    <p class="text-xs font-black uppercase tracking-[0.2em] text-white/60 px-1">
                         {{ previewModal.title }}
                     </p>
-                    <div class="flex-1 bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center">
+                    <div class="flex-1 bg-black/40 rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center">
                         <div v-if="previewModal.activeFile" class="w-full h-full flex items-center justify-center p-4">
                             <img v-if="previewModal.activeFile.file_type?.startsWith('image/') || previewModal.activeFile.type?.startsWith('image/')"
                                 :src="previewModal.activeFile.url || getFilePreview(previewModal.activeFile)"
@@ -392,24 +414,27 @@
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              ACCEPT QUOTATION MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="acceptModal.show"
-                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
                 @click.self="acceptModal.show = false">
-                <div class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Accept Quotation</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">Review and confirm your acceptance</p>
+                    <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 px-5 py-4 flex items-center justify-between relative overflow-hidden flex-shrink-0">
+                        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl animate-float" />
+                        <div class="relative">
+                            <h3 class="text-sm font-black text-white tracking-tight">Accept Quotation</h3>
+                            <p class="text-xs text-blue-100/90 mt-0.5">Review and confirm your acceptance</p>
                         </div>
                         <button @click="acceptModal.show = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
+                            class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
                             <X class="h-4 w-4" />
                         </button>
                     </div>
@@ -469,81 +494,87 @@
                         <input ref="acceptFileInput" type="file" class="hidden" multiple @change="onAcceptFilesSelected" />
                         <!-- Submit -->
                         <button type="submit" :disabled="acceptModal.submitting"
-                            class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:bg-blue-700 disabled:opacity-50 transition shadow-sm">
+                            class="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all">
                             <Loader2 v-if="acceptModal.submitting" class="h-4 w-4 animate-spin" />
                             Confirm Acceptance
                         </button>
                     </form>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              REJECT QUOTATION MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="rejectModal.show"
-                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
                 @click.self="rejectModal.show = false">
-                <div class="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden">
+                <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Reject Quotation</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">Please provide a reason</p>
+                    <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 px-5 py-4 flex items-center justify-between relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl animate-float" />
+                        <div class="relative">
+                            <h3 class="text-sm font-black text-white tracking-tight">Reject Quotation</h3>
+                            <p class="text-xs text-blue-100/90 mt-0.5">Please provide a reason</p>
                         </div>
                         <button @click="rejectModal.show = false"
-                            class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
+                            class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
                             <X class="h-4 w-4" />
                         </button>
                     </div>
                     <form @submit.prevent="submitReject" class="p-5 space-y-4">
                         <textarea v-model="rejectModal.reason" rows="3" required
-                            class="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 transition resize-none"
+                            class="w-full rounded-xl border border-transparent bg-gray-50 dark:bg-zinc-800 p-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 transition resize-none"
                             placeholder="Explain why you're rejecting this quotation…"></textarea>
                         <div class="flex gap-3">
                             <button type="button" @click="rejectModal.show = false"
-                                class="flex-1 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold uppercase hover:bg-gray-50 transition">
+                                class="flex-1 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 rounded-xl text-xs font-bold uppercase hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-95 transition">
                                 Cancel
                             </button>
                             <button type="submit" :disabled="rejectModal.submitting"
-                                class="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:bg-red-600 disabled:opacity-50 transition">
+                                class="flex-1 py-2.5 bg-gradient-to-r from-rose-500 to-red-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-rose-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all">
                                 Confirm Reject
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- ════════════════════════════════════════════
              QUOTATION PREVIEW & DOWNLOAD MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="quotationPreviewModal.show"
                 class="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm"
                 @click.self="quotationPreviewModal.show = false">
-                <div class="bg-white w-full max-w-3xl max-h-[95vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                <div class="bg-white dark:bg-zinc-900 w-full max-w-3xl max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
 
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 flex-shrink-0">
-                        <div>
-                            <h3 class="text-sm font-bold text-gray-900">Quotation Preview</h3>
-                            <p class="text-xs text-gray-400 mt-0.5">
+                    <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 px-5 sm:px-6 py-4 flex items-center justify-between relative overflow-hidden flex-shrink-0">
+                        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl animate-float" />
+                        <div class="relative">
+                            <h3 class="text-sm font-black text-white tracking-tight">Quotation Preview</h3>
+                            <p class="text-xs text-blue-100/90 mt-0.5 font-mono">
                                 {{ quotationPreviewModal.quotation?.quotation_number }}
                             </p>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="relative flex items-center gap-2">
                             <button
                                 @click="downloadQuotationPDF(quotationPreviewModal.quotation)"
                                 :disabled="quotationPreviewModal.downloading"
-                                class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase hover:bg-blue-700 transition shadow-sm disabled:opacity-60">
+                                class="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 rounded-xl text-xs font-black uppercase hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-60">
                                 <Loader2 v-if="quotationPreviewModal.downloading" class="h-3.5 w-3.5 animate-spin" />
                                 <Download v-else class="h-3.5 w-3.5" />
                                 <span class="hidden sm:inline">Download PDF</span>
                             </button>
                             <button @click="quotationPreviewModal.show = false"
-                                class="p-2 hover:bg-gray-100 rounded-xl transition text-gray-400">
+                                class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
                                 <X class="h-4 w-4" />
                             </button>
                         </div>
@@ -642,6 +673,7 @@
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
     </AuthenticatedLayout>
@@ -651,7 +683,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, nextTick, onMounted, watch } from 'vue';
-import { ArrowLeft, Paperclip, Send, Loader2, FileText, X, Eye, Trash2, Layers, Package, Download } from 'lucide-vue-next';
+import { ArrowLeft, Paperclip, Send, Loader2, FileText, X, Eye, Trash2, Layers, Package, Download, Sparkles } from 'lucide-vue-next';
 
 const props = defineProps({ inquiry: Object, quotations: Array });
 const messagesContainer = ref(null);
@@ -1089,3 +1121,23 @@ const colorDotStyle = (color) => {
 watch(() => props.inquiry.messages, () => scrollToBottom(), { deep: true });
 onMounted(() => scrollToBottom());
 </script>
+
+<style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.modal-enter-active { transition: opacity 0.25s ease; }
+.modal-enter-active > div { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from { opacity: 0; }
+.modal-enter-from > div { transform: scale(0.92) translateY(14px); opacity: 0; }
+.modal-leave-active { transition: opacity 0.2s ease; }
+.modal-leave-to { opacity: 0; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>

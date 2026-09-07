@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\trainee;
 
 use App\Http\Controllers\Controller;
-use App\Models\Payroll;
+use App\Models\hrm\Payroll;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

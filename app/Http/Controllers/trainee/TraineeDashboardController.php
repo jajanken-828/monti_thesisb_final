@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\trainee;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceLog;
-use App\Models\Holiday;
-use App\Models\LeaveRequest;
-use App\Models\Payroll;
+use App\Models\hrm\AttendanceLog;
+use App\Models\hrm\Holiday;
+use App\Models\hrm\LeaveRequest;
+use App\Models\hrm\Payroll;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 

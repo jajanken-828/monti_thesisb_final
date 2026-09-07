@@ -179,7 +179,7 @@ const getRoleIcon = (role) => {
 
 // Avatar color
 const getAvatarColor = (name) => {
-    const colors = ['from-blue-500 to-indigo-600', 'from-emerald-500 to-teal-600', 'from-rose-500 to-pink-600', 'from-amber-500 to-orange-600', 'from-purple-500 to-violet-600'];
+    const colors = ['from-blue-600 via-indigo-600 to-violet-700', 'from-emerald-500 via-teal-600 to-cyan-700', 'from-rose-500 via-pink-600 to-fuchsia-700', 'from-amber-500 via-orange-600 to-rose-600', 'from-violet-500 via-purple-600 to-indigo-700'];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
 };
@@ -188,134 +188,141 @@ const getAvatarColor = (name) => {
 <template>
     <AuthenticatedLayout>
         <Head title="Manufacturing Management" />
-        <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
-            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 sm:space-y-8">
-                <!-- Header -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-black">
-                            Manufacturing Management <span class="text-blue-600">Dashboard</span>
-                        </h1>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ getGreeting() }}, oversee production and staff</p>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <Calendar class="w-4 h-4" />
-                        <span>{{ new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) }}</span>
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <Factory class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> MAN · Management
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Manufacturing Dashboard</h1>
+                            <p class="text-sm text-blue-100/90">{{ getGreeting() }}, oversee production and staff</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                                <Calendar class="w-3.5 h-3.5" /> {{ new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    <div class="group relative overflow-hidden bg-white dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-zinc-800 hover:scale-[1.02]">
-                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div class="flex items-start justify-between">
+                <TransitionGroup name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="group relative overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 border border-gray-100 dark:border-zinc-800 hover:scale-[1.01] transition-all duration-300">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="relative flex items-start justify-between">
                             <div>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Received Orders</p>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Received Orders</p>
                                 <p class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">{{ stats.receivedOrders }}</p>
-                                <p class="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1"><TrendingUp class="w-3 h-3" /> +12%</p>
+                                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-bold"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /><TrendingUp class="w-3 h-3" /> +12%</p>
                             </div>
-                            <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl group-hover:rotate-6 transition-transform">
-                                <Package class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <div class="p-3 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <Package class="w-5 h-5" />
                             </div>
                         </div>
                     </div>
-                    <div class="group relative overflow-hidden bg-white dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-zinc-800 hover:scale-[1.02]">
-                        <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div class="flex items-start justify-between">
+                    <div class="group relative overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 border border-gray-100 dark:border-zinc-800 hover:scale-[1.01] transition-all duration-300">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="relative flex items-start justify-between">
                             <div>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">In Production</p>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">In Production</p>
                                 <p class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">{{ stats.inProduction }}</p>
-                                <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Active orders</p>
+                                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1 font-bold"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />Active orders</p>
                             </div>
-                            <div class="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl group-hover:rotate-6 transition-transform">
-                                <Factory class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                            <div class="p-3 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <Factory class="w-5 h-5" />
                             </div>
                         </div>
                     </div>
-                    <div class="group relative overflow-hidden bg-white dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-zinc-800 hover:scale-[1.02] sm:col-span-2 lg:col-span-1">
-                        <div class="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div class="flex items-start justify-between">
+                    <div class="group relative overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 border border-gray-100 dark:border-zinc-800 hover:scale-[1.01] transition-all duration-300 sm:col-span-2 lg:col-span-1">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="relative flex items-start justify-between">
                             <div>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Machines</p>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">Active Machines</p>
                                 <p class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mt-1">{{ stats.activeMachines }}</p>
-                                <p class="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1"><CheckCircle2 class="w-3 h-3" /> Operational</p>
+                                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-bold"><CheckCircle2 class="w-3 h-3" /> Operational</p>
                             </div>
-                            <div class="p-3 bg-green-100 dark:bg-green-900/30 rounded-2xl group-hover:rotate-6 transition-transform">
-                                <TrendingUp class="w-5 h-5 text-green-600 dark:text-green-400" />
+                            <div class="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <TrendingUp class="w-5 h-5" />
                             </div>
                         </div>
                     </div>
-                </div>
+                </TransitionGroup>
 
                 <!-- Quick Actions -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Link :href="route('man.manager.production')"
-                        class="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-4 rounded-xl font-bold text-sm shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                        <Factory class="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                        View Production Orders
-                        <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 hover:shadow-2xl hover:shadow-indigo-500/25 hover:-translate-y-1 text-white px-6 py-4 font-black text-sm shadow-xl shadow-indigo-500/20 transition-all duration-300 flex items-center justify-center gap-2">
+                        <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                        <Factory class="w-5 h-5 group-hover:rotate-12 transition-transform relative" />
+                        <span class="relative">View Production Orders</span>
+                        <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform relative" />
                     </Link>
                     <Link :href="route('man.manager.rejected')"
-                        class="group relative overflow-hidden bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-4 rounded-xl font-bold text-sm shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                        <X class="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                        class="group relative overflow-hidden rounded-3xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 hover:shadow-2xl hover:shadow-rose-500/15 hover:-translate-y-1 hover:border-rose-200 dark:hover:border-rose-800 text-gray-900 dark:text-white px-6 py-4 font-black text-sm shadow-sm transition-all duration-300 flex items-center justify-center gap-2">
+                        <X class="w-5 h-5 text-rose-500 group-hover:rotate-90 transition-transform" />
                         View Rejected Items
                         <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                     </Link>
-                    <!-- <Link :href="route('man.access.manage')"
-                        class="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-4 rounded-xl font-bold text-sm shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
-                        <ShieldCheck class="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        Access Control (Supervisors)
-                        <ArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                    </Link> -->
                 </div>
 
                 <!-- Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Production Trend -->
-                    <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800">
-                        <div class="flex items-center gap-2 mb-4">
-                            <BarChart3 class="w-4 h-4 text-blue-500" />
-                            <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200">Production Output Trend</h3>
+                    <div class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="relative flex items-center gap-2 mb-4">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow"><BarChart3 class="w-4 h-4" /></span>
+                            <h3 class="text-sm font-black tracking-tight text-gray-700 dark:text-gray-200">Production Output Trend</h3>
                         </div>
-                        <div class="h-48 flex items-end gap-2">
+                        <div class="relative h-48 flex items-end gap-2">
                             <div v-for="(value, idx) in productionTrend.values" :key="idx" class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-gradient-to-t from-blue-500 to-blue-600 rounded-t-lg transition-all duration-500" :style="{ height: `${(value / maxTrendValue) * 100}%`, minHeight: '4px' }"></div>
+                                <div class="w-full bg-gradient-to-t from-blue-600 via-indigo-600 to-violet-600 rounded-t-xl transition-all duration-500" :style="{ height: `${(value / maxTrendValue) * 100}%`, minHeight: '4px' }"></div>
                                 <span class="text-[10px] sm:text-xs mt-2 text-gray-500">{{ productionTrend.months[idx] }}</span>
-                                <span class="text-[9px] font-bold text-gray-600 dark:text-gray-400">{{ value }}</span>
+                                <span class="text-[9px] font-black text-gray-600 dark:text-gray-400">{{ value }}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Machine Utilization -->
-                    <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800">
-                        <div class="flex items-center gap-2 mb-4">
-                            <PieChart class="w-4 h-4 text-emerald-500" />
-                            <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200">Machine Status</h3>
+                    <div class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="relative flex items-center gap-2 mb-4">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 text-white shadow"><PieChart class="w-4 h-4" /></span>
+                            <h3 class="text-sm font-black tracking-tight text-gray-700 dark:text-gray-200">Machine Status</h3>
                         </div>
-                        <div class="space-y-3">
+                        <div class="relative space-y-3">
                             <div class="flex items-center gap-3">
-                                <span class="w-20 text-sm font-medium text-gray-600 dark:text-gray-400">Available</span>
-                                <div class="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                    <div class="h-full bg-green-500 rounded-full transition-all duration-700" :style="{ width: `${(machineUtilization.available / totalMachines) * 100}%` }"></div>
+                                <span class="w-20 text-xs font-black uppercase text-gray-500 dark:text-gray-400 flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />Available</span>
+                                <div class="flex-1 h-6 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-700" :style="{ width: `${(machineUtilization.available / totalMachines) * 100}%` }"></div>
                                 </div>
-                                <span class="text-sm font-bold">{{ machineUtilization.available }}</span>
+                                <span class="text-sm font-black">{{ machineUtilization.available }}</span>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span class="w-20 text-sm font-medium text-gray-600 dark:text-gray-400">Maintenance</span>
-                                <div class="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                    <div class="h-full bg-yellow-500 rounded-full transition-all duration-700" :style="{ width: `${(machineUtilization.maintenance / totalMachines) * 100}%` }"></div>
+                                <span class="w-20 text-xs font-black uppercase text-gray-500 dark:text-gray-400 flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />Repair</span>
+                                <div class="flex-1 h-6 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-700" :style="{ width: `${(machineUtilization.maintenance / totalMachines) * 100}%` }"></div>
                                 </div>
-                                <span class="text-sm font-bold">{{ machineUtilization.maintenance }}</span>
+                                <span class="text-sm font-black">{{ machineUtilization.maintenance }}</span>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span class="w-20 text-sm font-medium text-gray-600 dark:text-gray-400">Retired</span>
-                                <div class="flex-1 h-6 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                    <div class="h-full bg-red-500 rounded-full transition-all duration-700" :style="{ width: `${(machineUtilization.retired / totalMachines) * 100}%` }"></div>
+                                <span class="w-20 text-xs font-black uppercase text-gray-500 dark:text-gray-400 flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />Retired</span>
+                                <div class="flex-1 h-6 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-rose-500 to-pink-500 rounded-full transition-all duration-700" :style="{ width: `${(machineUtilization.retired / totalMachines) * 100}%` }"></div>
                                 </div>
-                                <span class="text-sm font-bold">{{ machineUtilization.retired }}</span>
+                                <span class="text-sm font-black">{{ machineUtilization.retired }}</span>
                             </div>
                         </div>
                     </div>
@@ -323,61 +330,61 @@ const getAvatarColor = (name) => {
 
                 <!-- Recent Activity & Staff Management -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Recent Activity (Placeholder) -->
-                    <div class="lg:col-span-1 bg-white dark:bg-zinc-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800">
-                        <div class="flex items-center gap-2 mb-4">
-                            <Activity class="w-4 h-4 text-purple-500" />
-                            <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200">Recent Activity</h3>
+                    <!-- Recent Activity -->
+                    <div class="group relative lg:col-span-1 bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300 overflow-hidden">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="relative flex items-center gap-2 mb-4">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-700 text-white shadow"><Activity class="w-4 h-4" /></span>
+                            <h3 class="text-sm font-black tracking-tight text-gray-700 dark:text-gray-200">Recent Activity</h3>
                         </div>
-                        <div class="space-y-3">
+                        <div class="relative space-y-3">
                             <div class="flex items-start gap-3">
-                                <div class="p-1.5 bg-blue-50 rounded-lg"><Factory class="w-3 h-3 text-blue-600" /></div>
+                                <div class="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg"><Factory class="w-3 h-3 text-blue-600" /></div>
                                 <div><p class="text-sm text-gray-700 dark:text-gray-300">Order #PO-2026-045 sent to production</p><p class="text-xs text-gray-400">2 hours ago</p></div>
                             </div>
                             <div class="flex items-start gap-3">
-                                <div class="p-1.5 bg-green-50 rounded-lg"><Users class="w-3 h-3 text-green-600" /></div>
+                                <div class="p-1.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg"><Users class="w-3 h-3 text-emerald-600" /></div>
                                 <div><p class="text-sm text-gray-700 dark:text-gray-300">Staff role updated: John → Dyeing Color</p><p class="text-xs text-gray-400">Yesterday</p></div>
                             </div>
                             <div class="flex items-start gap-3">
-                                <div class="p-1.5 bg-amber-50 rounded-lg"><AlertCircle class="w-3 h-3 text-amber-600" /></div>
+                                <div class="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg"><AlertCircle class="w-3 h-3 text-amber-600" /></div>
                                 <div><p class="text-sm text-gray-700 dark:text-gray-300">Low yarn stock alert for Polyester</p><p class="text-xs text-gray-400">2 days ago</p></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Staff Management Section -->
-                    <div class="lg:col-span-2 bg-white dark:bg-zinc-900/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 overflow-hidden">
-                        <div class="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-gray-50 to-white dark:from-zinc-800/50 dark:to-zinc-900/50">
+                    <div class="lg:col-span-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300">
+                        <div class="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div class="flex items-center gap-2">
-                                    <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><Users class="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
-                                    <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Manufacturing Staff</h2>
-                                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 rounded-full">{{ filteredStaff.length }} members</span>
+                                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-lg"><Users class="w-4 h-4" /></span>
+                                    <h2 class="text-sm font-black tracking-tight text-gray-900 dark:text-white">Manufacturing Staff</h2>
+                                    <span class="px-2 py-1 text-[11px] font-black bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-full">{{ filteredStaff.length }} members</span>
                                 </div>
                                 <div class="relative w-full sm:w-64">
-                                    <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input v-model="searchQuery" type="text" placeholder="Search by name or role..." class="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" />
+                                    <Search class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input v-model="searchQuery" type="text" placeholder="Search by name or role..." class="w-full rounded-2xl border-0 bg-gray-100 dark:bg-zinc-800 py-2.5 pl-11 pr-9 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition" />
                                     <button v-if="searchQuery" @click="clearSearch" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"><X class="w-4 h-4" /></button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Mobile Card View -->
-                        <div class="block md:hidden divide-y divide-gray-100 dark:divide-zinc-800">
-                            <div v-for="user in filteredStaff" :key="user.id" class="p-4 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-all">
+                        <TransitionGroup name="card" tag="div" class="block md:hidden divide-y divide-gray-100 dark:divide-zinc-800">
+                            <div v-for="(user, i) in filteredStaff" :key="user.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" class="p-4 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all">
                                 <div class="flex items-start gap-3">
                                     <div class="flex-shrink-0">
-                                        <div :class="['w-10 h-10 bg-gradient-to-br rounded-xl flex items-center justify-center text-white font-bold text-sm', getAvatarColor(user.name)]">{{ user.name.charAt(0).toUpperCase() }}</div>
+                                        <div :class="['w-10 h-10 bg-gradient-to-br rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg', getAvatarColor(user.name)]">{{ user.name.charAt(0).toUpperCase() }}</div>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ user.name }}</h3>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 capitalize flex items-center gap-1">
+                                        <h3 class="text-sm font-black text-gray-900 dark:text-white tracking-tight">{{ user.name }}</h3>
+                                        <p class="text-[11px] text-indigo-600 dark:text-indigo-400 mt-0.5 capitalize flex items-center gap-1 font-bold">
                                             <component :is="getRoleIcon(user.manufacturing_role)" class="w-3 h-3" /> {{ formatRole(user.manufacturing_role) }}
                                         </p>
-                                        <!-- Supervisor badge -->
-                                        <p v-if="user.is_manufacturing_supervisor" class="text-xs mt-1 text-purple-600 dark:text-purple-400 font-medium">Supervisor</p>
+                                        <p v-if="user.is_manufacturing_supervisor" class="text-xs mt-1 text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />Supervisor</p>
                                         <div class="mt-3">
-                                            <select v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="w-full border border-gray-200 dark:border-zinc-700 rounded-lg p-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+                                            <select v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="w-full rounded-2xl border-gray-200 dark:border-zinc-700 p-2.5 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
                                                 <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                                             </select>
                                         </div>
@@ -385,51 +392,53 @@ const getAvatarColor = (name) => {
                                     <ChevronRight class="w-4 h-4 text-gray-400 flex-shrink-0 mt-2" />
                                 </div>
                             </div>
-                        </div>
+                        </TransitionGroup>
 
                         <!-- Desktop Table View -->
                         <div class="hidden md:block overflow-x-auto">
                             <table class="w-full">
-                                <thead class="bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-100 dark:border-zinc-800">
+                                <thead>
                                     <tr>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Staff Member</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Current Role</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Supervisor</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Update Role</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Staff Member</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Current Role</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Supervisor</th>
+                                        <th class="px-6 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">Update Role</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
-                                    <tr v-for="user in filteredStaff" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-all">
+                                <TransitionGroup name="card" tag="tbody" class="divide-y divide-gray-100 dark:divide-zinc-800">
+                                    <tr v-for="(user, i) in filteredStaff" :key="user.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" class="hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all">
                                         <td class="px-6 py-4">
                                             <div class="flex items-center gap-3">
-                                                <div :class="['w-8 h-8 bg-gradient-to-br rounded-lg flex items-center justify-center text-white font-bold text-xs', getAvatarColor(user.name)]">{{ user.name.charAt(0).toUpperCase() }}</div>
-                                                <span class="font-medium text-gray-900 dark:text-white">{{ user.name }}</span>
+                                                <div :class="['w-9 h-9 bg-gradient-to-br rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg', getAvatarColor(user.name)]">{{ user.name.charAt(0).toUpperCase() }}</div>
+                                                <span class="font-bold text-sm text-gray-900 dark:text-white">{{ user.name }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex items-center gap-1">
-                                                <component :is="getRoleIcon(user.manufacturing_role)" class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 capitalize">{{ formatRole(user.manufacturing_role) }}</span>
+                                                <component :is="getRoleIcon(user.manufacturing_role)" class="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                                <span class="px-2.5 py-1 text-[10px] font-black uppercase rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 capitalize">{{ formatRole(user.manufacturing_role) }}</span>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <span v-if="user.is_manufacturing_supervisor" class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">Yes</span>
+                                            <span v-if="user.is_manufacturing_supervisor" class="px-2.5 py-1 text-[10px] font-black uppercase rounded-full bg-purple-100 text-purple-700 ring-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:ring-purple-500/30 ring-1 inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />Yes</span>
                                             <span v-else class="text-gray-400 text-xs">No</span>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <select v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 w-48">
+                                            <select v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="rounded-2xl border-gray-200 dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none w-48">
                                                 <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                                             </select>
                                         </td>
                                     </tr>
-                                </tbody>
+                                </TransitionGroup>
                             </table>
                         </div>
 
-                        <div v-if="filteredStaff.length === 0" class="text-center py-12">
-                            <Users class="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                            <p class="text-gray-500 dark:text-gray-400">No staff members found</p>
-                            <button @click="clearSearch" class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">Clear search</button>
+                        <div v-if="filteredStaff.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+                            <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                                <Users class="h-9 w-9 text-indigo-400" />
+                            </div>
+                            <p class="text-sm font-black text-gray-700 dark:text-gray-200">No staff members found</p>
+                            <button @click="clearSearch" class="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition active:scale-95">Clear search</button>
                         </div>
                     </div>
                 </div>
@@ -437,33 +446,38 @@ const getAvatarColor = (name) => {
         </div>
 
         <!-- Confirmation Modal -->
-        <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="closeModal">
-            <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full transform transition-all border border-gray-200 dark:border-zinc-700 overflow-hidden">
-                <div class="p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center"><UserCheck class="w-6 h-6 text-amber-600 dark:text-amber-400" /></div>
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">Confirm Role Change</h3>
+        <Transition name="modal">
+            <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="closeModal">
+                <div class="bg-white/95 dark:bg-zinc-900/95 backdrop-blur rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 dark:border-zinc-800">
+                    <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6">
+                        <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                        <div class="relative flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/30"><UserCheck class="w-6 h-6 text-white" /></div>
+                            <h3 class="text-lg font-black text-white tracking-tight">Confirm Role Change</h3>
+                        </div>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-300 mb-6">
-                        Are you sure you want to change the role of <span class="font-semibold">{{ pendingStaffName }}</span> from
-                        <span class="font-semibold text-gray-900 dark:text-white">{{ formatRole(pendingOldRole) }}</span> to
-                        <span class="font-semibold text-blue-600 dark:text-blue-400">{{ formatRole(pendingNewRole) }}</span>?
-                    </p>
-                    <div class="flex justify-end gap-3">
-                        <button @click="closeModal" :disabled="isUpdating" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition disabled:opacity-50">Cancel</button>
-                        <button @click="confirmUpdate" :disabled="isUpdating" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50">
-                            <RefreshCw v-if="isUpdating" class="w-4 h-4 animate-spin" /> Confirm Change
-                        </button>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                            Are you sure you want to change the role of <span class="font-bold">{{ pendingStaffName }}</span> from
+                            <span class="font-bold text-gray-900 dark:text-white">{{ formatRole(pendingOldRole) }}</span> to
+                            <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ formatRole(pendingNewRole) }}</span>?
+                        </p>
+                        <div class="flex justify-end gap-3">
+                            <button @click="closeModal" :disabled="isUpdating" class="px-4 py-2.5 text-xs font-black uppercase tracking-wide text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl hover:bg-gray-200 dark:hover:bg-zinc-700 transition active:scale-95 disabled:opacity-50">Cancel</button>
+                            <button @click="confirmUpdate" :disabled="isUpdating" class="px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 transition active:scale-95 flex items-center gap-2 disabled:opacity-50">
+                                <RefreshCw v-if="isUpdating" class="w-4 h-4 animate-spin" /> Confirm Change
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </Transition>
 
         <!-- Toast Notification -->
-        <div v-if="showToast" class="fixed bottom-4 right-4 z-50 transform transition-all duration-300" :class="{ 'bg-green-100 dark:bg-green-900/80 border-green-400': toastType === 'success', 'bg-red-100 dark:bg-red-900/80 border-red-400': toastType === 'error' }" style="animation: slide-up 0.3s ease-out;">
-            <div class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border">
-                <component :is="toastType === 'success' ? CheckCircle2 : AlertCircle" class="w-5 h-5" :class="toastType === 'success' ? 'text-green-600' : 'text-red-600'" />
-                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ toastMessage }}</span>
+        <div v-if="showToast" class="fixed bottom-4 right-4 z-50 transform transition-all duration-300 rounded-2xl shadow-2xl border" :class="{ 'bg-emerald-50 dark:bg-emerald-900/80 border-emerald-200 dark:border-emerald-700': toastType === 'success', 'bg-rose-50 dark:bg-rose-900/80 border-rose-200 dark:border-rose-700': toastType === 'error' }" style="animation: slide-up 0.3s ease-out;">
+            <div class="flex items-center gap-3 px-4 py-3">
+                <component :is="toastType === 'success' ? CheckCircle2 : AlertCircle" class="w-5 h-5" :class="toastType === 'success' ? 'text-emerald-600' : 'text-rose-600'" />
+                <span class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ toastMessage }}</span>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -482,4 +496,20 @@ const getAvatarColor = (name) => {
     from { transform: translateY(1rem); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: translateY(16px) scale(0.98); }
 </style>

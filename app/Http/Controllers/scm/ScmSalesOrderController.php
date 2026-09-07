@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\scm;
 
 use App\Http\Controllers\Controller;
-use App\Models\PurchaseOrder;
-use App\Models\SalesOrder;
-use App\Models\OrderQueue;
-use App\Models\BomRecord;
+use App\Models\ord\PurchaseOrder;
+use App\Models\ord\SalesOrder;
+use App\Models\ord\OrderQueue;
+use App\Models\man\BomRecord;
 use App\Models\inv\Material;
-use App\Models\WarehouseStockItem;
+use App\Models\war\WarehouseStockItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;

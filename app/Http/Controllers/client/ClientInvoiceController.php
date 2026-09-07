@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\client;
 
 use App\Http\Controllers\Controller;
-use App\Models\PurchaseOrder;
+use App\Models\ord\PurchaseOrder;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 

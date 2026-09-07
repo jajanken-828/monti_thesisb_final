@@ -2,9 +2,14 @@
 
 namespace App\Models\Scm;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Supplier;
+use App\Models\pro\Supplier;
+use App\Models\Scm\ScmPurchaseOrderItem;
+use App\Models\Scm\RequestForQuotation;
+use App\Models\Scm\PurchaseInvoice;
+use App\Models\core\User;
 
 class ScmPurchaseOrder extends Model
 {

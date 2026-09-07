@@ -4,7 +4,7 @@ namespace App\Http\Controllers\eco;
 
 use App\Http\Controllers\Controller;
 use App\Models\eco\Inquiry;
-use App\Models\PurchaseOrder;
+use App\Models\ord\PurchaseOrder;
 use Carbon\Carbon;
 use Inertia\Inertia;
 
@@ -14,7 +14,7 @@ class EcoDashboardController extends Controller
     {
         // Graphs data
         $inquiriesLast30 = Inquiry::where('created_at', '>=', Carbon::now()->subDays(30))->count();
-        $quotationsSent = \App\Models\ClientQuotation::whereMonth('created_at', Carbon::now()->month)->count();
+        $quotationsSent = \App\Models\client\ClientQuotation::whereMonth('created_at', Carbon::now()->month)->count();
         $salesOrders = PurchaseOrder::whereMonth('created_at', Carbon::now()->month)->count();
 
         return Inertia::render('Dashboard/ECO/Dashboard', [

@@ -6,7 +6,7 @@ import {
     Package, Shirt, Droplet, Factory,
     CheckCircle, XCircle, ArrowRight,
     Wind, Flame, Truck,
-    AlertTriangle, X,
+    AlertTriangle, X, Sparkles,
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -104,45 +104,57 @@ const pushToLogistics = (packageId) => {
 
 <template>
     <AuthenticatedLayout>
-        <div class="min-h-screen bg-gray-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-16">
 
-                <!-- Page Header -->
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-                            Production Pipeline
-                        </h1>
-                        <p class="text-sm text-gray-500 mt-0.5">Track and advance items through each stage</p>
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <Factory class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> MAN · Checker Quality
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Production Pipeline</h1>
+                            <p class="text-sm text-blue-100/90">Track and advance items through each stage</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                                {{ (fabrics?.length ?? 0) + (dyeJobs?.length ?? 0) + (packages?.length ?? 0) }} items
+                            </span>
+                            <span class="hidden sm:flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 ring-1 ring-white/25 backdrop-blur">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+                                <span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse"></span>
+                            </span>
+                        </div>
                     </div>
-                    <div class="hidden sm:flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-                        <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-                        <span class="w-2 h-2 rounded-full bg-gray-900"></span>
-                    </div>
-                </div>
 
-                <!-- Tab Navigation -->
-                <div class="relative">
-                    <div class="overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-                        <div class="flex gap-1 bg-white border border-gray-200 rounded-2xl p-1.5 w-max sm:w-full min-w-full">
+                    <!-- Tab Navigation inside hero -->
+                    <div class="relative mt-6 overflow-x-auto pb-1 -mx-1 px-1">
+                        <div class="flex gap-2 w-max sm:w-full min-w-full">
                             <button
                                 v-for="tab in tabs"
                                 :key="tab.key"
                                 @click="activeTab = tab.key"
                                 type="button"
-                                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 flex-1 justify-center"
+                                class="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wide whitespace-nowrap transition-all duration-200 flex-1 justify-center active:scale-95"
                                 :class="activeTab === tab.key
-                                    ? 'bg-gray-900 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'"
+                                    ? 'bg-white text-indigo-700 shadow-lg scale-105'
+                                    : 'bg-white/15 text-white hover:bg-white/25 backdrop-blur'"
                             >
                                 <component :is="tab.icon" class="w-3.5 h-3.5 flex-shrink-0" />
                                 <span class="hidden sm:inline">{{ tab.label }}</span>
                                 <span
-                                    class="rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none"
+                                    class="rounded-full px-1.5 py-0.5 text-[10px] font-black leading-none"
                                     :class="activeTab === tab.key
-                                        ? 'bg-white/20 text-white'
-                                        : 'bg-gray-100 text-gray-500'"
+                                        ? 'bg-indigo-100 text-indigo-700'
+                                        : 'bg-white/20 text-white'"
                                 >
                                     {{ tab.count }}
                                 </span>
@@ -154,314 +166,347 @@ const pushToLogistics = (packageId) => {
                 <!-- FABRICS TAB -->
                 <div v-if="activeTab === 'fabrics'">
                     <div v-if="!fabrics?.length"
-                         class="bg-white rounded-2xl border border-dashed border-gray-200 py-14 flex flex-col items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                            <Shirt class="w-6 h-6 text-gray-400" />
+                         class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Shirt class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-medium text-gray-400">No fabrics awaiting quality check</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No fabrics awaiting quality check</p>
+                        <p class="text-xs text-gray-400 mt-1">New fabrics will appear here.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div
-                            v-for="fabric in fabrics"
+                            v-for="(fabric, i) in fabrics"
                             :key="fabric.id"
-                            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                         >
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                <span class="text-xs font-bold text-gray-900 font-mono tracking-wide">{{ fabric.code }}</span>
-                                <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    Fabric
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-black text-gray-900 dark:text-white font-mono tracking-wide">{{ fabric.code }}</span>
+                                <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30 ring-1 text-[10px] font-black uppercase px-2.5 py-1 rounded-full">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> Fabric
                                 </span>
                             </div>
-                            <div class="px-4 py-3">
-                                <p class="text-sm text-gray-500">
-                                    Weight: <span class="font-bold text-gray-900">{{ fabric.weight }} kg</span>
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    Weight: <span class="font-black text-gray-900 dark:text-white">{{ fabric.weight }} kg</span>
                                 </p>
                             </div>
-                            <div class="px-4 pb-4 flex flex-col sm:flex-row gap-2">
+                            <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button
                                     @click="passFabric(fabric.id, 'dyeing')"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <Droplet class="w-3.5 h-3.5" /> Pass to Dyeing
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- DYE TAB -->
                 <div v-if="activeTab === 'dye'">
                     <div v-if="!dyeJobs?.length"
-                         class="bg-white rounded-2xl border border-dashed border-gray-200 py-14 flex flex-col items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                            <Droplet class="w-6 h-6 text-gray-400" />
+                         class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Droplet class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-medium text-gray-400">No dye jobs in progress</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No dye jobs in progress</p>
+                        <p class="text-xs text-gray-400 mt-1">New dye jobs will appear here.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div
-                            v-for="dye in dyeJobs"
+                            v-for="(dye, i) in dyeJobs"
                             :key="dye.id"
-                            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                         >
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                <span class="text-xs font-bold text-gray-900 font-mono tracking-wide">{{ dye.code }}</span>
-                                <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    Dyeing
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-black text-gray-900 dark:text-white font-mono tracking-wide">{{ dye.code }}</span>
+                                <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30 ring-1 text-[10px] font-black uppercase px-2.5 py-1 rounded-full">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> Dyeing
                                 </span>
                             </div>
-                            <div class="px-4 py-3">
-                                <p class="text-xs text-gray-500">
-                                    Fabric: <span class="font-semibold text-gray-800 font-mono">{{ dye.fabric.code }}</span>
+                            <div class="mb-4">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Fabric: <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">{{ dye.fabric.code }}</span>
                                 </p>
                             </div>
-                            <div class="px-4 pb-4 flex flex-col sm:flex-row gap-2">
+                            <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button
                                     @click="passDye(dye.id, 'quality')"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <CheckCircle class="w-3.5 h-3.5" /> Quality Pass
                                 </button>
                                 <button
                                     @click="rejectDyeWithReason(dye)"
-                                    class="flex-1 flex items-center justify-center gap-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 hover:bg-rose-100 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
                                 >
                                     <XCircle class="w-3.5 h-3.5" /> Reject
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- SOFTENER TAB -->
                 <div v-if="activeTab === 'softener'">
                     <div v-if="!softenerJobs?.length"
-                         class="bg-white rounded-2xl border border-dashed border-gray-200 py-14 flex flex-col items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                            <Wind class="w-6 h-6 text-gray-400" />
+                         class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Wind class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-medium text-gray-400">No softener jobs awaiting quality check</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No softener jobs awaiting quality check</p>
+                        <p class="text-xs text-gray-400 mt-1">New softener jobs will appear here.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div
-                            v-for="job in softenerJobs"
+                            v-for="(job, i) in softenerJobs"
                             :key="job.id"
-                            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                         >
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                <span class="text-xs font-bold text-gray-900 font-mono tracking-wide">{{ job.code }}</span>
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-black text-gray-900 dark:text-white font-mono tracking-wide">{{ job.code }}</span>
                                 <span
-                                    class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    class="text-[10px] font-black uppercase px-2.5 py-1 rounded-full ring-1 inline-flex items-center gap-1"
                                     :class="job.status === 'softened'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-yellow-100 text-yellow-800'"
+                                        ? 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30'
+                                        : 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'"
                                 >
-                                    {{ job.status }}
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ job.status }}
                                 </span>
                             </div>
-                            <div class="px-4 py-3">
-                                <p class="text-xs text-gray-500">
-                                    Fabric: <span class="font-semibold text-gray-800 font-mono">{{ job.fabric.code }}</span>
+                            <div class="mb-4">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Fabric: <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">{{ job.fabric.code }}</span>
                                 </p>
                             </div>
-                            <div v-if="job.status === 'softened'" class="px-4 pb-4 flex flex-col sm:flex-row gap-2">
+                            <div v-if="job.status === 'softened'" class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button
                                     @click="passSoftener(job.id, 'quality')"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <CheckCircle class="w-3.5 h-3.5" /> Pass to Squeezer
                                 </button>
                                 <button
                                     @click="passSoftener(job.id, 'resoften')"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
                                 >
                                     <Wind class="w-3.5 h-3.5" /> Resoften
                                 </button>
                             </div>
-                            <div v-else class="px-4 pb-4">
+                            <div v-else class="mt-auto">
                                 <p class="text-xs text-gray-400 italic text-center py-1">Awaiting softening…</p>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- SQUEEZER TAB -->
                 <div v-if="activeTab === 'squeezer'">
                     <div v-if="!squeezerJobs?.length"
-                         class="bg-white rounded-2xl border border-dashed border-gray-200 py-14 flex flex-col items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                            <Factory class="w-6 h-6 text-gray-400" />
+                         class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Factory class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-medium text-gray-400">No squeezer jobs in progress</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No squeezer jobs in progress</p>
+                        <p class="text-xs text-gray-400 mt-1">New squeezer jobs will appear here.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div
-                            v-for="job in squeezerJobs"
+                            v-for="(job, i) in squeezerJobs"
                             :key="job.id"
-                            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                         >
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                <span class="text-xs font-bold text-gray-900 font-mono tracking-wide">{{ job.code }}</span>
-                                <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    Squeezer
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-black text-gray-900 dark:text-white font-mono tracking-wide">{{ job.code }}</span>
+                                <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30 ring-1 text-[10px] font-black uppercase px-2.5 py-1 rounded-full">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> Squeezer
                                 </span>
                             </div>
-                            <div class="px-4 py-3">
-                                <p class="text-xs text-gray-500">
-                                    Fabric: <span class="font-semibold text-gray-800 font-mono">{{ job.softener_job?.fabric?.code }}</span>
+                            <div class="mb-4">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Fabric: <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">{{ job.softener_job?.fabric?.code }}</span>
                                 </p>
                             </div>
-                            <div class="px-4 pb-4 flex flex-col sm:flex-row gap-2">
+                            <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button
                                     @click="passSqueezer(job.id)"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <CheckCircle class="w-3.5 h-3.5" /> Pass to Iron
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- IRON TAB -->
                 <div v-if="activeTab === 'iron'">
                     <div v-if="!ironJobs?.length"
-                         class="bg-white rounded-2xl border border-dashed border-gray-200 py-14 flex flex-col items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                            <Flame class="w-6 h-6 text-gray-400" />
+                         class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Flame class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-medium text-gray-400">No iron jobs in progress</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No iron jobs in progress</p>
+                        <p class="text-xs text-gray-400 mt-1">New iron jobs will appear here.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div
-                            v-for="iron in ironJobs"
+                            v-for="(iron, i) in ironJobs"
                             :key="iron.id"
-                            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                         >
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                <span class="text-xs font-bold text-gray-900 font-mono tracking-wide">{{ iron.code }}</span>
-                                <span class="inline-flex items-center gap-1 bg-orange-50 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    Ironing
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-black text-gray-900 dark:text-white font-mono tracking-wide">{{ iron.code }}</span>
+                                <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 ring-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:ring-orange-500/30 ring-1 text-[10px] font-black uppercase px-2.5 py-1 rounded-full">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> Ironing
                                 </span>
                             </div>
-                            <div class="px-4 py-3">
-                                <p class="text-xs text-gray-500">
-                                    Fabric: <span class="font-semibold text-gray-800 font-mono">{{ iron.squeezer_job?.softener_job?.fabric?.code }}</span>
+                            <div class="mb-4">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Fabric: <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">{{ iron.squeezer_job?.softener_job?.fabric?.code }}</span>
                                 </p>
                             </div>
-                            <div class="px-4 pb-4">
+                            <div class="mt-auto">
                                 <button
                                     @click="passIron(iron.id)"
-                                    class="w-full flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <Package class="w-3.5 h-3.5" /> Pass to Pack
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- PACKED TAB -->
                 <div v-if="activeTab === 'packed'">
                     <div v-if="!packages?.length"
-                         class="bg-white rounded-2xl border border-dashed border-gray-200 py-14 flex flex-col items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center">
-                            <Package class="w-6 h-6 text-gray-400" />
+                         class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Package class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-medium text-gray-400">No packages ready for assignment</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No packages ready for assignment</p>
+                        <p class="text-xs text-gray-400 mt-1">Packed items will appear here.</p>
                     </div>
 
-                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div
-                            v-for="pkg in packages"
+                            v-for="(pkg, i) in packages"
                             :key="pkg.id"
-                            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                         >
-                            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                                <span class="text-xs font-bold text-gray-900 font-mono tracking-wide">{{ pkg.code }}</span>
-                                <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    Packed
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-black text-gray-900 dark:text-white font-mono tracking-wide">{{ pkg.code }}</span>
+                                <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30 ring-1 text-[10px] font-black uppercase px-2.5 py-1 rounded-full">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> Packed
                                 </span>
                             </div>
-                            <div class="px-4 py-3 space-y-1">
-                                <p class="text-sm font-semibold text-gray-900">{{ pkg.product_name }}</p>
-                                <p class="text-xs text-gray-500">SKU: {{ pkg.product_sku }}</p>
-                                <p class="text-xs text-gray-500">Fabric: {{ pkg.fabric_code }} ({{ pkg.yarn_type }}, {{ pkg.weight }} kg)</p>
-                                <p class="text-xs text-gray-500">Quantity: <span class="font-bold">{{ pkg.quantity }} rolls/pcs</span></p>
-                                <p class="text-xs text-gray-500">Operator: {{ pkg.operator }}</p>
+                            <div class="mb-4 space-y-1">
+                                <p class="text-sm font-black text-gray-900 dark:text-white tracking-tight">{{ pkg.product_name }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">SKU: {{ pkg.product_sku }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Fabric: {{ pkg.fabric_code }} ({{ pkg.yarn_type }}, {{ pkg.weight }} kg)</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Quantity: <span class="font-black text-gray-900 dark:text-white">{{ pkg.quantity }} rolls/pcs</span></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Operator: {{ pkg.operator }}</p>
                             </div>
-                            <div class="px-4 pb-4 flex flex-col sm:flex-row gap-2">
+                            <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button
                                     @click="assignToOrder(pkg.id)"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <ArrowRight class="w-3.5 h-3.5" /> Assign to Order
                                 </button>
                                 <button
                                     @click="pushToLogistics(pkg.id)"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <Truck class="w-3.5 h-3.5" /> Push to Logistics
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
                 </div>
 
             </div>
         </div>
 
         <!-- CONFIRM MODAL -->
-        <transition
-            enter-active-class="transition ease-out duration-200"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition ease-in duration-150"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
-        >
+        <Transition name="modal">
             <div
                 v-if="confirmModal"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                 @click.self="cancelConfirm"
             >
-                <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-
-                <div class="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
-                    <div class="h-1 w-full bg-gradient-to-r from-yellow-400 via-red-400 to-red-500"></div>
-
-                    <div class="px-6 pt-5 pb-4 text-center">
-                        <div class="w-12 h-12 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center">
-                            <AlertTriangle class="w-6 h-6 text-red-500" />
+                <div class="relative w-full max-w-sm bg-white/95 dark:bg-zinc-900/95 backdrop-blur rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+                    <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 px-6 pt-5 pb-4 text-center">
+                        <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                        <div class="relative w-12 h-12 mx-auto mb-3 rounded-2xl bg-white/15 ring-1 ring-white/30 flex items-center justify-center">
+                            <AlertTriangle class="w-6 h-6 text-white" />
                         </div>
-                        <h3 class="text-base font-bold text-gray-900">{{ confirmLabel }}</h3>
-                        <p class="text-sm text-gray-500 mt-1.5 leading-relaxed">{{ confirmSub }}</p>
+                        <h3 class="relative text-base font-black text-white tracking-tight">{{ confirmLabel }}</h3>
+                        <p class="relative text-sm text-blue-100/90 mt-1.5 leading-relaxed">{{ confirmSub }}</p>
                     </div>
 
-                    <div class="flex gap-2 px-6 pb-6">
+                    <div class="flex gap-2 px-6 py-5">
                         <button
                             @click="cancelConfirm"
                             type="button"
-                            class="flex-1 py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-semibold rounded-xl transition"
+                            class="flex-1 py-2.5 rounded-2xl border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800 text-xs font-black uppercase tracking-wide transition active:scale-95"
                         >
                             Cancel
                         </button>
                         <button
                             @click="runConfirm"
                             type="button"
-                            class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition"
+                            class="flex-1 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wide shadow-lg shadow-rose-500/25 transition active:scale-95"
                         >
                             Yes, Reject
                         </button>
                     </div>
                 </div>
             </div>
-        </transition>
+        </Transition>
 
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: translateY(16px) scale(0.98); }
+</style>

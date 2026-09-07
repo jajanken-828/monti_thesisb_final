@@ -338,49 +338,58 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
     <Head title="Workforce Scheduler" />
     <AuthenticatedLayout>
 
-        <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-6">
-            <div class="max-w-7xl mx-auto space-y-5">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="max-w-7xl mx-auto space-y-6 p-4 sm:p-6 pb-16">
 
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div class="flex items-center gap-3.5">
-                        <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
-                            <CalendarDays class="h-5.5 w-5.5 text-white" />
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-3.5">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop shrink-0">
+                                <CalendarDays class="h-7 w-7 text-white" />
+                            </div>
+                            <div>
+                                <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                    <Briefcase class="h-3.5 w-3.5" /> Workforce · Scheduling
+                                </p>
+                                <h1 class="text-2xl sm:text-3xl font-black tracking-tight leading-none">
+                                    <span v-if="isPlannerView">Executive Planner</span>
+                                    <span v-else-if="isCeoMode && ceoViewMode === 'schedules'">Schedule Overview</span>
+                                    <span v-else>Shift Scheduler</span>
+                                </h1>
+                                <p class="text-sm text-blue-100/90 mt-1">
+                                    <span v-if="isPlannerView">Your personal calendar for meetings &amp; business events</span>
+                                    <span v-else-if="isCeoMode && ceoViewMode === 'schedules'">Read-only view of all department shift schedules</span>
+                                    <span v-else>Assign shifts, manage holidays and bulk scheduling</span>
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 class="text-2xl sm:text-[1.7rem] font-extrabold leading-none text-slate-900 dark:text-white tracking-tight">
-                                <span v-if="isPlannerView">Executive Planner</span>
-                                <span v-else-if="isCeoMode && ceoViewMode === 'schedules'">Schedule Overview</span>
-                                <span v-else>Shift Scheduler</span>
-                            </h1>
-                            <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">
-                                <span v-if="isPlannerView">Your personal calendar for meetings &amp; business events</span>
-                                <span v-else-if="isCeoMode && ceoViewMode === 'schedules'">Read-only view of all department shift schedules</span>
-                                <span v-else>Assign shifts, manage holidays and bulk scheduling</span>
-                            </p>
-                        </div>
-                    </div>
 
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <button v-if="!isCeoMode" @click="openBulkModal"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold shadow-sm transition-all">
-                            <Layers class="h-3.5 w-3.5" /> Bulk Schedule
-                        </button>
-                        <button @click="openHolidayModal"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-sm transition-all">
-                            <Plus class="h-3.5 w-3.5" /> Add Holiday
-                        </button>
-                        <button @click="openManageHolidays"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all">
-                            <CalendarDays class="h-3.5 w-3.5" /> Holidays
-                        </button>
-                        <button v-if="!isCeoMode" @click="isShiftConfigOpen = true"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all">
-                            <Settings class="h-3.5 w-3.5" /> Shift Times
-                        </button>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button v-if="!isCeoMode" @click="openBulkModal"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white text-indigo-700 text-xs font-black shadow-lg hover:scale-105 active:scale-95 transition-all">
+                                <Layers class="h-3.5 w-3.5" /> Bulk Schedule
+                            </button>
+                            <button @click="openHolidayModal"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 text-white text-xs font-bold transition-all active:scale-95">
+                                <Plus class="h-3.5 w-3.5" /> Add Holiday
+                            </button>
+                            <button @click="openManageHolidays"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 text-white text-xs font-bold transition-all active:scale-95">
+                                <CalendarDays class="h-3.5 w-3.5" /> Holidays
+                            </button>
+                            <button v-if="!isCeoMode" @click="isShiftConfigOpen = true"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 text-white text-xs font-bold transition-all active:scale-95">
+                                <Settings class="h-3.5 w-3.5" /> Shift Times
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div v-if="isCeoMode" class="flex gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-1.5 w-fit shadow-sm">
+                <div v-if="isCeoMode" class="animate-fade-up flex gap-1 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-3xl p-1.5 w-fit shadow-sm" style="animation-delay: 60ms">
                     <button @click="switchCeoView('planner')"
                         :class="['flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200',
                             ceoViewMode === 'planner'
@@ -400,7 +409,7 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
 
                 <div v-if="isCeoMode && ceoViewMode === 'schedules'"
-                    class="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-2xl px-4 py-3">
+                    class="animate-fade-up flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-3xl px-4 py-3 shadow-sm" style="animation-delay: 80ms">
                     <Eye class="h-4.5 w-4.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
                     <p class="text-sm text-indigo-700 dark:text-indigo-300">
                         Viewing employee shift schedules in <strong>read-only</strong> mode. Switch to
@@ -410,7 +419,8 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
 
                 <div v-if="!isCeoMode || (isCeoMode && ceoViewMode === 'schedules')"
-                    class="flex flex-wrap gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-2.5 shadow-sm">
+                    class="animate-fade-up group relative flex flex-wrap gap-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-3xl p-2.5 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 overflow-hidden" style="animation-delay: 100ms">
+                    <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <button v-for="mod in modules" :key="mod" @click="selectedModule = mod"
                         :class="['px-4 py-1.5 rounded-xl text-xs font-bold transition-all',
                             selectedModule === mod
@@ -421,7 +431,8 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
 
                 <div v-if="!isCeoMode && filteredEmployees.length"
-                    class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                    class="animate-fade-up group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 overflow-hidden" style="animation-delay: 140ms">
+                    <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700/60">
                         <div class="flex items-center gap-2">
                             <div class="h-6 w-6 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -478,7 +489,8 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                <div class="animate-fade-up group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300 overflow-hidden" style="animation-delay: 180ms">
+                    <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                     <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
                         <button @click="prevMonth"
@@ -592,7 +604,7 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                     <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-blue-600"></span>Today</span>
                 </div>
 
-                <div v-if="isPlannerView && upcomingEvents.length > 0" class="mt-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                <div v-if="isPlannerView && upcomingEvents.length > 0" class="animate-fade-up mt-6 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 overflow-hidden" style="animation-delay: 220ms">
                     <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2">
                         <List class="h-5 w-5 text-indigo-500" />
                         <h3 class="font-extrabold text-slate-800 dark:text-white">Upcoming Agenda</h3>
@@ -628,11 +640,14 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
             </div></div>
             
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="isEventListModalOpen"
             class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="closeEventListModal">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden">
-                <div class="bg-gradient-to-r from-indigo-500 to-blue-600 p-5 flex items-center justify-between shrink-0">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-center justify-between shrink-0">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <div>
                         <p class="text-white/70 text-xs font-semibold">All events for</p>
                         <h2 class="text-white font-extrabold text-xl">{{ selectedDateEvents }}</h2>
@@ -691,14 +706,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="isEventModalOpen"
             class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="closeEventModal">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-gradient-to-r from-indigo-500 to-blue-600 p-5 flex items-start justify-between">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-start justify-between">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <div>
                         <p class="text-white/70 text-xs font-semibold">{{ editingEvent ? 'Editing event' : 'New event' }}</p>
                         <h2 class="text-white font-extrabold text-lg leading-tight">{{ editingEvent ? editingEvent.title : 'Add Event' }}</h2>
@@ -755,14 +774,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="!isCeoMode && isBulkModalOpen"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="closeBulkModal">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-gradient-to-r from-indigo-500 to-blue-600 p-5 flex items-start justify-between">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-start justify-between">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <div>
                         <h2 class="text-white font-extrabold text-lg leading-tight">Advanced Bulk Scheduler</h2>
                         <p class="text-indigo-100 text-xs mt-1">Assign or clear specific shifts over a date range.</p>
@@ -822,14 +845,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="!isCeoMode && isShiftModalOpen"
             class="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="closeShiftModal">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-5 flex items-start justify-between">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-start justify-between">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <div>
                         <p class="text-white/70 text-xs font-semibold">Assigning shift for</p>
                         <h2 class="text-white font-extrabold text-lg leading-tight">{{ shiftForm.effective_date }}</h2>
@@ -877,14 +904,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="isHolidayModalOpen"
             class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="closeHolidayModal">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-gradient-to-r from-rose-500 to-pink-600 p-5 flex items-center justify-between">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-center justify-between">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <h2 class="text-white font-extrabold text-base">Add Holiday</h2>
                     <button @click="closeHolidayModal" class="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"><X class="h-4 w-4" /></button>
                 </div>
@@ -907,14 +938,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="isManageHolidaysModalOpen"
             class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="closeManageHolidays">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden">
-                <div class="bg-gradient-to-r from-slate-700 to-slate-800 p-5 flex items-center justify-between shrink-0">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-center justify-between shrink-0">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <h2 class="text-white font-extrabold text-base">Manage Holidays</h2>
                     <button @click="closeManageHolidays" class="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"><X class="h-4 w-4" /></button>
                 </div>
@@ -947,14 +982,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="editingHoliday"
             class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="editingHoliday = null">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-5 flex items-center justify-between">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-center justify-between">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <h2 class="text-white font-extrabold text-base">Edit Holiday</h2>
                     <button @click="editingHoliday = null" class="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"><X class="h-4 w-4" /></button>
                 </div>
@@ -977,14 +1016,18 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
         <Teleport to="body">
+        <Transition name="modal">
         <div v-if="!isCeoMode && isShiftConfigOpen"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             @click.self="isShiftConfigOpen = false">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-                <div class="bg-gradient-to-r from-slate-700 to-slate-900 p-5 flex items-center justify-between">
+            <div class="modal-panel bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
+                <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 flex items-center justify-between">
+                    <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                     <h2 class="text-white font-extrabold text-base">Shift Configuration</h2>
                     <button @click="isShiftConfigOpen = false" class="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition"><X class="h-4 w-4" /></button>
                 </div>
@@ -1007,12 +1050,32 @@ const monthName = computed(() => new Date(currentYear.value, currentMonth.value)
                 </div>
             </div>
         </div>
+        </Transition>
         </Teleport>
 
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.25s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-active .modal-panel, .modal-leave-active .modal-panel { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from .modal-panel { opacity: 0; transform: translateY(16px) scale(0.97); }
+.modal-leave-to .modal-panel { opacity: 0; transform: translateY(8px) scale(0.98); }
 ::-webkit-scrollbar          { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track    { background: transparent; }
 ::-webkit-scrollbar-thumb    { background: #cbd5e1; border-radius: 10px; }

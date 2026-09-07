@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CrmLead;
-use App\Models\CrmFeedback;
-use App\Models\CrmMeeting;
-use App\Models\CrmClientAssignment;
+use App\Models\crm\Client;
+use App\Models\crm\CrmLead;
+use App\Models\crm\CrmFeedback;
+use App\Models\crm\CrmMeeting;
+use App\Models\crm\CrmClientAssignment;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Traits\HasPagePermissions;

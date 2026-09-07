@@ -554,56 +554,56 @@ async function saveClientAssignments(staffId) {
     <AuthenticatedLayout>
         <Head title="CEO Access Control" />
 
-        <div class="min-h-screen bg-[#f0f3f8] p-4 sm:p-6" style="font-family: 'Outfit', 'Sora', sans-serif;">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30 p-4 sm:p-6">
 
             <!-- ╔══════════════════ HEADER ══════════════════╗ -->
             <div class="max-w-screen-2xl mx-auto mb-6">
-                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-2xl shadow-slate-900/40 p-6 sm:p-8">
-                    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                        <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-indigo-600/10"></div>
-                        <div class="absolute -bottom-16 -left-8 w-64 h-64 rounded-full bg-violet-600/10"></div>
-                        <div class="absolute top-8 left-1/2 w-px h-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                    </div>
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
 
                     <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <div class="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center">
-                                    <Network class="w-5 h-5 text-amber-400" />
-                                </div>
-                                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop shrink-0">
+                                <Network class="h-7 w-7" />
+                            </div>
+                            <div>
+                                <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                    CEO · Access Control
+                                </p>
+                                <h1 class="text-2xl sm:text-3xl font-black tracking-tight">
                                     Organisation Chart
                                 </h1>
+                                <p class="text-sm text-blue-100/90 max-w-xl leading-relaxed">
+                                    Monti Textile — assign positions, module access, and page-level permissions across the entire organisation hierarchy.
+                                </p>
                             </div>
-                            <p class="text-slate-400 text-sm max-w-xl leading-relaxed">
-                                Monti Textile · Access Control — assign positions, module access, and page-level permissions across the entire organisation hierarchy.
-                            </p>
                         </div>
 
-                        <div class="flex gap-3 flex-wrap shrink-0">
-                            <div class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center min-w-[72px]">
-                                <div class="text-2xl font-bold text-white">{{ totalCount }}</div>
-                                <div class="text-xs text-slate-400 mt-0.5">Total</div>
+                        <div class="flex gap-2 flex-wrap shrink-0">
+                            <div class="rounded-full bg-white/15 px-4 py-2 text-center ring-1 ring-white/25 backdrop-blur min-w-[72px]">
+                                <div class="text-lg font-black text-white">{{ totalCount }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wide text-blue-100">Total</div>
                             </div>
-                            <div class="bg-amber-400/10 border border-amber-400/20 rounded-xl px-4 py-3 text-center min-w-[72px]">
-                                <div class="text-2xl font-bold text-amber-400">{{ (props.generalManagers?.length || 0) + (props.secretary ? 1 : 0) }}</div>
-                                <div class="text-xs text-amber-400/70 mt-0.5">Elevated</div>
+                            <div class="rounded-full bg-white/15 px-4 py-2 text-center ring-1 ring-white/25 backdrop-blur min-w-[72px]">
+                                <div class="text-lg font-black text-white">{{ (props.generalManagers?.length || 0) + (props.secretary ? 1 : 0) }}</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wide text-blue-100">Elevated</div>
                             </div>
-                            <div class="bg-emerald-400/10 border border-emerald-400/20 rounded-xl px-4 py-3 text-center min-w-[72px]">
-                                <div class="text-2xl font-bold text-emerald-400">{{ props.supervisors?.length || 0 }}</div>
-                                <div class="text-xs text-emerald-400/70 mt-0.5">Supervisors</div>
+                            <div class="rounded-full bg-emerald-400/90 px-4 py-2 text-center min-w-[72px]">
+                                <div class="text-lg font-black text-emerald-950">{{ props.supervisors?.length || 0 }}</div>
+                                <div class="text-[10px] font-black uppercase tracking-wide text-emerald-950">Supervisors</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="relative mt-5 max-w-md">
-                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <div class="relative mt-6 max-w-md">
+                        <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                             v-model="searchQuery"
                             type="text"
                             placeholder="Search name, email, role or label…"
-                            class="w-full pl-9 pr-4 py-2.5 text-sm bg-white/8 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
-                            style="background: rgba(255,255,255,0.06);"
+                            class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition"
                         />
                     </div>
                 </div>
@@ -620,9 +620,10 @@ async function saveClientAssignments(staffId) {
                         <div class="h-px w-12 bg-amber-300/50"></div>
                     </div>
 
-                    <div v-if="props.ceo" class="relative group">
-                        <div :class="['org-node-ceo relative flex items-center gap-4 px-5 py-4 rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-lg shadow-amber-100 min-w-[260px] max-w-xs',
+                    <div v-if="props.ceo" class="animate-fade-up relative group">
+                        <div :class="['org-node-ceo group relative overflow-hidden flex items-center gap-4 px-5 py-4 rounded-3xl border-2 border-amber-300 dark:border-amber-500/40 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 min-w-[260px] max-w-xs',
                              matchesSearch({...props.ceo, smart_label:'CEO', role:'CEO', employee_id:''}) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
                                 <Crown class="w-3.5 h-3.5 text-white" />
                             </div>
@@ -637,6 +638,7 @@ async function saveClientAssignments(staffId) {
                                 <div class="font-bold text-amber-900 text-base truncate">{{ props.ceo.name }}</div>
                                 <div class="text-xs text-amber-700 truncate mt-0.5">{{ props.ceo.email }}</div>
                                 <div class="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-bold rounded-full border border-amber-300">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                                     <Star class="w-3 h-3 fill-current" />
                                     President
                                 </div>
@@ -659,8 +661,9 @@ async function saveClientAssignments(staffId) {
 
                     <div v-if="props.secretary"
                          @click="openPanel(props.secretary, 'secretary')"
-                         :class="['relative group flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-purple-50 shadow-md shadow-violet-100 cursor-pointer hover:shadow-lg hover:border-violet-400 transition-all min-w-[240px] max-w-xs',
+                         :class="['relative group overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border-2 border-violet-300 dark:border-violet-700 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 min-w-[240px] max-w-xs',
                                   matchesSearch(props.secretary) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <img v-if="props.secretary.profile_photo" :src="props.secretary.profile_photo" :alt="props.secretary.name"
                              class="w-11 h-11 rounded-xl object-cover ring-2 ring-violet-200 shadow shrink-0" />
                         <div v-else :class="`bg-gradient-to-br ${getAvatarColor(props.secretary.name)} w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0`">
@@ -690,14 +693,15 @@ async function saveClientAssignments(staffId) {
                         <div class="h-px w-12 bg-indigo-300/50"></div>
                     </div>
 
-                    <div v-if="props.generalManagers && props.generalManagers.length > 0" class="flex flex-wrap justify-center gap-3">
+                    <div v-if="props.generalManagers && props.generalManagers.length > 0" class="flex flex-wrap justify-center gap-4">
                         <div
                             v-for="gm in props.generalManagers"
                             :key="gm.id"
                             @click="openPanel(gm, 'gm')"
-                            :class="['group relative flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-indigo-200 bg-white shadow-sm cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all w-56',
+                            :class="['group relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 w-56',
                                      matchesSearch(gm) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
                         >
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <img v-if="gm.profile_photo" :src="gm.profile_photo" :alt="gm.name"
                                  class="w-10 h-10 rounded-lg object-cover ring-2 ring-indigo-100 shadow shrink-0" />
                             <div v-else :class="`bg-gradient-to-br ${getAvatarColor(gm.name)} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow shrink-0`">
@@ -717,13 +721,13 @@ async function saveClientAssignments(staffId) {
                 </div>
 
                 <!-- ── SECTION DIVIDER ─────────────────────────── -->
-                <div class="flex items-center gap-4 my-8">
-                    <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
-                    <div class="flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
-                        <Building2 class="w-3.5 h-3.5 text-slate-500" />
-                        <span class="text-xs font-bold text-slate-600 uppercase tracking-widest">Core Module Departments</span>
+                <div class="animate-fade-up flex items-center gap-4 my-8">
+                    <div class="flex-1 h-px bg-gradient-to-r from-transparent via-indigo-300 dark:via-indigo-700 to-transparent"></div>
+                    <div class="flex items-center gap-2 px-4 py-1.5 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-full shadow-sm">
+                        <Building2 class="w-3.5 h-3.5 text-indigo-500" />
+                        <span class="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.2em]">Core Module Departments</span>
                     </div>
-                    <div class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+                    <div class="flex-1 h-px bg-gradient-to-r from-transparent via-indigo-300 dark:via-indigo-700 to-transparent"></div>
                 </div>
 
                 <!-- ── TIER 4-6: DEPARTMENT COLUMNS ──────────────── -->
@@ -731,7 +735,7 @@ async function saveClientAssignments(staffId) {
                     <div v-for="mod in CORE_MODULES" :key="mod.key" class="flex flex-col">
 
                         <div :style="{background: mod.light, borderColor: mod.border}"
-                             class="rounded-xl border-2 px-4 py-3 flex items-center gap-2 mb-2 shadow-sm">
+                             class="rounded-3xl border-2 px-4 py-3 flex items-center gap-2 mb-2 shadow-sm dark:bg-zinc-900/80 dark:border-zinc-800">
                             <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0"
                                  :style="{background: mod.accent}">
                                 <Factory v-if="mod.key === 'MAN'" class="w-4 h-4 text-white" />
@@ -753,9 +757,10 @@ async function saveClientAssignments(staffId) {
                         <div class="mb-2">
                             <div v-if="managerByModule(mod.key)"
                                  @click="openPanel(managerByModule(mod.key), 'manager')"
-                                 :class="['group relative flex items-center gap-3 px-3 py-3 rounded-xl border-2 bg-white shadow-sm cursor-pointer hover:shadow-md transition-all',
+                                 :class="['group relative overflow-hidden flex items-center gap-3 px-3 py-3 rounded-3xl border-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300',
                                           matchesSearch(managerByModule(mod.key)) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
                                  :style="{borderColor: mod.border}">
+                                <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <img v-if="managerByModule(mod.key).profile_photo"
                                      :src="managerByModule(mod.key).profile_photo"
                                      class="w-10 h-10 rounded-lg object-cover shadow shrink-0"
@@ -877,10 +882,10 @@ async function saveClientAssignments(staffId) {
                             leave-from-class="translate-x-0"
                             leave-to-class="translate-x-full"
                         >
-                            <div v-if="panelOpen" class="w-full max-w-lg bg-white shadow-2xl flex flex-col" style="max-height: 100vh;">
+                            <div v-if="panelOpen" class="w-full max-w-lg bg-white dark:bg-zinc-900 shadow-2xl flex flex-col" style="max-height: 100vh;">
 
                                 <!-- Panel Header -->
-                                <div class="sticky top-0 z-10 bg-white border-b border-gray-100 px-5 pt-5 pb-4 shrink-0">
+                                <div class="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 px-5 pt-5 pb-4 shrink-0">
                                     <div class="flex items-start gap-4">
                                         <div class="shrink-0">
                                             <img v-if="headerProfilePhoto" :src="headerProfilePhoto"
@@ -1653,21 +1658,16 @@ async function saveClientAssignments(staffId) {
 
             <!-- ╔══════════════════ IMAGE PREVIEW MODAL ══════════════════╗ -->
             <Teleport to="body">
-                <Transition
-                    enter-active-class="transition duration-200 ease-out"
-                    enter-from-class="opacity-0 scale-95"
-                    enter-to-class="opacity-100 scale-100"
-                    leave-active-class="transition duration-150 ease-in"
-                    leave-from-class="opacity-100 scale-100"
-                    leave-to-class="opacity-0 scale-95"
-                >
+                <Transition name="modal">
                     <div v-if="imageModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
                         <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="closeImageModal"></div>
-                        <div class="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden">
-                            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
-                                <h3 class="text-lg font-bold text-gray-900">{{ imageModal.title }}</h3>
-                                <button @click="closeImageModal" class="p-1.5 rounded-lg hover:bg-gray-200 transition">
-                                    <X class="w-5 h-5 text-gray-600" />
+                        <div class="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden">
+                            <div class="relative overflow-hidden flex items-center justify-between px-6 py-4 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white">
+                                <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                                <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                                <h3 class="relative text-lg font-black tracking-tight">{{ imageModal.title }}</h3>
+                                <button @click="closeImageModal" class="relative p-1.5 rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition active:scale-95">
+                                    <X class="w-5 h-5" />
                                 </button>
                             </div>
                             <div class="p-4 flex justify-center bg-gray-100">
@@ -1680,20 +1680,23 @@ async function saveClientAssignments(staffId) {
 
             <!-- ╔══════════════════ STAFF PAGES MODAL ══════════════════╗ -->
             <Teleport to="body">
+                <Transition name="modal">
                 <div v-if="pagesModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closePagesModal"></div>
-                    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
-                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-violet-50">
-                            <div>
-                                <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                                    <LayoutGrid class="w-4 h-4 text-indigo-600" />
+                    <div class="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+                        <div class="relative overflow-hidden flex items-center justify-between px-6 py-4 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative">
+                                <h3 class="text-base font-black tracking-tight flex items-center gap-2">
+                                    <LayoutGrid class="w-4 h-4" />
                                     Page Permissions
                                 </h3>
-                                <p class="text-xs text-gray-500 mt-0.5">
-                                    {{ pagesModal.user.name }} · <span class="font-medium text-indigo-600">{{ pagesModal.user.role }}</span> · {{ pagesModal.user.smart_label }}
+                                <p class="text-xs text-blue-100 mt-0.5">
+                                    {{ pagesModal.user.name }} · <span class="font-bold">{{ pagesModal.user.role }}</span> · {{ pagesModal.user.smart_label }}
                                 </p>
                             </div>
-                            <button @click="closePagesModal" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                            <button @click="closePagesModal" class="relative p-1.5 rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition active:scale-95">
                                 <X class="w-5 h-5" />
                             </button>
                         </div>
@@ -1768,35 +1771,30 @@ async function saveClientAssignments(staffId) {
                         </div>
                     </div>
                 </div>
+                </Transition>
             </Teleport>
 
             <!-- ╔══════════════════ CONFIRMATION MODAL ══════════════════╗ -->
             <Teleport to="body">
-                <Transition
-                    enter-active-class="transition duration-200 ease-out"
-                    enter-from-class="opacity-0 scale-95"
-                    enter-to-class="opacity-100 scale-100"
-                    leave-active-class="transition duration-150 ease-in"
-                    leave-from-class="opacity-100 scale-100"
-                    leave-to-class="opacity-0 scale-95"
-                >
+                <Transition name="modal">
                     <div v-if="confirmModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
                         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeConfirm"></div>
-                        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                            <div class="flex flex-col items-center px-6 pt-7 pb-4">
+                        <div class="relative bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+                            <div class="relative overflow-hidden px-6 pt-7 pb-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white">
+                                <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                                <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                                <div class="relative flex flex-col items-center">
                                 <div :class="[
-                                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md',
-                                    confirmModal.icon === 'warning' ? 'bg-red-100' :
-                                    confirmModal.icon === 'promote' ? 'bg-indigo-100' :
-                                    confirmModal.icon === 'shield'  ? 'bg-violet-100' : 'bg-blue-100'
+                                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md bg-white/15 ring-1 ring-white/30 backdrop-blur animate-pop',
                                 ]">
-                                    <AlertTriangle v-if="confirmModal.icon === 'warning'" class="w-7 h-7 text-red-500" />
-                                    <Crown         v-else-if="confirmModal.icon === 'promote'" class="w-7 h-7 text-indigo-600" />
-                                    <ShieldCheck   v-else-if="confirmModal.icon === 'shield'"  class="w-7 h-7 text-violet-600" />
-                                    <Info          v-else class="w-7 h-7 text-blue-500" />
+                                    <AlertTriangle v-if="confirmModal.icon === 'warning'" class="w-7 h-7" />
+                                    <Crown         v-else-if="confirmModal.icon === 'promote'" class="w-7 h-7" />
+                                    <ShieldCheck   v-else-if="confirmModal.icon === 'shield'"  class="w-7 h-7" />
+                                    <Info          v-else class="w-7 h-7" />
                                 </div>
-                                <h3 class="text-base font-bold text-gray-900 text-center">{{ confirmModal.title }}</h3>
-                                <p class="text-sm text-gray-500 text-center mt-2 leading-relaxed">{{ confirmModal.message }}</p>
+                                <h3 class="text-base font-black tracking-tight text-center">{{ confirmModal.title }}</h3>
+                                <p class="text-sm text-blue-100 text-center mt-2 leading-relaxed">{{ confirmModal.message }}</p>
+                                </div>
                             </div>
                             <div class="flex gap-2 px-6 pb-6">
                                 <button
@@ -1846,17 +1844,42 @@ async function saveClientAssignments(staffId) {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
-
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
 .animate-spin { animation: spin 1s linear infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active { transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+.modal-enter-from { opacity: 0; transform: translateY(14px) scale(0.98); }
+.modal-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.modal-leave-to { opacity: 0; transform: scale(0.97); }
 
 .panel-section {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 16px;
 }
+:global(.dark) .panel-section {
+    background: rgba(24, 24, 27, 0.8);
+    border-color: #3f3f46;
+}
+:global(.dark) .panel-section-title { color: #e4e4e7; }
+:global(.dark) .info-label { color: #71717a; }
+:global(.dark) .info-value { color: #e4e4e7; }
+:global(.dark) .edu-row { background: #27272a; border-color: #3f3f46; }
+:global(.dark) .edu-school { color: #e4e4e7; }
 
 .panel-section-title {
     display: flex;

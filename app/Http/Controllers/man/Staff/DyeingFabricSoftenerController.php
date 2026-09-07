@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\Fabric;
-use App\Models\Machine;
-use App\Models\MachineReport;
-use App\Models\ManufacturingInventoryItem;
-use App\Models\SoftenerJob;
+use App\Models\man\Fabric;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
+use App\Models\man\ManufacturingInventoryItem;
+use App\Models\man\SoftenerJob;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +15,13 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
 {
     public function index()
     {
-        $pendingCount = Fabric::where('status', 'softener')->count();
+        $pendingCount = Fabric::where('status', 'softener')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('softener_jobs')
+                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id');
+            })
+            ->count();
         $recentJobs = SoftenerJob::with('fabric')
             ->where('operator_id', $this->staff()->id)
             ->latest()
@@ -33,8 +39,17 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
 
     public function dyeingFabricSoftener()
     {
+        // Only fabrics that are AT the softener stage AND don't already have a
+        // softener job recorded. Once a job is created, the fabric stays at
+        // status 'softener' until the quality checker approves it — so without
+        // this exclusion, it would keep showing up as "pending" here forever.
         $fabrics = Fabric::with('machine', 'salesOrder')
             ->where('status', 'softener')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('softener_jobs')
+                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id');
+            })
             ->get();
 
         $machines = Machine::where('type', 'softening')

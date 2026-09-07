@@ -4,8 +4,8 @@ namespace App\Http\Controllers\inv;
 
 use App\Http\Controllers\Controller;
 use App\Models\inv\Material;
-use App\Models\Warehouse;
-use App\Models\WarehouseStockItem;
+use App\Models\war\Warehouse;
+use App\Models\war\WarehouseStockItem;
 use Inertia\Inertia;
 
 class InvDashboardController extends Controller

@@ -13,7 +13,7 @@ import {
     UserCog, MessageSquare, Navigation, MapPin, Briefcase, Plus, ArrowLeft,
     Paperclip, Loader2, Info, Phone, Mail, Calendar, Tag, Weight, Ruler, Layers,
     ArrowRight, Zap, Activity, DollarSign, Users as UsersIcon, UserCog2, Camera,
-    Sparkles, Palette, Wrench, CheckCircle2, UserPen
+    Sparkles, Palette, Wrench, CheckCircle2, UserPen, Share2
 } from 'lucide-vue-next'
 
 const page = usePage()
@@ -31,6 +31,7 @@ const isScmOpen = ref(false)
 const isWarehouseOpen = ref(false)
 const isInventoryOpen = ref(false)
 const isProOpen = ref(false)
+const isFinOpen = ref(false)
 const isManOpen = ref(false)
 const isOrdOpen = ref(false)
 const isLogisticsOpen = ref(false)
@@ -57,6 +58,7 @@ const toggleScm = () => { isScmOpen.value = !isScmOpen.value }
 const toggleWarehouse = () => { isWarehouseOpen.value = !isWarehouseOpen.value }
 const toggleInventory = () => { isInventoryOpen.value = !isInventoryOpen.value }
 const togglePro = () => { isProOpen.value = !isProOpen.value }
+const toggleFin = () => { isFinOpen.value = !isFinOpen.value }
 const toggleMan = () => { isManOpen.value = !isManOpen.value }
 const toggleOrd = () => { isOrdOpen.value = !isOrdOpen.value }
 const toggleLogistics = () => { isLogisticsOpen.value = !isLogisticsOpen.value }
@@ -271,6 +273,7 @@ const getFilteredCrmChildren = () => {
         { label: 'Approvals', href: route('crm.approval.index'), icon: ClipboardCheck },
         { label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Users },
         { label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle },
+        { label: 'Socials', href: route('crm.socials.index'), icon: Share2 },
         { label: 'Access Control', href: route('crm.access.index'), icon: ShieldCheck },
     ]
     if (user.value?.role === 'CEO') return all
@@ -457,6 +460,22 @@ const getFilteredProChildren = () => {
     return all.filter(child => hasModulePermission('PRO', child.label.toLowerCase()))
 }
 
+const getFilteredFinChildren = () => {
+    const all = [
+        { label: 'Overview', href: route('fin.manager.dashboard'), icon: LayoutDashboard },
+        { label: 'Receivables', href: route('fin.manager.receivables'), icon: HandCoins },
+        { label: 'Payables', href: route('fin.manager.payables'), icon: Receipt },
+        { label: 'Expenses', href: route('fin.manager.expenses'), icon: Wallet },
+        { label: 'Payroll', href: route('fin.manager.payroll'), icon: Users },
+        { label: 'Reports', href: route('fin.manager.reports'), icon: TrendingUp },
+    ]
+    if (user.value?.role === 'CEO') return all
+    if (user.value?.position === 'manager' && user.value?.role === 'FIN') return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('FIN')) return all
+    if (isManufacturingSupervisor.value && grantedModules.value.includes('FIN')) return all
+    return all.filter(child => hasModulePermission('FIN', child.label.toLowerCase()))
+}
+
 // Navigation items computed
 const navItems = computed(() => {
     if (isSupplier.value) {
@@ -523,6 +542,7 @@ const navItems = computed(() => {
         { key: 'WAR', label: 'Warehouse', icon: Warehouse, childrenGetter: getFilteredWarehouseChildren, isOpen: isWarehouseOpen, toggle: toggleWarehouse, condition: hasWarehouseAccess.value },
         { key: 'INV', label: 'Inventory', icon: Boxes, childrenGetter: getFilteredInventoryChildren, isOpen: isInventoryOpen, toggle: toggleInventory, condition: hasInventoryAccess.value },
         { key: 'PRO', label: 'Procurement', icon: ShoppingCart, childrenGetter: getFilteredProChildren, isOpen: isProOpen, toggle: togglePro, condition: canAccessModule('PRO') },
+        { key: 'FIN', label: 'Finance', icon: Wallet, childrenGetter: getFilteredFinChildren, isOpen: isFinOpen, toggle: toggleFin, condition: canAccessModule('FIN') },
     ]
 
     const coreModules = []
@@ -616,14 +636,13 @@ const logoutRoute = computed(() => {
         <nav
             class="fixed top-0 left-0 right-0 z-[60] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-sm h-16 flex items-center justify-between px-4 transition-colors duration-300">
             <div class="flex items-center gap-3">
-                <div :class="isSupplier ? 'bg-emerald-600 shadow-emerald-500/20' : 'bg-blue-600 shadow-blue-500/20'"
-                    class="h-8 w-8 rounded-lg flex items-center justify-center shadow-lg">
+                <div class="animate-logo h-8 w-8 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 shadow-indigo-500/30">
                     <img src="/images/applogo.png" alt="Logo" class="h-4.5 w-4.5 object-contain brightness-0 invert" />
                 </div>
                 <div class="flex flex-col">
                     <span
                         class="text-[14px] font-black tracking-tight text-gray-900 dark:text-white uppercase leading-none">
-                        Monti <span :class="isSupplier ? 'text-emerald-600' : 'text-blue-600'">Textile</span>
+                        Monti <span class="text-indigo-700">Textile</span>
                     </span>
                     <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
                         {{ sidebarLabel }}
@@ -631,7 +650,7 @@ const logoutRoute = computed(() => {
                 </div>
             </div>
             <button @click.stop="isOpen = !isOpen"
-                class="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                class="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
                 <Menu v-if="!isOpen" class="h-6 w-6" />
                 <X v-else class="h-6 w-6" />
             </button>
@@ -661,12 +680,12 @@ const logoutRoute = computed(() => {
                         <!-- Dropdown (level 1) -->
                         <div v-else-if="item.isDropdown" class="space-y-1">
                             <button @click="item.toggle" :class="[
-                                item.isOpen ? 'text-blue-600 bg-white/50 dark:bg-gray-900/50' : 'text-gray-500 dark:text-gray-400',
-                                'w-full flex items-center justify-between px-3 py-3.5 text-[14px] font-bold rounded-xl hover:bg-white/50 dark:hover:bg-gray-900/50 transition-all duration-300'
+                                item.isOpen ? 'text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-500 dark:text-gray-400',
+                                'w-full flex items-center justify-between px-3 py-3.5 text-[14px] font-bold rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-300'
                             ]">
                                 <div class="flex items-center">
-                                    <div :class="[item.isOpen ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-400']"
-                                        class="p-2 rounded-lg mr-3 transition-colors duration-300">
+                                    <div :class="[item.isOpen ? 'bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white shadow-md shadow-indigo-500/25' : 'text-gray-400']"
+                                        class="p-2 rounded-xl mr-3 transition-all duration-300">
                                         <component :is="item.icon" class="h-5 w-5" />
                                     </div>
                                     <span class="truncate tracking-tight">{{ item.label }}</span>
@@ -681,12 +700,12 @@ const logoutRoute = computed(() => {
                                     <!-- Sub-dropdown (level 2) -->
                                     <div v-if="subItem.isDropdown" class="space-y-1">
                                         <button @click="subItem.toggle" :class="[
-                                            subItem.isOpen ? 'text-blue-600 bg-white/50 dark:bg-gray-900/50' : 'text-gray-500 dark:text-gray-400',
-                                            'w-full flex items-center justify-between px-3 py-3 text-[13px] font-bold rounded-xl hover:bg-white/50 dark:hover:bg-gray-900/50 transition-all duration-300'
+                                            subItem.isOpen ? 'text-indigo-700 bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-500 dark:text-gray-400',
+                                            'w-full flex items-center justify-between px-3 py-3 text-[13px] font-bold rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-300'
                                         ]">
                                             <div class="flex items-center">
-                                                <div :class="[subItem.isOpen ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600' : 'text-gray-400']"
-                                                    class="p-1.5 rounded-lg mr-2 transition-colors duration-300">
+                                                <div :class="[subItem.isOpen ? 'bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white shadow-md shadow-indigo-500/25' : 'text-gray-400']"
+                                                    class="p-1.5 rounded-lg mr-2 transition-all duration-300">
                                                     <component :is="subItem.icon" class="h-4 w-4" />
                                                 </div>
                                                 <span class="truncate tracking-tight">{{ subItem.label }}</span>
@@ -697,7 +716,7 @@ const logoutRoute = computed(() => {
                                         <div v-show="subItem.isOpen" class="pl-8 space-y-1">
                                             <Link v-for="link in subItem.children" :key="link.label"
                                                 :href="link.href" @click="handleNavClick"
-                                                :class="[isActive(link.href) ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white']"
+                                                :class="[isActive(link.href) ? 'text-indigo-700' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white']"
                                                 class="flex items-center py-2 text-[12px] font-medium transition-colors">
                                                 <component :is="link.icon" class="h-3.5 w-3.5 mr-2" />
                                                 {{ link.label }}
@@ -708,7 +727,7 @@ const logoutRoute = computed(() => {
                                     <div v-else-if="subItem.isDivider" class="text-[10px] text-gray-400 py-1 px-2">{{ subItem.label }}</div>
                                     <!-- Direct link (level 2) -->
                                     <Link v-else :href="subItem.href" @click="handleNavClick"
-                                        :class="[isActive(subItem.href) ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white']"
+                                        :class="[isActive(subItem.href) ? 'text-indigo-700' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white']"
                                         class="flex items-center py-2.5 text-[13px] font-bold transition-colors">
                                         <component :is="subItem.icon" class="h-4 w-4 mr-3" />
                                         {{ subItem.label }}
@@ -720,20 +739,16 @@ const logoutRoute = computed(() => {
                         <!-- Direct link -->
                         <Link v-else :href="item.href" @click="handleNavClick" :class="[
                             isActive(item.href)
-                                ? isSupplier
-                                    ? 'bg-white dark:bg-gray-900 text-emerald-600 shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-800'
-                                    : 'bg-white dark:bg-gray-900 text-blue-600 shadow-sm ring-1 ring-gray-200/50 dark:ring-gray-800'
-                                : 'text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-900/50 hover:text-gray-900 dark:hover:text-white'
+                                ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white shadow-lg shadow-indigo-500/25'
+                                : 'text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-gray-900 dark:hover:text-white'
                         ]" class="group relative flex items-center justify-between px-3 py-3 text-[14px] font-bold rounded-xl transition-all duration-300">
-                            <div v-if="isActive(item.href)" :class="isSupplier ? 'bg-emerald-600' : 'bg-blue-600'"
-                                class="absolute left-0 top-1/4 bottom-1/4 w-0.5 rounded-r-full"></div>
+                            <div v-if="isActive(item.href)"
+                                class="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full bg-white"></div>
                             <div class="flex items-center relative z-10">
                                 <div :class="[
                                     isActive(item.href)
-                                        ? isSupplier
-                                            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600'
-                                            : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600'
-                                        : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                                        ? 'bg-white/20 text-white'
+                                        : 'text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-300'
                                 ]" class="p-2 rounded-lg transition-colors duration-300 mr-3">
                                     <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
                                 </div>
@@ -750,12 +765,9 @@ const logoutRoute = computed(() => {
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="relative flex-shrink-0">
                             <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="Profile"
-                                class="h-10 w-10 rounded-xl object-cover shadow-lg"
-                                :class="isSupplier ? 'shadow-emerald-500/30' : 'shadow-blue-500/30'" />
-                            <div v-else :class="isSupplier
-                                ? 'from-emerald-600 to-teal-700 shadow-emerald-500/30'
-                                : 'from-blue-600 to-indigo-700 shadow-blue-500/30'"
-                                class="h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white text-sm font-black shadow-lg uppercase">
+                                class="h-10 w-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
+                            <div v-else
+                                class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-500/30 uppercase">
                                 {{ displayInitial }}
                             </div>
                             <div
@@ -769,14 +781,12 @@ const logoutRoute = computed(() => {
                             </p>
                             <div class="flex items-center gap-1 mt-0.5 mb-1">
                                 <Building2 class="h-3 w-3 text-gray-400" />
-                                <span :class="isSupplier ? 'text-emerald-600' : 'text-blue-600'"
-                                    class="text-[9px] font-black uppercase truncate">
+                                <span class="text-indigo-700 text-[9px] font-black uppercase truncate">
                                     {{ displayDepartment }}
                                 </span>
                             </div>
                             <div class="flex items-center gap-1">
-                                <ShieldCheck :class="isSupplier ? 'text-emerald-500' : 'text-blue-500'"
-                                    class="h-3 w-3" />
+                                <ShieldCheck class="h-3 w-3 text-indigo-600" />
                                 <span class="text-[9px] font-black text-gray-400 uppercase truncate">
                                     {{ displayPosition }}
                                 </span>
@@ -798,13 +808,13 @@ const logoutRoute = computed(() => {
                                 @click="switchManufacturingRole(role.manufacturing_role)"
                                 :class="[
                                     activeManufacturingRole === role.manufacturing_role
-                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/30'
-                                        : 'bg-gray-100/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                        ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500/30'
+                                        : 'bg-gray-100/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
                                 ]"
                                 class="w-full text-left text-[11px] font-medium px-2 py-1.5 rounded-lg transition-all">
                                 {{ formatRoleLabel(role.manufacturing_role) }}
                                 <span v-if="activeManufacturingRole === role.manufacturing_role"
-                                    class="float-right text-blue-500">✓</span>
+                                    class="float-right text-indigo-600">✓</span>
                             </button>
                         </div>
                     </div>
@@ -845,6 +855,24 @@ const logoutRoute = computed(() => {
 </template>
 
 <style scoped>
+.animate-logo {
+    animation: logoFloat 4.5s ease-in-out infinite, logoGlow 3.2s ease-in-out infinite;
+    transition: transform 0.3s ease;
+}
+.animate-logo:hover {
+    animation-play-state: paused;
+    transform: scale(1.12) rotate(-8deg);
+}
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-2px) rotate(-4deg); }
+    50% { transform: translateY(1px) rotate(0deg); }
+    75% { transform: translateY(-1px) rotate(4deg); }
+}
+@keyframes logoGlow {
+    0%, 100% { box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.45); }
+    50% { box-shadow: 0 8px 30px -4px rgba(139, 92, 246, 0.7); }
+}
 .custom-scrollbar::-webkit-scrollbar {
     width: 3px;
 }

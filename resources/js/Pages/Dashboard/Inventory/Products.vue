@@ -7,7 +7,7 @@ import {
     Tag, Ruler, Weight, Palette, Clock,
     AlertTriangle, Boxes,
     ChevronDown, Info, Zap, Plus, Trash2,
-    Pencil, Upload, ImageIcon, Check, ImageMinus
+    Pencil, Upload, ImageIcon, Check, ImageMinus, Sparkles
 } from 'lucide-vue-next';
 
 const ChevronRightIcon = ChevronRight;
@@ -370,57 +370,65 @@ const closeModal = () => { selectedProduct.value = null; };
     <Head title="Product Catalog | Monti Textile" />
     <AuthenticatedLayout>
 
-        <div class="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
-            :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'"
-            style="transition: opacity .45s ease, transform .45s ease;">
-            <div>
-                <p class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Monti Textile ERP</p>
-                <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Product Catalog</h1>
-                <p class="text-slate-500 text-sm mt-0.5">Bill of materials, specifications, and raw material breakdown
-                    for every product.</p>
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
+
+        <!-- Hero header -->
+        <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+            <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+            <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+            <div class="relative flex flex-wrap items-center gap-4">
+                <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                    <Package class="h-7 w-7" />
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                        <Sparkles class="h-3.5 w-3.5" /> Inventory · Catalog
+                    </p>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Product Catalog</h1>
+                    <p class="text-sm text-blue-100/90">Bill of materials, specifications, and raw material breakdown for every product.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                        {{ products.length }} Products
+                    </span>
+                    <button @click="showAddProduct = true"
+                        class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 inline-flex items-center gap-2">
+                        <Plus class="w-4 h-4" /> Add Product
+                    </button>
+                </div>
             </div>
-            <div class="flex items-center gap-3 text-sm flex-shrink-0">
-                <span
-                    class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-300">
-                    {{ products.length }} Products
-                </span>
-                <button @click="showAddProduct = true"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold rounded-xl hover:opacity-80 transition shadow-sm">
-                    <Plus class="w-4 h-4" /> Add Product
-                </button>
+
+            <div class="relative mt-6 flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input v-model="searchQuery" type="text" placeholder="Search product, SKU..."
+                        class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition" />
+                </div>
+                <div class="flex gap-2">
+                    <div class="relative">
+                        <select v-model="catFilter"
+                            class="appearance-none rounded-2xl bg-white/15 backdrop-blur px-4 py-3 pr-9 text-xs font-black uppercase tracking-wide text-white ring-1 ring-white/25 outline-none hover:bg-white/25 transition [&>option]:text-gray-900">
+                            <option v-for="c in categories" :key="c">{{ c }}</option>
+                        </select>
+                        <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/70 pointer-events-none" />
+                    </div>
+                    <button v-if="searchQuery || catFilter !== 'All'" @click="searchQuery = ''; catFilter = 'All'"
+                        class="rounded-2xl bg-white/15 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition-all active:scale-95 flex items-center gap-1.5">
+                        <X class="w-3.5 h-3.5" /> {{ filtered.length }}
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="flex flex-wrap gap-3 mb-6 items-center" :class="isLoaded ? 'opacity-100' : 'opacity-0'"
-            style="transition: opacity .5s ease .1s;">
-            <div class="relative flex-1 min-w-[200px] max-w-xs">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input v-model="searchQuery" type="text" placeholder="Search product, SKU..."
-                    class="pl-9 pr-4 py-2.5 w-full text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-slate-200 placeholder-slate-400" />
-            </div>
-            <div class="relative">
-                <select v-model="catFilter"
-                    class="appearance-none pl-3 pr-8 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-slate-200 font-semibold">
-                    <option v-for="c in categories" :key="c">{{ c }}</option>
-                </select>
-                <ChevronDown
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
-            <div v-if="searchQuery || catFilter !== 'All'" class="flex items-center gap-1.5">
-                <span class="text-xs text-slate-400 font-medium">{{ filtered.length }} results</span>
-                <button @click="searchQuery = ''; catFilter = 'All'"
-                    class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                    <X class="w-3.5 h-3.5" />
-                </button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <TransitionGroup name="card" tag="div" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             <div v-for="(product, i) in filtered" :key="product.id"
-                class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-lg hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-300 cursor-pointer flex flex-col"
-                :style="`transition-delay: ${i * 50}ms`"
-                :class="isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'"
+                class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 cursor-pointer flex flex-col"
+                :style="`transition-delay: ${Math.min(i * 40, 400)}ms`"
                 @click="openProduct(product)">
+                <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
+                <div class="absolute left-0 top-8 bottom-8 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300 z-10" />
 
                 <div class="relative overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
 
@@ -539,24 +547,29 @@ const closeModal = () => { selectedProduct.value = null; };
             </div>
 
             <div v-if="filtered.length === 0"
-                class="col-span-full flex flex-col items-center justify-center py-24 text-slate-400">
-                <Package class="w-12 h-12 mb-4 opacity-30" />
-                <p class="font-bold text-slate-500">No products match your filters.</p>
+                class="col-span-full animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                    <Package class="h-9 w-9 text-indigo-400" />
+                </div>
+                <p class="text-sm font-black text-gray-700 dark:text-gray-200">No products match your filters.</p>
+                <p class="text-xs text-gray-400 mt-1">Try a different search or category.</p>
                 <button @click="searchQuery = ''; catFilter = 'All'"
-                    class="mt-3 text-sm text-blue-600 font-bold hover:underline">Clear filters</button>
+                    class="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition active:scale-95">Clear filters</button>
+            </div>
+        </TransitionGroup>
             </div>
         </div>
 
         <!-- Modal: Product Detail -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="selectedProduct"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm overflow-y-auto"
                 @click.self="closeModal">
                 <div
-                    class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-4xl">
+                    class="modal-panel relative overflow-hidden bg-white/95 dark:bg-zinc-900/95 backdrop-blur rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 w-full max-w-4xl">
 
-                    <div class="h-1.5 w-full rounded-t-2xl"
-                        :style="`background-color: ${(selectedProduct.colors && selectedProduct.colors.length > 0) ? (Array.isArray(selectedProduct.colors) ? selectedProduct.colors[0].hex : (JSON.parse(selectedProduct.colors)[0]?.hex || '#64748b')) : (selectedProduct.colorHex || '#64748b')}`" />
+                    <div class="h-1.5 w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800" />
 
                     <div v-if="selectedProduct.images && selectedProduct.images.length"
                         class="flex gap-2 p-4 border-b border-slate-100 dark:border-slate-800 overflow-x-auto">
@@ -622,22 +635,25 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- Modal: Add Product -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="showAddProduct"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm overflow-y-auto"
                 @click.self="showAddProduct = false; resetAddForm()">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md my-auto">
+                <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 w-full max-w-md my-auto overflow-hidden">
 
-                    <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-black text-slate-900 dark:text-white">Add New Product</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Define product details and available colors.</p>
+                    <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex items-center justify-between">
+                        <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
+                        <div class="relative">
+                            <h3 class="text-lg font-black tracking-tight">Add New Product</h3>
+                            <p class="text-xs text-blue-100/90 mt-0.5">Define product details and available colors.</p>
                         </div>
                         <button @click="showAddProduct = false; resetAddForm()"
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            class="relative p-2 rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition">
                             <X class="w-4 h-4" />
                         </button>
                     </div>
@@ -734,22 +750,25 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- Modal: Edit Product -->
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="showEditProduct"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm overflow-y-auto"
                 @click.self="showEditProduct = false">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md my-auto">
+                <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 w-full max-w-md my-auto overflow-hidden">
 
-                    <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-black text-slate-900 dark:text-white">Edit Product</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Manage details and color availability.</p>
+                    <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex items-center justify-between">
+                        <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
+                        <div class="relative">
+                            <h3 class="text-lg font-black tracking-tight">Edit Product</h3>
+                            <p class="text-xs text-blue-100/90 mt-0.5">Manage details and color availability.</p>
                         </div>
                         <button @click="showEditProduct = false"
-                            class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            class="relative p-2 rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition">
                             <X class="w-4 h-4" />
                         </button>
                     </div>
@@ -868,12 +887,14 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <!-- Confirmation Modals -->
         <Teleport to="body">
-            <div v-if="showEditConfirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" @click.self="showEditConfirm = false">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <Transition name="modal">
+            <div v-if="showEditConfirm" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="showEditConfirm = false">
+                <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-xl w-full max-w-sm overflow-hidden">
                     <div class="p-6 text-center">
                         <div class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-4">
                             <Info class="w-6 h-6" />
@@ -892,11 +913,13 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="productToDelete" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="productToDelete = null">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div class="p-6 text-center">
                         <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-900 shadow-sm">
                             <AlertTriangle class="w-8 h-8" />
@@ -917,11 +940,13 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="colorToDeleteInfo" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="colorToDeleteInfo = null">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div class="p-6 text-center">
                         <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-900 shadow-sm">
                             <Palette class="w-8 h-8" />
@@ -941,11 +966,13 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
         <Teleport to="body">
+            <Transition name="modal">
             <div v-if="imageToDelete" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="imageToDelete = null">
-                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
                     <div class="p-6 text-center">
                         <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-slate-900 shadow-sm">
                             <ImageMinus class="w-8 h-8" />
@@ -966,12 +993,32 @@ const closeModal = () => { selectedProduct.value = null; };
                     </div>
                 </div>
             </div>
+            </Transition>
         </Teleport>
 
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.25s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-active .modal-panel, .modal-leave-active .modal-panel { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from .modal-panel { opacity: 0; transform: translateY(20px) scale(0.97); }
+.modal-leave-to .modal-panel { opacity: 0; transform: translateY(12px) scale(0.98); }
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

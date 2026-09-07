@@ -1,213 +1,263 @@
 <template>
     <Head title="Credit Management - ECO Module" />
     <AuthenticatedLayout>
-        <div class="max-w-[1600px] mx-auto space-y-10 p-4 lg:p-10">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
 
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-[0.2em]">
-                        <CreditCard class="h-3.5 w-3.5" />
-                        Financial Risk Monitoring
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <CreditCard class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> ECO · Financial Risk Monitoring
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Credit Ledger</h1>
+                            <p class="text-sm text-blue-100/90">Monitor outstanding balances, approve reviews, and view order history.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
+                                <span class="h-1.5 w-1.5 rounded-full bg-rose-300 animate-pulse" /> ₱{{ formatCurrency(totalOutstanding) }} outstanding
+                            </span>
+                            <button @click="refreshData" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition active:scale-95">
+                                <RefreshCw class="h-4 w-4" />
+                            </button>
+                        </div>
                     </div>
-                    <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">
-                        Credit <span class="text-indigo-600">Ledger</span>
-                    </h1>
-                    <p class="text-sm font-medium text-gray-500 italic">
-                        Monitor client outstanding balances, approve pending credit reviews, and view order history.
-                    </p>
-                </div>
-                <button @click="refreshData" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                    <RefreshCw class="h-5 w-5 text-gray-500" />
-                </button>
-            </div>
 
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="bg-white dark:bg-gray-900 p-7 rounded-[2.5rem] border border-gray-100 dark:border-gray-800">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Outstanding</p>
-                    <p class="text-3xl font-black text-rose-600 mt-1">₱{{ formatCurrency(totalOutstanding) }}</p>
+                    <!-- Search + filters -->
+                    <div class="relative mt-6 flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input v-model="searchTerm" type="text" placeholder="Search by company name..."
+                                class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition" />
+                        </div>
+                        <div class="flex gap-2">
+                            <button v-for="key in ['all','good','risk']" :key="key" @click="filterStatus = key"
+                                :class="filterStatus === key ? 'bg-white text-indigo-700 shadow-lg scale-105' : 'bg-white/15 text-white hover:bg-white/25'"
+                                class="rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide backdrop-blur transition-all duration-200 active:scale-95">
+                                {{ key === 'all' ? 'All' : key === 'good' ? 'Good Payers' : 'At Risk' }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="bg-white dark:bg-gray-900 p-7 rounded-[2.5rem] border border-gray-100 dark:border-gray-800">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Good Payers</p>
-                    <p class="text-3xl font-black text-emerald-600 mt-1">{{ goodPayersCount }}</p>
-                </div>
-                <div class="bg-white dark:bg-gray-900 p-7 rounded-[2.5rem] border border-gray-100 dark:border-gray-800">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">At Risk</p>
-                    <p class="text-3xl font-black text-amber-600 mt-1">{{ atRiskCount }}</p>
-                </div>
-                <div class="bg-white dark:bg-gray-900 p-7 rounded-[2.5rem] border border-gray-100 dark:border-gray-800">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Clients</p>
-                    <p class="text-3xl font-black text-gray-900 dark:text-white mt-1">{{ clients.length }}</p>
-                </div>
-            </div>
 
-            <!-- Pending Credit Reviews Section -->
-            <div v-if="pendingCreditReviews.length > 0" class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-amber-200 dark:border-amber-800 shadow-sm overflow-hidden">
-                <div class="px-8 py-5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
-                    <div class="flex items-center gap-2">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="animate-fade-up group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 p-5 overflow-hidden" style="animation-delay:80ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-rose-400/20 to-orange-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-rose-500 to-orange-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 via-red-600 to-orange-600 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <CreditCard class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Total Outstanding</p>
+                                <h3 class="text-2xl font-black text-rose-600 tracking-tight">₱{{ formatCurrency(totalOutstanding) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="animate-fade-up group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 p-5 overflow-hidden" style="animation-delay:160ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-400/20 to-teal-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <CheckCircle class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Good Payers</p>
+                                <h3 class="text-3xl font-black text-emerald-600 tracking-tight">{{ goodPayersCount }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="animate-fade-up group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 p-5 overflow-hidden" style="animation-delay:240ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-amber-500 to-orange-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <AlertCircle class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">At Risk</p>
+                                <h3 class="text-3xl font-black text-amber-600 tracking-tight">{{ atRiskCount }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="animate-fade-up group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 p-5 overflow-hidden" style="animation-delay:320ms">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                                <Building2 class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Total Clients</p>
+                                <h3 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{{ clients.length }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Credit Reviews Section -->
+                <div v-if="pendingCreditReviews.length > 0" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-amber-200 dark:border-amber-800/50 overflow-hidden hover:shadow-xl transition-shadow duration-300" style="animation-delay:120ms">
+                    <div class="p-6 border-b border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-900/20 flex items-center gap-2">
                         <AlertCircle class="h-5 w-5 text-amber-600" />
-                        <h2 class="text-sm font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                            Pending Credit Review ({{ pendingCreditReviews.length }})
-                        </h2>
+                        <h2 class="text-sm font-black uppercase tracking-widest text-amber-800 dark:text-amber-300">Pending Credit Review ({{ pendingCreditReviews.length }})</h2>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50/50 dark:bg-gray-800/30 text-[10px] font-black uppercase text-gray-400 tracking-[0.15em]">
-                            <tr>
-                                <th class="px-8 py-5">PO Number</th>
-                                <th class="px-8 py-5">Client</th>
-                                <th class="px-8 py-5 text-right">Total Amount</th>
-                                <th class="px-8 py-5 text-center">Order Date</th>
-                                <th class="px-8 py-5 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                            <tr v-for="order in pendingCreditReviews" :key="order.id" class="group hover:bg-gray-50/50 transition-all">
-                                <td class="px-8 py-6">
-                                    <span class="font-mono text-sm font-black text-gray-900 dark:text-white">{{ order.po_number }}</span>
-                                </td>
-                                <td class="px-8 py-6">
-                                    <div class="flex items-center gap-2">
-                                        <div class="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                                            <Building2 class="h-4 w-4 text-indigo-600" />
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-zinc-800">
+                                <tr>
+                                    <th class="px-6 py-4">PO Number</th>
+                                    <th class="px-6 py-4">Client</th>
+                                    <th class="px-6 py-4 text-right">Total Amount</th>
+                                    <th class="px-6 py-4 text-center">Order Date</th>
+                                    <th class="px-6 py-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                <tr v-for="order in pendingCreditReviews" :key="order.id" class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <span class="font-mono text-sm font-black text-gray-900 dark:text-white">{{ order.po_number }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20"><Building2 class="h-4 w-4 text-indigo-600" /></span>
+                                            <span class="text-sm font-bold text-gray-900 dark:text-white">{{ order.client?.company_name }}</span>
                                         </div>
-                                        <span class="text-sm font-bold">{{ order.client?.company_name }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-8 py-6 text-right font-black text-gray-900">₱{{ formatCurrency(order.total_amount) }}</td>
-                                <td class="px-8 py-6 text-center text-xs text-gray-500">{{ formatDate(order.created_at) }}</td>
-                                <td class="px-8 py-6 text-center">
-                                    <button @click="approveCreditReview(order)" :disabled="approving[order.id]"
-                                        class="inline-flex items-center gap-1 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-emerald-700 transition disabled:opacity-50">
-                                        <CheckCircle v-if="!approving[order.id]" class="h-3 w-3" />
-                                        <Loader2 v-else class="h-3 w-3 animate-spin" />
-                                        {{ approving[order.id] ? 'Approving...' : 'Approve' }}
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Clients Table -->
-            <div class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
-                <div class="p-8 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center">
-                    <div class="relative flex-1 lg:w-96 group">
-                        <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input v-model="searchTerm" type="text" placeholder="Search by company name..."
-                            class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-gray-100 dark:border-gray-800 dark:bg-gray-950 text-[10px] font-black uppercase tracking-widest">
-                    </div>
-                    <div class="flex gap-2 ml-4">
-                        <select v-model="filterStatus"
-                            class="px-4 py-3 rounded-2xl border-gray-100 dark:border-gray-800 dark:bg-gray-950 text-[10px] font-black uppercase">
-                            <option value="all">All Clients</option>
-                            <option value="good">Good Payers</option>
-                            <option value="risk">At Risk</option>
-                        </select>
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-black text-gray-900 dark:text-white">₱{{ formatCurrency(order.total_amount) }}</td>
+                                    <td class="px-6 py-4 text-center text-xs text-gray-500 dark:text-gray-400">{{ formatDate(order.created_at) }}</td>
+                                    <td class="px-6 py-4 text-center">
+                                        <button @click="approveCreditReview(order)" :disabled="approving[order.id]"
+                                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 active:scale-95 transition disabled:opacity-50 shadow-lg shadow-emerald-500/20">
+                                            <CheckCircle v-if="!approving[order.id]" class="h-3 w-3" />
+                                            <Loader2 v-else class="h-3 w-3 animate-spin" />
+                                            {{ approving[order.id] ? 'Approving...' : 'Approve' }}
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50/50 dark:bg-gray-800/30 text-[10px] font-black uppercase text-gray-400 tracking-[0.15em]">
-                            <tr>
-                                <th class="px-8 py-5">Client</th>
-                                <th class="px-8 py-5 text-right">Outstanding Balance</th>
-                                <th class="px-8 py-5 text-center">Payment Standing</th>
-                                <th class="px-8 py-5 text-center">Total Orders</th>
-                                <th class="px-8 py-5 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
-                            <tr v-for="client in filteredClients" :key="client.id" class="group hover:bg-gray-50/50 transition-all">
-                                <td class="px-8 py-6">
-                                    <div class="flex items-center gap-4">
-                                        <div class="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                            <Building2 class="h-5 w-5" />
+                <!-- Clients Table -->
+                <div class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-xl transition-shadow duration-300" style="animation-delay:200ms">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 flex items-center gap-2">
+                        <Building2 class="h-5 w-5 text-indigo-600" />
+                        <h2 class="text-sm font-black uppercase tracking-widest">Client Balances</h2>
+                        <span class="ml-auto rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[11px] font-black px-2.5 py-1">{{ filteredClients.length }} showing</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-[10px] font-black uppercase text-gray-400 tracking-widest border-b border-gray-100 dark:border-zinc-800">
+                                <tr>
+                                    <th class="px-6 py-4">Client</th>
+                                    <th class="px-6 py-4 text-right">Outstanding Balance</th>
+                                    <th class="px-6 py-4 text-center">Payment Standing</th>
+                                    <th class="px-6 py-4 text-center">Total Orders</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                <tr v-for="client in filteredClients" :key="client.id" class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 flex items-center justify-center text-white font-black shadow-lg uppercase">
+                                                {{ (client.company_name ?? '?').charAt(0) }}
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-black text-gray-900 dark:text-white">{{ client.company_name }}</p>
+                                                <p class="text-[10px] font-bold text-gray-400">{{ client.contact_person }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="text-sm font-black text-gray-900 dark:text-white">{{ client.company_name }}</p>
-                                            <p class="text-[10px] font-bold text-gray-400">{{ client.contact_person }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-8 py-6 text-right">
-                                    <span class="text-lg font-black text-rose-600">₱{{ formatCurrency(client.outstanding_balance || 0) }}</span>
-                                </td>
-                                <td class="px-8 py-6 text-center">
-                                    <span :class="client.is_good_payer ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
-                                        class="px-3 py-1 rounded-full text-[9px] font-black uppercase">
-                                        {{ client.is_good_payer ? 'Good Payer' : 'At Risk' }}
-                                    </span>
-                                </td>
-                                <td class="px-8 py-6 text-center font-bold text-gray-700">{{ client.orders_count || 0 }}</td>
-                                <td class="px-8 py-6 text-right">
-                                    <button @click="openHistoryModal(client)" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 hover:text-indigo-600 transition">
-                                        <History class="h-4 w-4" />
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr v-if="filteredClients.length === 0">
-                                <td colspan="5" class="px-8 py-20 text-center text-gray-400 uppercase font-black italic">
-                                    No clients found.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <span class="text-lg font-black text-rose-600">₱{{ formatCurrency(client.outstanding_balance || 0) }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span :class="client.is_good_payer ? 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' : 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'"
+                                            class="px-2.5 py-1 rounded-full ring-1 text-[9px] font-black uppercase inline-flex items-center gap-1">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {{ client.is_good_payer ? 'Good Payer' : 'At Risk' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center font-bold text-gray-700 dark:text-gray-300">{{ client.orders_count || 0 }}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button @click="openHistoryModal(client)" class="p-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 hover:bg-indigo-600 hover:text-white transition active:scale-95">
+                                            <History class="h-4 w-4" />
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="filteredClients.length === 0">
+                                    <td colspan="5" class="px-6 py-12 text-center">
+                                        <Search class="mx-auto h-10 w-10 text-gray-200 dark:text-zinc-700 animate-bounce-soft" />
+                                        <p class="mt-2 text-sm font-bold text-gray-400">No clients found.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+
+            <!-- Order History Modal -->
+            <Teleport to="body">
+                <Transition name="modal">
+                    <div v-if="showHistoryModal && selectedClient" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showHistoryModal = false">
+                        <div class="bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-pop">
+                            <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex justify-between items-center">
+                                <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                                <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                                <div class="relative">
+                                    <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100"><History class="h-3.5 w-3.5" /> Order History</p>
+                                    <h3 class="text-xl font-black tracking-tight">{{ selectedClient.company_name }}</h3>
+                                </div>
+                                <button @click="showHistoryModal = false" class="relative p-2 bg-white/10 rounded-xl hover:bg-white/20 transition"><X class="h-5 w-5" /></button>
+                            </div>
+                            <div class="p-6 overflow-y-auto">
+                                <div class="mb-4 p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-2xl flex flex-wrap justify-between gap-2">
+                                    <div><span class="text-sm text-gray-500 dark:text-gray-400">Outstanding:</span> <span class="font-black text-rose-600">₱{{ formatCurrency(selectedClient.outstanding_balance) }}</span></div>
+                                    <div><span class="text-sm text-gray-500 dark:text-gray-400">Status:</span> <span :class="selectedClient.is_good_payer ? 'text-emerald-600' : 'text-amber-600'" class="font-black inline-flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ selectedClient.is_good_payer ? 'Good Payer' : 'At Risk' }}</span></div>
+                                </div>
+                                <TransitionGroup name="card" tag="div" class="space-y-3">
+                                    <div v-for="order in selectedClient.orders" :key="order.id" class="rounded-2xl border border-gray-100 dark:border-zinc-800 p-4 hover:shadow-lg hover:-translate-y-0.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <p class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ order.po_number }}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(order.created_at) }}</p>
+                                            </div>
+                                            <span :class="order.status === 'approved' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30' : 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30'" class="px-2.5 py-1 rounded-full ring-1 text-[9px] font-black uppercase inline-flex items-center gap-1">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {{ order.status }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-2 flex justify-between items-center">
+                                            <span class="text-sm text-gray-600 dark:text-gray-300">Total: <span class="font-black text-gray-900 dark:text-white">₱{{ formatCurrency(order.total_amount) }}</span></span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ order.items_count || 0 }} items</span>
+                                        </div>
+                                    </div>
+                                </TransitionGroup>
+                                <div v-if="!selectedClient.orders || selectedClient.orders.length === 0" class="text-center py-8 text-gray-400">
+                                    <p class="text-sm font-bold">No orders found for this client.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Transition>
+            </Teleport>
+
+            <Transition name="toast">
+                <div v-if="toast.show" class="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-2xl shadow-lg text-white font-bold text-sm"
+                    :class="toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'">
+                    {{ toast.message }}
+                </div>
+            </Transition>
         </div>
-
-        <!-- Order History Modal -->
-        <Teleport to="body">
-            <div v-if="showHistoryModal && selectedClient" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showHistoryModal = false">
-                <div class="bg-white dark:bg-gray-900 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-                    <div class="px-8 py-6 bg-indigo-600 text-white flex justify-between items-center">
-                        <div>
-                            <h3 class="text-xl font-black uppercase tracking-tighter">Order History</h3>
-                            <p class="text-sm opacity-90">{{ selectedClient.company_name }}</p>
-                        </div>
-                        <button @click="showHistoryModal = false" class="p-2 bg-white/10 rounded-xl hover:bg-white/20"><X class="h-5 w-5" /></button>
-                    </div>
-                    <div class="p-6 overflow-y-auto">
-                        <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl flex justify-between">
-                            <div><span class="text-sm text-gray-500">Outstanding:</span> <span class="font-black text-rose-600">₱{{ formatCurrency(selectedClient.outstanding_balance) }}</span></div>
-                            <div><span class="text-sm text-gray-500">Status:</span> <span :class="selectedClient.is_good_payer ? 'text-emerald-600' : 'text-amber-600'" class="font-black">{{ selectedClient.is_good_payer ? 'Good Payer' : 'At Risk' }}</span></div>
-                        </div>
-                        <div class="space-y-3">
-                            <div v-for="order in selectedClient.orders" :key="order.id" class="border rounded-xl p-4">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="font-mono text-sm font-bold">{{ order.po_number }}</p>
-                                        <p class="text-xs text-gray-500">{{ formatDate(order.created_at) }}</p>
-                                    </div>
-                                    <span :class="order.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'" class="px-2 py-1 rounded text-[9px] font-black uppercase">
-                                        {{ order.status }}
-                                    </span>
-                                </div>
-                                <div class="mt-2 flex justify-between items-center">
-                                    <span class="text-sm">Total: <span class="font-black">₱{{ formatCurrency(order.total_amount) }}</span></span>
-                                    <span class="text-xs text-gray-500">{{ order.items_count || 0 }} items</span>
-                                </div>
-                            </div>
-                            <div v-if="!selectedClient.orders || selectedClient.orders.length === 0" class="text-center py-8 text-gray-400">
-                                No orders found for this client.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
-
-        <Transition name="toast">
-            <div v-if="toast.show" class="fixed bottom-8 right-8 z-50 px-6 py-3 rounded-xl shadow-lg text-white font-bold text-sm"
-                :class="toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'">
-                {{ toast.message }}
-            </div>
-        </Transition>
     </AuthenticatedLayout>
 </template>
 
@@ -215,7 +265,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { CreditCard, RefreshCw, Search, Building2, History, X, AlertCircle, CheckCircle, Loader2 } from 'lucide-vue-next';
+import { CreditCard, RefreshCw, Search, Building2, History, X, AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-vue-next';
 
 const props = defineProps({
     clients: { type: Array, default: () => [] },
@@ -292,14 +342,24 @@ const refreshData = () => {
 </script>
 
 <style scoped>
-.tracking-tighter {
-    letter-spacing: -0.05em;
-}
-.toast-enter-active, .toast-leave-active {
-    transition: all 0.3s ease;
-}
-.toast-enter-from, .toast-leave-to {
-    opacity: 0;
-    transform: translateY(20px);
-}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.25s ease; }
+.modal-enter-active > div, .modal-leave-active > div { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from > div, .modal-leave-to > div { opacity: 0; transform: scale(0.95) translateY(10px); }
+.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
 </style>

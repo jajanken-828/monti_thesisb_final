@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Applicant;
-use App\Models\User;
+use App\Models\hrm\Applicant;
+use App\Models\core\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

@@ -41,10 +41,27 @@ const props = defineProps({
         default: () => ({}),
     },
 });
-console.log(props.applicants);
 
-// Check if user can edit applications (add/accept/reject)
-const canEdit = computed(() => props.permissions?.applications === 'edit');
+const page = usePage();
+const user = page.props.auth.user;
+
+// ----- FIXED canEdit: uses page_permissions and role/position fallback -----
+const canEdit = computed(() => {
+    // 1. Check explicit edit permission on the 'application' page
+    const perms = user?.page_permissions || [];
+    const hasPerm = perms.some(
+        p => p.module === 'HRM' && p.page === 'application' && p.permission_level === 'edit'
+    );
+    if (hasPerm) return true;
+
+    // 2. Fallback: HRM manager has full edit rights
+    if (user?.role === 'HRM' && user?.position === 'manager') return true;
+
+    // 3. CEO also has edit rights (already covered by CEO bypass in middleware)
+    if (user?.role === 'CEO') return true;
+
+    return false;
+});
 
 // Toast notification
 const showToast = ref(false);
@@ -61,7 +78,6 @@ const triggerToast = (msg, type = "success") => {
 };
 
 // Flash messages from server
-const page = usePage();
 if (page.props.flash?.message) {
     triggerToast(page.props.flash.message);
 }

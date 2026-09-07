@@ -1,101 +1,239 @@
-<script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
-import { 
-    Factory, 
-    ListChecks, 
-    Clock, 
-    CheckCircle2, 
-    AlertCircle,
-    TrendingUp
-} from 'lucide-vue-next';
-
-const props = defineProps({
-    productions: Array,
-    auth: Object
-});
-</script>
-
 <template>
-    <Head title="Production Tracking" />
-
     <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-black text-xl text-gray-800 dark:text-white leading-tight uppercase tracking-tight">
-                Order Production Status
-            </h2>
-        </template>
+        <Head title="Production Tracking" />
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-16">
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white dark:bg-zinc-900 overflow-hidden shadow-sm sm:rounded-2xl border border-gray-100 dark:border-zinc-800 p-6">
-                    <div class="flex items-center justify-between mb-8">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                <Factory class="w-6 h-6 text-orange-600" />
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Active Production Lines</h3>
-                                <p class="text-sm text-gray-500">Monitor textile processing stages from Knitting to Packaging.</p>
-                            </div>
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <Factory class="h-7 w-7" />
                         </div>
-                        <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-700">
-                            <ListChecks class="w-4 h-4 text-zinc-400" />
-                            <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Live Updates</span>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> ORD · Manufacturing
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Production Tracking</h1>
+                            <p class="text-sm text-blue-100/90">Monitor textile processing stages from Knitting to Packaging</p>
+                        </div>
+                        <!-- Live badge -->
+                        <div class="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                            <span class="h-2 w-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                            Live Updates
                         </div>
                     </div>
 
-                    <div v-if="productions && productions.length > 0" class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-zinc-100 dark:border-zinc-800">
-                                    <th class="py-4 px-2 text-[11px] font-black text-zinc-400 uppercase tracking-widest">Order Info</th>
-                                    <th class="py-4 px-2 text-[11px] font-black text-zinc-400 uppercase tracking-widest">Progress</th>
-                                    <th class="py-4 px-2 text-[11px] font-black text-zinc-400 uppercase tracking-widest">Status</th>
-                                    <th class="py-4 px-2 text-[11px] font-black text-zinc-400 uppercase tracking-widest text-right">Start Date</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-zinc-50 dark:divide-zinc-800/50">
-                                <tr v-for="item in productions" :key="item.id" class="group hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors">
-                                    <td class="py-4 px-2">
-                                        <div class="font-bold text-zinc-900 dark:text-white text-sm">{{ item.po_number }}</div>
-                                        <div class="text-xs text-zinc-500 font-medium">{{ item.client_name }}</div>
-                                    </td>
-                                    <td class="py-4 px-2 w-1/3">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex-1 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                                <div 
-                                                    class="h-full bg-orange-500 rounded-full transition-all duration-1000" 
-                                                    :style="{ width: item.progress + '%' }"
-                                                ></div>
-                                            </div>
-                                            <span class="text-xs font-black text-zinc-700 dark:text-zinc-300">{{ item.progress }}%</span>
-                                        </div>
-                                        <div class="text-[10px] text-zinc-400 mt-1 uppercase font-bold tracking-tighter">
-                                            {{ item.completed_quantity }} / {{ item.total_quantity }} Units Done
-                                        </div>
-                                    </td>
-                                    <td class="py-4 px-2">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                                            <TrendingUp class="w-3 h-3 mr-1" />
-                                            {{ item.status }}
-                                        </span>
-                                    </td>
-                                    <td class="py-4 px-2 text-right">
-                                        <div class="text-xs font-bold text-zinc-500 dark:text-zinc-400">{{ item.created_at }}</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div v-else class="text-center py-20">
-                        <Clock class="w-12 h-12 text-gray-300 mx-auto mb-4 animate-pulse" />
-                        <p class="text-gray-500 italic font-medium">No active production batches found.</p>
-                        <p class="text-xs text-gray-400 mt-1 uppercase tracking-widest">New orders will appear here once pushed from ECO center.</p>
+                    <!-- Summary pills -->
+                    <div class="relative mt-6 flex flex-wrap items-center gap-2 text-xs font-black">
+                        <span class="rounded-full bg-white/15 px-3 py-1.5 ring-1 ring-white/25 backdrop-blur">{{ productions.length }} batch{{ productions.length !== 1 ? 'es' : '' }}</span>
                     </div>
                 </div>
+
+                <!-- Content: Table on desktop, Cards on mobile -->
+                <div v-if="productions.length > 0">
+
+                    <!-- ── MOBILE CARDS (hidden on md+) ── -->
+                    <TransitionGroup name="card" tag="div" class="flex flex-col gap-4 md:hidden">
+                        <div
+                            v-for="(item, i) in productions"
+                            :key="item.id"
+                            :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 overflow-hidden"
+                        >
+                            <!-- hover glow -->
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <!-- Card accent bar -->
+                            <div :class="progressBarColor(item.status)" class="h-1 w-full"></div>
+
+                            <div class="p-5">
+                                <!-- Header row -->
+                                <div class="flex items-start justify-between gap-2 mb-3">
+                                    <div class="min-w-0">
+                                        <p class="font-black text-gray-900 dark:text-white text-sm tracking-tight">{{ item.order_number }}</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300 font-medium mt-0.5 truncate">{{ item.client_name }}</p>
+                                        <p class="text-xs text-gray-400 truncate">{{ item.product_name }}</p>
+                                    </div>
+                                    <span
+                                        class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wide border flex-shrink-0 flex items-center gap-1"
+                                        :class="statusBadge(item.status)"
+                                    ><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ formatStatus(item.status) }}</span>
+                                </div>
+
+                                <!-- Progress Section -->
+                                <div class="mb-3">
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Progress</span>
+                                        <span class="text-indigo-600 dark:text-indigo-300 font-black text-sm tabular-nums">{{ item.progress }}%</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                        <div
+                                            class="h-full rounded-full transition-all duration-1000"
+                                            :class="progressBarColor(item.status)"
+                                            :style="{ width: item.progress + '%' }"
+                                        ></div>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-1 font-bold uppercase tracking-wider">
+                                        {{ item.completed_quantity }} / {{ item.total_quantity }} Units
+                                    </p>
+                                </div>
+
+                                <!-- Footer row -->
+                                <div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-zinc-800">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Started</span>
+                                    <span class="text-xs font-semibold text-gray-600 dark:text-gray-300">{{ item.created_at }}</span>
+                                </div>
+                            </div>
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
+                        </div>
+                    </TransitionGroup>
+
+                    <!-- ── DESKTOP TABLE (hidden on mobile) ── -->
+                    <div class="animate-fade-up hidden md:block bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300 overflow-hidden" style="animation-delay: 100ms">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-gray-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-800/40">
+                                        <th class="py-3.5 px-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Order</th>
+                                        <th class="py-3.5 px-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Client / Product</th>
+                                        <th class="py-3.5 px-5 text-[10px] font-black text-gray-400 uppercase tracking-widest w-1/3">Progress</th>
+                                        <th class="py-3.5 px-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                        <th class="py-3.5 px-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Started</th>
+                                    </tr>
+                                </thead>
+                                <TransitionGroup name="card" tag="tbody" class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                    <tr
+                                        v-for="item in productions"
+                                        :key="item.id"
+                                        class="group hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-colors"
+                                    >
+                                        <!-- Order Number -->
+                                        <td class="py-4 px-5">
+                                            <div class="flex items-center gap-2.5">
+                                                <div :class="progressBarColor(item.status)" class="w-1 h-8 rounded-full flex-shrink-0"></div>
+                                                <span class="font-black text-gray-900 dark:text-white text-sm">{{ item.order_number }}</span>
+                                            </div>
+                                        </td>
+
+                                        <!-- Client / Product -->
+                                        <td class="py-4 px-5">
+                                            <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ item.client_name }}</p>
+                                            <p class="text-xs text-gray-400 mt-0.5">{{ item.product_name }}</p>
+                                        </td>
+
+                                        <!-- Progress -->
+                                        <td class="py-4 px-5">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex-1 h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        class="h-full rounded-full transition-all duration-1000"
+                                                        :class="progressBarColor(item.status)"
+                                                        :style="{ width: item.progress + '%' }"
+                                                    ></div>
+                                                </div>
+                                                <span class="text-sm font-black text-indigo-600 dark:text-indigo-300 tabular-nums w-10 text-right flex-shrink-0">{{ item.progress }}%</span>
+                                            </div>
+                                            <p class="text-[10px] text-gray-400 mt-1.5 font-bold uppercase tracking-wider">
+                                                {{ item.completed_quantity }} / {{ item.total_quantity }} Units
+                                            </p>
+                                        </td>
+
+                                        <!-- Status -->
+                                        <td class="py-4 px-5">
+                                            <span
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide border"
+                                                :class="statusBadge(item.status)"
+                                            >
+                                                <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                                                {{ formatStatus(item.status) }}
+                                            </span>
+                                        </td>
+
+                                        <!-- Date -->
+                                        <td class="py-4 px-5 text-right">
+                                            <span class="text-xs font-semibold text-gray-400">{{ item.created_at }}</span>
+                                        </td>
+                                    </tr>
+                                </TransitionGroup>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="animate-fade-up flex flex-col items-center justify-center py-20 text-center bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                    <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 dark:to-violet-900/20 rounded-full mb-4 animate-bounce-soft">
+                        <Factory class="h-9 w-9 text-indigo-400" />
+                    </div>
+                    <p class="text-sm font-black text-gray-700 dark:text-gray-200">No active production batches</p>
+                    <p class="text-xs text-gray-400 mt-1">Production lines will appear here once started</p>
+                </div>
+
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
+
+<script setup>
+import { Head } from '@inertiajs/vue3';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Factory, Sparkles } from 'lucide-vue-next';
+
+defineProps({
+    productions: Array
+});
+
+const statusBadge = (status) => {
+    const map = {
+        pending:     'bg-yellow-50 text-yellow-700 border-yellow-200',
+        in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
+        completed:   'bg-green-50 text-green-700 border-green-200',
+        rejected:    'bg-red-50 text-red-700 border-red-200',
+    };
+    return map[status] || 'bg-gray-50 text-gray-600 border-gray-200';
+};
+
+const progressBarColor = (status) => {
+    const map = {
+        pending:     'bg-yellow-400',
+        in_progress: 'bg-blue-500',
+        completed:   'bg-green-500',
+        rejected:    'bg-red-400',
+    };
+    return map[status] || 'bg-gray-300';
+};
+
+const formatStatus = (status) => {
+    const map = {
+        pending:     'Pending',
+        in_progress: 'In Progress',
+        completed:   'Completed',
+        rejected:    'Rejected',
+    };
+    return map[status] || status;
+};
+</script>
+
+<style scoped>
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active { transition: opacity 0.25s ease, transform 0.32s cubic-bezier(0.22,1,0.36,1); }
+.modal-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: translateY(18px) scale(0.97); }
+</style>

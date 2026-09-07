@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\eco\ConversationAttachment;
 use App\Models\eco\ConversationMessage;
 use App\Models\eco\Inquiry;
-use App\Models\EcoQuotation;
+use App\Models\eco\EcoQuotation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;

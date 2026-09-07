@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Applicant;
-use App\Models\User;
+use App\Models\hrm\Applicant;
+use App\Models\core\User;
 use Inertia\Inertia;
 use App\Traits\HasPagePermissions;
 

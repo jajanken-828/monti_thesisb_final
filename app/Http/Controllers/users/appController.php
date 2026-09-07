@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\users;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceLog;
-use App\Models\EmployeeShift;
+use App\Models\hrm\AttendanceLog;
+use App\Models\hrm\EmployeeShift;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;

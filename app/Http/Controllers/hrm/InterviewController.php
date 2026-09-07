@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Applicant;
-use App\Models\Interview;
-use App\Models\User;
+use App\Models\hrm\Applicant;
+use App\Models\hrm\Interview;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -18,24 +18,21 @@ class InterviewController extends Controller
 
     public function index(Request $request)
     {
-        // DYNAMIC MODULE DETECTION
-        $routeName = $request->route()->getName();
-        $modulePrefix = explode('.', $routeName)[0];
-        $module = strtoupper($modulePrefix);
-
+        // HRM now manages ALL interviews across the whole ERP
+        // Fetch all applicants with status 'Interview', regardless of assigned_module
         $applicants = Applicant::with('interview')
             ->where('status', 'Interview')
-            ->where('assigned_module', $module)
             ->where('archived', false)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn ($a) => $this->formatApplicant($a));
 
+        // Page permissions are always under HRM module
         $permissions = $this->getPagePermissionsForModule('HRM');
 
         return Inertia::render('Dashboard/HRM/Interview', [
             'applicants' => $applicants,
-            'currentModule' => $module,
+            'currentModule' => 'HRM',   // fixed for HRM
             'permissions' => $permissions,
         ]);
     }
@@ -63,7 +60,7 @@ class InterviewController extends Controller
     public function pass(Request $request, $id)
     {
         $applicant = Applicant::findOrFail($id);
-        $module = $applicant->assigned_module;
+        $module = $applicant->assigned_module;  // Keep the original module for trainee role
 
         $user = User::create([
             'name' => $applicant->first_name.' '.$applicant->last_name,

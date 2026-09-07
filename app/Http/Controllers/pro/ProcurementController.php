@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\pro;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SupplierInvoicePaid;
 use App\Models\inv\Warehouse;
+use App\Models\pro\Supplier;
 use App\Models\Scm\MaterialRequest;
+use App\Models\Scm\ProcurementPayment;
 use App\Models\Scm\PurchaseInvoice;
 use App\Models\Scm\RequestForQuotation;
 use App\Models\Scm\RfqResponse;
 use App\Models\Scm\ScmPurchaseOrder;
-use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class ProcurementController extends Controller
@@ -110,10 +113,12 @@ class ProcurementController extends Controller
             $mr->update(['status' => 'rfq_sent']);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'RFQ successfully dispatched to suppliers.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('RFQ creation failed: '.$e->getMessage());
+
             return redirect()->back()->withErrors(['error' => 'Critical Error: Could not generate RFQ.']);
         }
     }
@@ -146,7 +151,7 @@ class ProcurementController extends Controller
                     'payment_terms' => $res->payment_terms,
                     'status' => $res->status,
                 ]),
-            ]); 
+            ]);
 
         return Inertia::render('Dashboard/PRO/supp_quo', ['rfqs' => $rfqs]);
     }
@@ -211,10 +216,12 @@ class ProcurementController extends Controller
             $rfq->update(['status' => 'responded']);
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Quotation accepted. Scm PO generated as Draft.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Accept quotation failed: '.$e->getMessage());
+
             return redirect()->back()->withErrors(['error' => 'Failed to process acceptance.']);
         }
     }
@@ -228,13 +235,14 @@ class ProcurementController extends Controller
         try {
             $response = RfqResponse::findOrFail($responseId);
             $response->update([
-                'status' => 'declined', 
-                'decline_reason' => $validated['reason']
+                'status' => 'declined',
+                'decline_reason' => $validated['reason'],
             ]);
 
             return redirect()->back()->with('success', 'Quotation declined.');
         } catch (\Exception $e) {
             Log::error('Decline quotation failed: '.$e->getMessage());
+
             return redirect()->back()->withErrors(['error' => 'Failed to decline quotation.']);
         }
     }
@@ -260,7 +268,21 @@ class ProcurementController extends Controller
                 ]),
             ]);
 
-        $invoices = PurchaseInvoice::orderBy('created_at', 'desc')->get();
+        $invoices = PurchaseInvoice::orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn ($inv) => [
+                'id' => $inv->id,
+                'invoice_number' => $inv->invoice_number,
+                'po_number' => $inv->po_number,
+                'supplier_name' => $inv->supplier_name,
+                'invoice_date' => $inv->invoice_date,
+                'due_date' => $inv->due_date,
+                'amount' => $inv->amount,
+                'status' => $inv->status,
+                'amount_paid' => ProcurementPayment::where('invoice_id', $inv->id)
+                    ->where('status', 'cleared')
+                    ->sum('amount'),
+            ]);
 
         return Inertia::render('Dashboard/PRO/receipt', [
             'purchaseOrders' => $purchaseOrders,
@@ -276,10 +298,74 @@ class ProcurementController extends Controller
         try {
             $po = ScmPurchaseOrder::findOrFail($poId);
             $po->update(['status' => 'sent']);
+
             return redirect()->back()->with('success', 'Purchase Order sent to supplier.');
         } catch (\Exception $e) {
             Log::error('Send PO failed: '.$e->getMessage());
+
             return redirect()->back()->withErrors(['error' => 'Failed to send PO.']);
+        }
+    }
+
+    /**
+     * Pay a supplier invoice, record the payment, and notify the supplier by email.
+     */
+    public function payInvoice(Request $request, $invoiceId)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'method' => 'required|string|in:bank_transfer,check,cash,gcash,other',
+            'paid_date' => 'required|date',
+            'bank_reference' => 'nullable|string|max:255',
+            'remarks' => 'nullable|string|max:500',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $invoice = PurchaseInvoice::findOrFail($invoiceId);
+
+            if (in_array($invoice->status, ['paid', 'cancelled'])) {
+                return redirect()->back()->withErrors(['error' => 'This invoice is already '.$invoice->status.'.']);
+            }
+
+            $payment = ProcurementPayment::create([
+                'payment_number' => $this->generatePaymentNumber(),
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'supplier_name' => $invoice->supplier_name,
+                'paid_date' => $validated['paid_date'],
+                'amount' => $validated['amount'],
+                'method' => $validated['method'],
+                'bank_reference' => $validated['bank_reference'] ?? null,
+                'remarks' => $validated['remarks'] ?? null,
+                'status' => 'cleared',
+            ]);
+
+            // Recalculate invoice status from all cleared payments so far
+            $totalPaid = ProcurementPayment::where('invoice_id', $invoice->id)
+                ->where('status', 'cleared')
+                ->sum('amount');
+
+            $invoice->update([
+                'status' => $totalPaid >= $invoice->amount ? 'paid' : 'partial',
+            ]);
+
+            // Notify the supplier by email that their invoice has been paid
+            if ($invoice->supplier_id) {
+                $supplier = Supplier::find($invoice->supplier_id);
+                if ($supplier && $supplier->email) {
+                    Mail::to($supplier->email)->send(new SupplierInvoicePaid($invoice, $payment));
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', "Payment recorded. {$invoice->supplier_name} has been notified by email.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Invoice payment failed: '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['error' => 'Failed to process payment.']);
         }
     }
 
@@ -290,6 +376,7 @@ class ProcurementController extends Controller
     {
         $year = now()->format('Y');
         $count = RequestForQuotation::whereYear('created_at', $year)->count() + 1;
+
         return 'RFQ-'.$year.'-'.str_pad($count, 3, '0', STR_PAD_LEFT);
     }
 
@@ -297,6 +384,15 @@ class ProcurementController extends Controller
     {
         $year = now()->format('Y');
         $count = ScmPurchaseOrder::whereYear('created_at', $year)->count() + 1;
+
         return 'SCMPO-'.$year.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function generatePaymentNumber(): string
+    {
+        $year = now()->format('Y');
+        $count = ProcurementPayment::whereYear('created_at', $year)->count() + 1;
+
+        return 'PAY-'.$year.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
     }
 }

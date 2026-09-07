@@ -3,132 +3,122 @@
     <Head title="Push Center · ECO" />
 
     <AuthenticatedLayout>
-        <div class="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-20">
-            <div class="max-w-[1600px] mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-10">
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
 
-                <!-- ── Header ──────────────────────────────────────────────── -->
-                <div
-                    class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white rounded-[2rem] p-6 sm:p-8 shadow-sm border border-slate-100">
-                    <div class="flex items-center gap-5">
-                        <div
-                            class="h-14 w-14 rounded-2xl bg-black flex items-center justify-center text-white shadow-lg shadow-black/10 flex-shrink-0">
-                            <Send class="h-6 w-6" />
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <Send class="h-7 w-7" />
                         </div>
-                        <div>
-                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 mb-1">Dispatch
-                                Unit</p>
-                            <h1 class="text-3xl sm:text-4xl font-black text-black tracking-tight">
-                                Push <span class="text-slate-400 font-light">Center</span>
-                            </h1>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> ECO · Dispatch Unit
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Push Center</h1>
+                            <p class="text-sm text-blue-100/90">Forward approved job orders to SCM in one click.</p>
                         </div>
-                    </div>
-
-                    <div class="flex-1 max-w-2xl flex items-center gap-3 w-full">
-                        <div class="relative group flex-1">
-                            <Search
-                                class="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
-                            <input v-model="searchQuery" type="text" placeholder="Search JO#, PO#, Client Name..."
-                                class="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400" />
-                        </div>
-                        <button @click="refreshData"
-                            class="p-4 rounded-2xl bg-white border border-slate-100 text-slate-400 hover:text-black hover:border-black transition-all flex-shrink-0 shadow-sm hover:shadow-md active:scale-95">
-                            <RefreshCw class="h-5 w-5" />
+                        <button @click="refreshData" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition active:scale-95">
+                            <RefreshCw class="h-4 w-4" />
                         </button>
                     </div>
-                </div>
 
-                <!-- ── Tabs ─────────────────────────────────────────────────── -->
-                <div class="flex items-center gap-4 border-b border-slate-200 overflow-x-auto hide-scrollbar">
-                    <button @click="activeTab = 'pending'"
-                        :class="activeTab === 'pending' ? 'border-black text-black' : 'border-transparent text-slate-400 hover:text-slate-700'"
-                        class="py-4 px-2 font-black uppercase text-xs sm:text-sm border-b-2 transition-all whitespace-nowrap flex items-center gap-2">
-                        Pending Push
-                        <span
-                            :class="activeTab === 'pending' ? 'bg-yellow-400 text-black' : 'bg-slate-100 text-slate-500'"
-                            class="px-2 py-0.5 rounded-md text-[10px]">
-                            {{ filteredPendingOrders.length }}
-                        </span>
-                    </button>
-                    <button @click="activeTab = 'pushed'"
-                        :class="activeTab === 'pushed' ? 'border-black text-black' : 'border-transparent text-slate-400 hover:text-slate-700'"
-                        class="py-4 px-2 font-black uppercase text-xs sm:text-sm border-b-2 transition-all whitespace-nowrap flex items-center gap-2">
-                        Already Pushed
-                        <span :class="activeTab === 'pushed' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'"
-                            class="px-2 py-0.5 rounded-md text-[10px]">
-                            {{ filteredPushedOrders.length }}
-                        </span>
-                    </button>
+                    <!-- Search + tabs -->
+                    <div class="relative mt-6 flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input v-model="searchQuery" type="text" placeholder="Search JO#, PO#, Client Name..."
+                                class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition" />
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="activeTab = 'pending'"
+                                :class="activeTab === 'pending' ? 'bg-white text-indigo-700 shadow-lg scale-105' : 'bg-white/15 text-white hover:bg-white/25'"
+                                class="rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide backdrop-blur transition-all duration-200 active:scale-95">
+                                Pending · {{ filteredPendingOrders.length }}
+                            </button>
+                            <button @click="activeTab = 'pushed'"
+                                :class="activeTab === 'pushed' ? 'bg-white text-indigo-700 shadow-lg scale-105' : 'bg-white/15 text-white hover:bg-white/25'"
+                                class="rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide backdrop-blur transition-all duration-200 active:scale-95">
+                                Pushed · {{ filteredPushedOrders.length }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ══════════════════════════════════════════════════════════
                      PENDING TAB
                      ══════════════════════════════════════════════════════════ -->
-                <div v-if="activeTab === 'pending'" class="animate-in">
+                <div v-if="activeTab === 'pending'" class="animate-fade-up">
 
                     <!-- Mobile cards -->
-                    <div class="md:hidden space-y-4">
-                        <div v-for="jo in filteredPendingOrders" :key="jo.id"
-                            class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden flex flex-col gap-5">
-                            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-yellow-400"></div>
+                    <TransitionGroup name="card" tag="div" class="md:hidden space-y-4">
+                        <div v-for="(jo, i) in filteredPendingOrders" :key="jo.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur p-5 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300 overflow-hidden flex flex-col gap-4">
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-amber-500 to-orange-500 rounded-r-full" />
 
-                            <div class="pl-2 flex justify-between items-start">
+                            <div class="relative pl-2 flex justify-between items-start">
                                 <div>
-                                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
                                         Client Name</p>
-                                    <h3 class="text-base font-black text-black leading-tight">
+                                    <h3 class="text-base font-black text-gray-900 dark:text-white leading-tight">
                                         {{ jo.client?.company_name }}
                                     </h3>
                                 </div>
                                 <div class="text-right flex-shrink-0 ml-4">
-                                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
                                         Volume</p>
                                     <span
-                                        class="text-sm font-black text-black bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">{{
+                                        class="text-sm font-black text-gray-900 dark:text-white bg-gray-100 dark:bg-zinc-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-zinc-700">{{
                                             jo.quantity }} kg</span>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3 pl-2">
-                                <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                            <div class="relative grid grid-cols-2 gap-3 pl-2">
+                                <div class="bg-blue-50/70 dark:bg-blue-900/10 p-3 rounded-2xl border border-blue-100 dark:border-blue-800/40">
                                     <p class="text-[9px] font-black uppercase tracking-widest text-blue-400 mb-1">JO
                                         Number</p>
-                                    <p class="text-xs font-bold text-blue-600 uppercase">{{ jo.jo_number }}</p>
+                                    <p class="text-xs font-bold text-blue-600 dark:text-blue-300 uppercase">{{ jo.jo_number }}</p>
                                 </div>
-                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">PO
+                                <div class="bg-gray-50 dark:bg-zinc-800/60 p-3 rounded-2xl border border-gray-100 dark:border-zinc-700">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">PO
                                         Number</p>
-                                    <p class="text-[10px] font-mono font-bold text-slate-700">{{ jo.purchase_order_id }}
+                                    <p class="text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300">{{ jo.purchase_order_id }}
                                     </p>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2">
+                            <div class="relative grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2">
                                 <div>
-                                    <p class="text-[9px] font-black uppercase text-slate-400 mb-0.5">Color</p>
+                                    <p class="text-[9px] font-black uppercase text-gray-400 mb-0.5">Color</p>
                                     <p
-                                        class="text-xs font-bold text-slate-700 uppercase truncate flex items-center gap-1.5">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-black"></span> {{ jo.color }}
+                                        class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase truncate flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span> {{ jo.color }}
                                     </p>
                                 </div>
                                 <!-- ── RECIPE (mobile) ── -->
                                 <div>
-                                    <p class="text-[9px] font-black uppercase text-slate-400 mb-1">Recipe Number(s)</p>
+                                    <p class="text-[9px] font-black uppercase text-gray-400 mb-1">Recipe Number(s)</p>
                                     <div class="flex flex-wrap gap-1">
                                         <template v-if="jo.extracted_recipes && jo.extracted_recipes.length > 0">
                                             <div v-for="(rec, idx) in jo.extracted_recipes" :key="idx"
                                                 class="flex flex-col gap-0.5">
                                                 <span
-                                                    class="text-[10px] font-mono font-bold text-slate-700 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+                                                    class="text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-lg">
                                                     REC-{{ String(rec).padStart(4, '0') }}
                                                 </span>
                                                 <span v-if="idx === 0 && jo.recipe && jo.recipe.yarn_type"
-                                                    class="text-[8px] text-slate-400 font-medium leading-none truncate max-w-[110px]">
+                                                    class="text-[8px] text-gray-400 font-medium leading-none truncate max-w-[110px]">
                                                     {{ jo.recipe.yarn_type }}
                                                 </span>
                                             </div>
                                         </template>
                                         <span v-else
-                                            class="text-[10px] font-bold text-slate-500 font-mono bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                            class="text-[10px] font-bold text-gray-500 font-mono bg-gray-50 dark:bg-zinc-800 px-1.5 py-0.5 rounded-lg border border-gray-100 dark:border-zinc-700">
                                             N/A
                                         </span>
                                     </div>
@@ -136,70 +126,75 @@
                             </div>
 
                             <!-- ── Total Amount (mobile) ── -->
-                            <div class="pl-2">
-                                <p class="text-[9px] font-black uppercase text-slate-400 mb-0.5">Total Amount</p>
-                                <p class="text-sm font-black text-blue-600">₱{{ formatPrice(jo.total_amount) }}</p>
+                            <div class="relative pl-2">
+                                <p class="text-[9px] font-black uppercase text-gray-400 mb-0.5">Total Amount</p>
+                                <p class="text-sm font-black text-indigo-600">₱{{ formatPrice(jo.total_amount) }}</p>
                             </div>
 
-                            <div class="flex items-center gap-2 pl-2 mt-2">
+                            <div class="relative flex items-center gap-2 pl-2 mt-1">
                                 <button @click="openSummary(jo)"
-                                    class="flex-1 py-3.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                                    class="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex justify-center items-center gap-2 active:scale-95">
                                     <Eye class="h-4 w-4" /> Summary
                                 </button>
                                 <button @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
-                                    class="flex-1 py-3.5 bg-black hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-black/10">
+                                    class="flex-1 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
                                     <Loader2 v-if="pushing[jo.id]" class="h-4 w-4 animate-spin" />
                                     Push SCM
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
 
                     <!-- Desktop table -->
                     <div
-                        class="hidden md:block bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                        class="hidden md:block bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-900/20 flex items-center gap-2">
+                            <Send class="h-5 w-5 text-indigo-600" />
+                            <h2 class="text-sm font-black uppercase tracking-widest">Pending Push</h2>
+                            <span class="ml-auto rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[11px] font-black px-2.5 py-1">{{ filteredPendingOrders.length }} orders</span>
+                        </div>
                         <table class="w-full text-left">
                             <thead
-                                class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100">
+                                class="text-[10px] font-black uppercase text-gray-400 tracking-widest border-b border-gray-100 dark:border-zinc-800">
                                 <tr>
-                                    <th class="px-8 py-5">Order Identifiers</th>
-                                    <th class="px-6 py-5">Product Specifications</th>
-                                    <th class="px-6 py-5 text-center">Volume / Value</th>
-                                    <th class="px-8 py-5 text-right">Actions</th>
+                                    <th class="px-6 py-4">Order Identifiers</th>
+                                    <th class="px-6 py-4">Product Specifications</th>
+                                    <th class="px-6 py-4 text-center">Volume / Value</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-50">
+                            <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
                                 <tr v-for="jo in filteredPendingOrders" :key="jo.id"
-                                    class="hover:bg-slate-50/50 transition-colors">
+                                    class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
 
                                     <!-- Order identifiers -->
-                                    <td class="px-8 py-6">
-                                        <div class="flex items-start gap-4">
+                                    <td class="px-6 py-5">
+                                        <div class="flex items-start gap-3">
                                             <div
-                                                class="h-10 w-10 mt-1 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center font-black text-xs">
+                                                class="h-10 w-10 mt-1 rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 text-white flex items-center justify-center font-black text-xs shadow-lg flex-shrink-0">
                                                 JO
                                             </div>
                                             <div class="space-y-2.5">
                                                 <div>
                                                     <span
-                                                        class="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Client
+                                                        class="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-0.5">Client
                                                         Name</span>
-                                                    <p class="text-sm font-black text-black">{{ jo.client?.company_name
+                                                    <p class="text-sm font-black text-gray-900 dark:text-white">{{ jo.client?.company_name
                                                     }}</p>
                                                 </div>
                                                 <div class="flex flex-wrap items-center gap-2">
                                                     <div
-                                                        class="flex items-center gap-1.5 bg-blue-50 border border-blue-100 px-2 py-1 rounded-md">
+                                                        class="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/40 px-2 py-1 rounded-lg">
                                                         <span class="text-[9px] font-black uppercase text-blue-400">JO
                                                             Number:</span>
-                                                        <span class="text-xs font-bold text-blue-600 uppercase">{{
+                                                        <span class="text-xs font-bold text-blue-600 dark:text-blue-300 uppercase">{{
                                                             jo.jo_number }}</span>
                                                     </div>
                                                     <div
-                                                        class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
-                                                        <span class="text-[9px] font-black uppercase text-slate-400">PO
+                                                        class="flex items-center gap-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-2 py-1 rounded-lg">
+                                                        <span class="text-[9px] font-black uppercase text-gray-400">PO
                                                             Number:</span>
-                                                        <span class="text-[10px] font-mono font-bold text-slate-600">{{
+                                                        <span class="text-[10px] font-mono font-bold text-gray-600 dark:text-gray-300">{{
                                                             jo.purchase_order_id
                                                         }}</span>
                                                     </div>
@@ -209,40 +204,40 @@
                                     </td>
 
                                     <!-- Product specs + Recipe -->
-                                    <td class="px-6 py-6">
+                                    <td class="px-6 py-5">
                                         <div class="space-y-2.5">
                                             <div class="flex items-center gap-2">
                                                 <span
-                                                    class="text-[9px] font-black uppercase text-slate-400 w-14">Color:</span>
+                                                    class="text-[9px] font-black uppercase text-gray-400 w-14">Color:</span>
                                                 <span
-                                                    class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-black"></span> {{ jo.color
+                                                    class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase flex items-center gap-1.5">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span> {{ jo.color
                                                     }}
                                                 </span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <span
-                                                    class="text-[9px] font-black uppercase text-slate-400 w-14">Type:</span>
-                                                <span class="text-[10px] font-bold text-slate-500 uppercase">{{
+                                                    class="text-[9px] font-black uppercase text-gray-400 w-14">Type:</span>
+                                                <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{{
                                                     jo.yarn_type }}</span>
                                             </div>
 
                                             <!-- ── RECIPE DISPLAY (desktop) ── -->
                                             <div
-                                                class="flex items-start gap-2 bg-slate-50 px-2 py-1.5 rounded-md w-fit border border-slate-100">
+                                                class="flex items-start gap-2 bg-gray-50 dark:bg-zinc-800/60 px-2 py-1.5 rounded-xl w-fit border border-gray-100 dark:border-zinc-700">
                                                 <span
-                                                    class="text-[9px] font-black uppercase text-slate-400 mt-0.5 flex-shrink-0">Recipe(s):</span>
+                                                    class="text-[9px] font-black uppercase text-gray-400 mt-0.5 flex-shrink-0">Recipe(s):</span>
                                                 <div class="flex flex-wrap gap-1 max-w-[220px]">
                                                     <template
                                                         v-if="jo.extracted_recipes && jo.extracted_recipes.length > 0">
                                                         <div v-for="(rec, idx) in jo.extracted_recipes" :key="idx"
                                                             class="flex flex-col gap-0.5">
                                                             <span
-                                                                class="text-[9px] font-mono text-slate-700 font-bold bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+                                                                class="text-[9px] font-mono text-gray-700 dark:text-gray-300 font-bold bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-1.5 py-0.5 rounded-lg">
                                                                 REC-{{ String(rec).padStart(4, '0') }}
                                                             </span>
                                                             <span v-if="idx === 0 && jo.recipe && jo.recipe.yarn_type"
-                                                                class="text-[8px] text-slate-400 font-medium leading-none truncate max-w-[110px]">
+                                                                class="text-[8px] text-gray-400 font-medium leading-none truncate max-w-[110px]">
                                                                 {{ jo.recipe.yarn_type }}
                                                             </span>
                                                             <span v-if="idx === 0 && jo.recipe && jo.recipe.dye_color"
@@ -252,28 +247,28 @@
                                                         </div>
                                                     </template>
                                                     <span v-else
-                                                        class="text-[9px] font-mono text-slate-500 font-bold">N/A</span>
+                                                        class="text-[9px] font-mono text-gray-500 font-bold">N/A</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
 
                                     <!-- Volume / Value -->
-                                    <td class="px-6 py-6 text-center">
-                                        <p class="text-sm font-black text-black">{{ jo.quantity }} kg</p>
-                                        <p class="text-[10px] font-bold text-slate-400 mt-1">₱{{
+                                    <td class="px-6 py-5 text-center">
+                                        <p class="text-sm font-black text-gray-900 dark:text-white">{{ jo.quantity }} kg</p>
+                                        <p class="text-[10px] font-bold text-gray-400 mt-1">₱{{
                                             formatPrice(jo.total_amount) }}</p>
                                     </td>
 
                                     <!-- Actions -->
-                                    <td class="px-8 py-6 text-right">
+                                    <td class="px-6 py-5 text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <button @click="openSummary(jo)"
-                                                class="p-3 text-slate-400 hover:text-black transition-colors rounded-xl hover:bg-white border border-transparent hover:border-slate-200 shadow-sm">
+                                                class="p-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-95">
                                                 <Eye class="h-4 w-4" />
                                             </button>
                                             <button @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
-                                                class="px-5 py-3 bg-black hover:bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-2 shadow-md">
+                                                class="px-5 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
                                                 <Loader2 v-if="pushing[jo.id]" class="h-3 w-3 animate-spin" />
                                                 Push SCM
                                             </button>
@@ -286,96 +281,102 @@
                     </div>
 
                     <div v-if="filteredPendingOrders.length === 0"
-                        class="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-16 text-center">
-                        <div
-                            class="mx-auto h-16 w-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
-                            <Search class="h-8 w-8" />
+                        class="mt-4 flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Search class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">No pending orders found
-                        </p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No pending orders found</p>
+                        <p class="text-xs text-gray-400 mt-1">Try a different search.</p>
                     </div>
                 </div>
 
                 <!-- ══════════════════════════════════════════════════════════
                      PUSHED TAB
                      ══════════════════════════════════════════════════════════ -->
-                <div v-if="activeTab === 'pushed'" class="animate-in">
+                <div v-if="activeTab === 'pushed'" class="animate-fade-up">
 
                     <!-- Mobile cards -->
-                    <div class="md:hidden space-y-4">
-                        <div v-for="order in filteredPushedOrders" :key="order.id"
-                            class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                    <TransitionGroup name="card" tag="div" class="md:hidden space-y-4">
+                        <div v-for="(order, i) in filteredPushedOrders" :key="order.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                            class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur p-5 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all space-y-4 overflow-hidden">
+                            <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-emerald-400/20 to-teal-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                            <div class="flex justify-between items-start">
+                            <div class="relative flex justify-between items-start">
                                 <div>
-                                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
                                         Client Name</p>
-                                    <h3 class="text-sm font-black text-black">{{ order.client?.company_name }}</h3>
+                                    <h3 class="text-sm font-black text-gray-900 dark:text-white">{{ order.client?.company_name }}</h3>
                                 </div>
                                 <span
-                                    class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-100">
-                                    {{ order.pushed_to }}
+                                    class="px-3 py-1.5 bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full ring-1 ring-blue-200 dark:ring-blue-500/30 text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {{ order.pushed_to }}
                                 </span>
                             </div>
 
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">JO
+                            <div class="relative bg-gray-50 dark:bg-zinc-800/60 p-3 rounded-2xl border border-gray-100 dark:border-zinc-700">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">JO
                                     Number</p>
-                                <p class="text-xs font-mono font-bold text-slate-700">{{ order.jo_number }}</p>
+                                <p class="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">{{ order.jo_number }}</p>
                             </div>
 
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">PO
+                            <div class="relative bg-gray-50 dark:bg-zinc-800/60 p-3 rounded-2xl border border-gray-100 dark:border-zinc-700">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-0.5">PO
                                     Number</p>
-                                <p class="text-xs font-mono font-bold text-slate-700">{{ order.purchase_order_id }}</p>
+                                <p class="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">{{ order.purchase_order_id }}</p>
                             </div>
                         </div>
-                    </div>
+                    </TransitionGroup>
 
                     <!-- Desktop table -->
                     <div
-                        class="hidden md:block bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                        class="hidden md:block bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                        <div class="p-6 border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-900/10 flex items-center gap-2">
+                            <Check class="h-5 w-5 text-emerald-600" />
+                            <h2 class="text-sm font-black uppercase tracking-widest">Already Pushed</h2>
+                            <span class="ml-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-black px-2.5 py-1">{{ filteredPushedOrders.length }} orders</span>
+                        </div>
                         <table class="w-full text-left">
                             <thead
-                                class="bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100">
+                                class="text-[10px] font-black uppercase text-gray-400 tracking-widest border-b border-gray-100 dark:border-zinc-800">
                                 <tr>
-                                    <th class="px-8 py-5">Client Information</th>
-                                    <th class="px-8 py-5">Reference Details</th>
-                                    <th class="px-8 py-5 text-right">Status / Location</th>
+                                    <th class="px-6 py-4">Client Information</th>
+                                    <th class="px-6 py-4">Reference Details</th>
+                                    <th class="px-6 py-4 text-right">Status / Location</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-50">
+                            <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
                                 <tr v-for="order in filteredPushedOrders" :key="order.id"
-                                    class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-8 py-6">
-                                        <span class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">Client
+                                    class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
+                                    <td class="px-6 py-5">
+                                        <span class="text-[9px] font-black uppercase text-gray-400 block mb-0.5">Client
                                             Name</span>
-                                        <span class="font-black text-black text-sm">{{ order.client?.company_name
+                                        <span class="font-black text-gray-900 dark:text-white text-sm">{{ order.client?.company_name
                                         }}</span>
                                     </td>
-                                    <td class="px-8 py-6">
+                                    <td class="px-6 py-5">
                                         <div class="flex flex-wrap gap-2">
                                             <div>
                                                 <span
-                                                    class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">JO
+                                                    class="text-[9px] font-black uppercase text-gray-400 block mb-0.5">JO
                                                     Number</span>
                                                 <span
-                                                    class="font-mono text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">{{
+                                                    class="font-mono text-sm font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/10 px-2 py-1 rounded-lg border border-blue-100 dark:border-blue-800/40">{{
                                                         order.jo_number }}</span>
                                             </div>
                                             <div>
                                                 <span
-                                                    class="text-[9px] font-black uppercase text-slate-400 block mb-0.5">PO
+                                                    class="text-[9px] font-black uppercase text-gray-400 block mb-0.5">PO
                                                     Number</span>
                                                 <span
-                                                    class="font-mono text-sm font-bold text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">{{
+                                                    class="font-mono text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800 px-2 py-1 rounded-lg border border-gray-100 dark:border-zinc-700">{{
                                                         order.purchase_order_id }}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-8 py-6 text-right">
+                                    <td class="px-6 py-5 text-right">
                                         <span
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full ring-1 ring-blue-200 dark:ring-blue-500/30 text-[10px] font-black uppercase tracking-widest">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                                             <Check class="h-3 w-3" />
                                             {{ order.pushed_to }}
                                         </span>
@@ -386,12 +387,12 @@
                     </div>
 
                     <div v-if="filteredPushedOrders.length === 0"
-                        class="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-16 text-center">
-                        <div
-                            class="mx-auto h-16 w-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
-                            <Check class="h-8 w-8" />
+                        class="mt-4 flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 shadow-sm">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Check class="h-9 w-9 text-indigo-400" />
                         </div>
-                        <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">No pushed orders yet</p>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No pushed orders yet</p>
+                        <p class="text-xs text-gray-400 mt-1">Pushed orders will appear here.</p>
                     </div>
                 </div>
 
@@ -404,9 +405,9 @@
         <Teleport to="body">
             <Transition name="toast">
                 <div v-if="toast.show"
-                    class="fixed bottom-6 right-6 z-[200] flex items-center gap-3 bg-black text-white px-6 py-4 rounded-2xl shadow-2xl shadow-black/20 max-w-sm">
+                    class="fixed bottom-6 right-6 z-[200] flex items-center gap-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-6 py-4 rounded-2xl shadow-2xl max-w-sm">
                     <div class="h-8 w-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                        :class="toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'">
+                        :class="toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'">
                         <Check v-if="toast.type !== 'error'" class="h-4 w-4" />
                         <X v-else class="h-4 w-4" />
                     </div>
@@ -419,78 +420,80 @@
              PUSH CONFIRMATION MODAL
              ══════════════════════════════════════════════════════════════════ -->
         <Teleport to="body">
-            <Transition name="modal-fade">
+            <Transition name="modal">
                 <div v-if="confirmModal.show"
-                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-sm"
+                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
                     @click.self="confirmModal.show = false">
                     <div
-                        class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden animate-zoom-in flex flex-col">
+                        class="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-pop flex flex-col">
 
                         <!-- Modal Header -->
-                        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-start">
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
-                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                        <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex justify-between items-start">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">
                                         Confirm Action
                                     </p>
                                 </div>
-                                <h3 class="font-black text-xl text-black tracking-tight">
+                                <h3 class="font-black text-xl tracking-tight">
                                     Push to {{ confirmModal.module === 'scm' ? 'SCM' : 'Order Management' }}?
                                 </h3>
                             </div>
                             <button @click="confirmModal.show = false"
-                                class="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-black rounded-2xl transition-colors">
+                                class="relative p-2 bg-white/15 hover:bg-white/25 rounded-xl transition-colors">
                                 <X class="h-5 w-5" />
                             </button>
                         </div>
 
                         <!-- Modal Body -->
-                        <div class="p-8 space-y-4 bg-[#FAFAFA]">
-                            <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                        <div class="p-6 space-y-4">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
                                 You are about to forward this Job Order to
-                                <strong class="text-black">{{ confirmModal.module === 'scm' ? 'Supply Chain Management (SCM)' : 'Order Management' }}</strong>.
+                                <strong class="text-gray-900 dark:text-white">{{ confirmModal.module === 'scm' ? 'Supply Chain Management (SCM)' : 'Order Management' }}</strong>.
                                 This action will move the order out of the pending queue.
                             </p>
 
                             <!-- Order Summary Card -->
-                            <div v-if="confirmModal.order" class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+                            <div v-if="confirmModal.order" class="bg-gray-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-700 rounded-2xl p-5 space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Client</span>
-                                    <span class="text-sm font-black text-black">{{ confirmModal.order.client?.company_name }}</span>
+                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Client</span>
+                                    <span class="text-sm font-black text-gray-900 dark:text-white">{{ confirmModal.order.client?.company_name }}</span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-100 pt-3">
-                                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">JO Number</span>
-                                    <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                                <div class="flex justify-between items-center border-t border-gray-100 dark:border-zinc-700 pt-3">
+                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest">JO Number</span>
+                                    <span class="text-xs font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/10 px-2 py-1 rounded-lg border border-blue-100 dark:border-blue-800/40">
                                         {{ confirmModal.order.jo_number }}
                                     </span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-100 pt-3">
-                                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">PO Number</span>
-                                    <span class="text-xs font-mono font-bold text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                <div class="flex justify-between items-center border-t border-gray-100 dark:border-zinc-700 pt-3">
+                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest">PO Number</span>
+                                    <span class="text-xs font-mono font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-zinc-800 px-2 py-1 rounded-lg border border-gray-100 dark:border-zinc-700">
                                         {{ confirmModal.order.purchase_order_id ?? 'N/A' }}
                                     </span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-100 pt-3">
-                                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Volume</span>
-                                    <span class="text-sm font-black text-black">{{ confirmModal.order.quantity }} kg</span>
+                                <div class="flex justify-between items-center border-t border-gray-100 dark:border-zinc-700 pt-3">
+                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Volume</span>
+                                    <span class="text-sm font-black text-gray-900 dark:text-white">{{ confirmModal.order.quantity }} kg</span>
                                 </div>
-                                <div class="flex justify-between items-center border-t border-slate-100 pt-3">
-                                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Amount</span>
-                                    <span class="text-sm font-black text-blue-600">₱{{ formatPrice(confirmModal.order.total_amount) }}</span>
+                                <div class="flex justify-between items-center border-t border-gray-100 dark:border-zinc-700 pt-3">
+                                    <span class="text-[9px] font-black uppercase text-gray-400 tracking-widest">Amount</span>
+                                    <span class="text-sm font-black text-indigo-600">₱{{ formatPrice(confirmModal.order.total_amount) }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Modal Footer -->
-                        <div class="p-6 border-t border-slate-100 bg-white flex gap-3">
+                        <div class="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3">
                             <button @click="confirmModal.show = false"
-                                class="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                                class="flex-1 py-3.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 text-xs font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors active:scale-95">
                                 Cancel
                             </button>
                             <button @click="executePush"
                                 :disabled="pushing[confirmModal.order?.id]"
-                                class="flex-1 py-4 rounded-2xl bg-black hover:bg-blue-600 text-white text-xs font-black uppercase tracking-widest transition-colors shadow-lg shadow-black/10 flex items-center justify-center gap-2 disabled:opacity-50">
+                                class="flex-1 py-3.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
                                 <Loader2 v-if="pushing[confirmModal.order?.id]" class="h-4 w-4 animate-spin" />
                                 <Send v-else class="h-4 w-4" />
                                 Confirm Push
@@ -505,142 +508,146 @@
              SUMMARY MODAL
              ══════════════════════════════════════════════════════════════════ -->
         <Teleport to="body">
-            <div v-if="summaryModal.show"
-                class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm"
-                @click.self="summaryModal.show = false">
-                <div
-                    class="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-zoom-in flex flex-col max-h-[90vh]">
+            <Transition name="modal">
+                <div v-if="summaryModal.show"
+                    class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
+                    @click.self="summaryModal.show = false">
+                    <div
+                        class="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden animate-pop flex flex-col max-h-[90vh]">
 
-                    <!-- Modal header -->
-                    <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-start bg-white">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="h-2 w-2 rounded-full bg-yellow-400"></span>
-                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">JO Number
-                                </p>
+                        <!-- Modal header -->
+                        <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex justify-between items-start">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">JO Number
+                                    </p>
+                                </div>
+                                <h3 class="font-black text-2xl tracking-tight uppercase">{{
+                                    summaryModal.data.jo_number
+                                }}</h3>
                             </div>
-                            <h3 class="font-black text-2xl text-black tracking-tight uppercase">{{
-                                summaryModal.data.jo_number
-                            }}</h3>
-                        </div>
-                        <button @click="summaryModal.show = false"
-                            class="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-black rounded-2xl transition-colors">
-                            <X class="h-5 w-5" />
-                        </button>
-                    </div>
-
-                    <!-- Modal body -->
-                    <div class="p-8 space-y-6 overflow-y-auto bg-[#FAFAFA]">
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="p-5 bg-white border border-slate-200 rounded-3xl">
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Client
-                                    Name</p>
-                                <p class="font-black text-black text-sm">
-                                    {{ summaryModal.data.client?.company_name }}
-                                </p>
-                            </div>
-                            <div class="p-5 bg-white border border-slate-200 rounded-3xl">
-                                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">PO Number
-                                </p>
-                                <p
-                                    class="font-bold font-mono text-slate-700 text-sm bg-slate-50 px-2 py-1 rounded-md w-fit border border-slate-100">
-                                    {{ summaryModal.data.purchase_order_id }}</p>
-                            </div>
+                            <button @click="summaryModal.show = false"
+                                class="relative p-2 bg-white/15 hover:bg-white/25 rounded-xl transition-colors">
+                                <X class="h-5 w-5" />
+                            </button>
                         </div>
 
-                        <div class="space-y-3">
-                            <h4
-                                class="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center gap-2">
-                                <span class="h-px bg-slate-200 flex-1"></span> Item Details <span
-                                    class="h-px bg-slate-200 flex-1"></span>
-                            </h4>
+                        <!-- Modal body -->
+                        <div class="p-6 space-y-5 overflow-y-auto">
 
-                            <div class="bg-white border border-slate-200 rounded-3xl p-6">
-                                <div class="flex justify-between items-start mb-6">
-                                    <div class="space-y-4">
-                                        <div>
-                                            <p
-                                                class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                                                Color</p>
-                                            <p class="text-lg font-black text-black uppercase leading-none">{{
-                                                summaryModal.data.color }}</p>
-                                        </div>
-                                        <div class="flex flex-col gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="p-5 bg-gray-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-700 rounded-3xl">
+                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Client
+                                        Name</p>
+                                    <p class="font-black text-gray-900 dark:text-white text-sm">
+                                        {{ summaryModal.data.client?.company_name }}
+                                    </p>
+                                </div>
+                                <div class="p-5 bg-gray-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-700 rounded-3xl">
+                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">PO Number
+                                    </p>
+                                    <p
+                                        class="font-bold font-mono text-gray-700 dark:text-gray-300 text-sm bg-white dark:bg-zinc-800 px-2 py-1 rounded-lg w-fit border border-gray-100 dark:border-zinc-700">
+                                        {{ summaryModal.data.purchase_order_id }}</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <h4
+                                    class="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em] flex items-center gap-2">
+                                    <span class="h-px bg-gray-200 dark:bg-zinc-700 flex-1"></span> Item Details <span
+                                        class="h-px bg-gray-200 dark:bg-zinc-700 flex-1"></span>
+                                </h4>
+
+                                <div class="bg-gray-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-700 rounded-3xl p-6">
+                                    <div class="flex justify-between items-start mb-6">
+                                        <div class="space-y-4">
                                             <div>
                                                 <p
-                                                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                                                    Type</p>
-                                                <p class="text-xs font-bold text-slate-500 uppercase">{{
-                                                    summaryModal.data.yarn_type }}</p>
+                                                    class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                                                    Color</p>
+                                                <p class="text-lg font-black text-gray-900 dark:text-white uppercase leading-none">{{
+                                                    summaryModal.data.color }}</p>
                                             </div>
+                                            <div class="flex flex-col gap-3">
+                                                <div>
+                                                    <p
+                                                        class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                                                        Type</p>
+                                                    <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">{{
+                                                        summaryModal.data.yarn_type }}</p>
+                                                </div>
 
-                                            <!-- ── RECIPE in Summary Modal ── -->
-                                            <div>
-                                                <p
-                                                    class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                                                    Recipe Number(s)</p>
-                                                <div class="flex flex-wrap gap-1.5">
-                                                    <template
-                                                        v-if="summaryModal.data.extracted_recipes && summaryModal.data.extracted_recipes.length > 0">
-                                                        <div v-for="(rec, idx) in summaryModal.data.extracted_recipes"
-                                                            :key="idx" class="flex flex-col gap-0.5">
-                                                            <span
-                                                                class="text-[10px] font-mono font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
-                                                                REC-{{ String(rec).padStart(4, '0') }}
-                                                            </span>
-                                                            <span
-                                                                v-if="idx === 0 && summaryModal.data.recipe?.yarn_type"
-                                                                class="text-[9px] text-slate-400 font-medium truncate max-w-[160px]">
-                                                                {{ summaryModal.data.recipe.yarn_type }}
-                                                            </span>
-                                                            <span
-                                                                v-if="idx === 0 && summaryModal.data.recipe?.dye_color"
-                                                                class="text-[9px] text-blue-400 font-medium truncate max-w-[160px]">
-                                                                {{ summaryModal.data.recipe.dye_color }}
-                                                            </span>
-                                                        </div>
-                                                    </template>
-                                                    <span v-else
-                                                        class="text-[10px] font-mono font-bold text-slate-500">N/A</span>
+                                                <!-- ── RECIPE in Summary Modal ── -->
+                                                <div>
+                                                    <p
+                                                        class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                        Recipe Number(s)</p>
+                                                    <div class="flex flex-wrap gap-1.5">
+                                                        <template
+                                                            v-if="summaryModal.data.extracted_recipes && summaryModal.data.extracted_recipes.length > 0">
+                                                            <div v-for="(rec, idx) in summaryModal.data.extracted_recipes"
+                                                                :key="idx" class="flex flex-col gap-0.5">
+                                                                <span
+                                                                    class="text-[10px] font-mono font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-zinc-700">
+                                                                    REC-{{ String(rec).padStart(4, '0') }}
+                                                                </span>
+                                                                <span
+                                                                    v-if="idx === 0 && summaryModal.data.recipe?.yarn_type"
+                                                                    class="text-[9px] text-gray-400 font-medium truncate max-w-[160px]">
+                                                                    {{ summaryModal.data.recipe.yarn_type }}
+                                                                </span>
+                                                                <span
+                                                                    v-if="idx === 0 && summaryModal.data.recipe?.dye_color"
+                                                                    class="text-[9px] text-blue-400 font-medium truncate max-w-[160px]">
+                                                                    {{ summaryModal.data.recipe.dye_color }}
+                                                                </span>
+                                                            </div>
+                                                        </template>
+                                                        <span v-else
+                                                            class="text-[10px] font-mono font-bold text-gray-500">N/A</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="text-right">
+                                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                Volume
+                                            </p>
+                                            <span
+                                                class="block text-2xl font-black text-indigo-600 tracking-tight leading-none">{{
+                                                    summaryModal.data.quantity }}<span
+                                                    class="text-sm text-indigo-400 ml-1">kg</span></span>
+                                        </div>
                                     </div>
-                                    <div class="text-right">
-                                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                                            Volume
-                                        </p>
-                                        <span
-                                            class="block text-2xl font-black text-blue-600 tracking-tighter leading-none">{{
-                                                summaryModal.data.quantity }}<span
-                                                class="text-sm text-blue-400 ml-1">kg</span></span>
-                                    </div>
-                                </div>
 
-                                <div class="pt-4 border-t border-slate-100 flex justify-between items-center">
-                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Est.
-                                        Amount</span>
-                                    <span class="text-base font-black text-black">₱{{
-                                        formatPrice(summaryModal.data.total_amount) }}</span>
+                                    <div class="pt-4 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center">
+                                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Est.
+                                            Amount</span>
+                                        <span class="text-base font-black text-gray-900 dark:text-white">₱{{
+                                            formatPrice(summaryModal.data.total_amount) }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="p-6 border-t border-slate-100 bg-white flex gap-3">
-                        <button @click="summaryModal.show = false"
-                            class="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-colors">
-                            Close Summary
-                        </button>
-                        <button @click="openConfirmFromSummary"
-                            class="flex-1 py-4 rounded-2xl bg-black text-white text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-colors shadow-lg shadow-black/10 flex items-center justify-center gap-2">
-                            <Send class="h-4 w-4" />
-                            Push to SCM
-                        </button>
+                        <div class="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3">
+                            <button @click="summaryModal.show = false"
+                                class="flex-1 py-3.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 text-xs font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors active:scale-95">
+                                Close Summary
+                            </button>
+                            <button @click="openConfirmFromSummary"
+                                class="flex-1 py-3.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                                <Send class="h-4 w-4" />
+                                Push to SCM
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
     </AuthenticatedLayout>
 </template>
@@ -649,7 +656,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { Send, RefreshCw, Search, Loader2, X, Eye, Check } from 'lucide-vue-next';
+import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles } from 'lucide-vue-next';
 
 // ── Props ──────────────────────────────────────────────────────────────────
 const props = defineProps({
@@ -763,67 +770,24 @@ const refreshData = () => router.reload();
 </script>
 
 <style scoped>
-.hide-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-
-.hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-.animate-in {
-    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animate-zoom-in {
-    animation: zoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes zoomIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-/* Toast transition */
-.toast-enter-active,
-.toast-leave-active {
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.toast-enter-from,
-.toast-leave-to {
-    opacity: 0;
-    transform: translateY(1rem) scale(0.95);
-}
-
-/* Confirmation modal fade */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-    transition: opacity 0.25s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-    opacity: 0;
-}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.25s ease; }
+.modal-enter-active > div, .modal-leave-active > div { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from > div, .modal-leave-to > div { opacity: 0; transform: scale(0.95) translateY(10px); }
+.toast-enter-active, .toast-leave-active { transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(1rem) scale(0.95); }
 </style>

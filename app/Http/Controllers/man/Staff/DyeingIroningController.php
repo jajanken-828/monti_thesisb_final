@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\IronJob;
-use App\Models\MachineReport;
-use App\Models\SqueezerJob;
+use App\Models\man\IronJob;
+use App\Models\man\MachineReport;
+use App\Models\man\SqueezerJob;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,9 +12,8 @@ class DyeingIroningController extends ManufacturingStaffController
 {
     public function index()
     {
-        $pendingCount = SqueezerJob::whereHas('ironJob', function ($q) {
-            $q->whereNull('id');
-        })->count(); // or use a status field on squeezer jobs
+        $pendingCount = SqueezerJob::whereDoesntHave('ironJob')
+            ->count();
 
         $recentJobs = IronJob::with('squeezerJob.softenerJob.fabric')
             ->where('operator_id', $this->staff()->id)
@@ -33,6 +32,9 @@ class DyeingIroningController extends ManufacturingStaffController
 
     public function dyeingIroning()
     {
+        // Option B: auto-flow from squeezer (fabric status is set to 'iron'
+        // in DyeingSqueezerController@storeSqueezer). Same pattern as
+        // iron -> forming which only checks for missing next-stage job.
         $squeezerJobs = SqueezerJob::with('softenerJob.fabric')
             ->whereDoesntHave('ironJob')
             ->get();
@@ -49,6 +51,8 @@ class DyeingIroningController extends ManufacturingStaffController
             'remarks' => 'nullable|string',
         ]);
 
+        $squeezerJob = SqueezerJob::with('softenerJob.fabric')->findOrFail($validated['squeezer_job_id']);
+
         IronJob::create([
             'squeezer_job_id' => $validated['squeezer_job_id'],
             'remarks' => $validated['remarks'],
@@ -57,6 +61,12 @@ class DyeingIroningController extends ManufacturingStaffController
             'code' => $this->generateCode('IRON', IronJob::class),
             'processed_at' => now(),
         ]);
+
+        // Forming step removed: ironing now flows directly to packaging.
+        $fabric = $squeezerJob->softenerJob?->fabric;
+        if ($fabric) {
+            $fabric->update(['status' => 'packed']);
+        }
 
         return redirect()->back()->with('message', 'Ironing recorded successfully.');
     }

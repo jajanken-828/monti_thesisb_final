@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\AttendanceLog;
-use App\Models\EmployeeShift;
-use App\Models\Holiday;
-use App\Models\LeaveRequest;
-use App\Models\Payroll;
-use App\Models\PayrollSet;
-use App\Models\PayrollRate;
-use App\Models\User;
-use App\Models\GovernmentContributionRate;
+use App\Models\hrm\AttendanceLog;
+use App\Models\hrm\EmployeeShift;
+use App\Models\hrm\Holiday;
+use App\Models\hrm\LeaveRequest;
+use App\Models\hrm\Payroll;
+use App\Models\hrm\PayrollSet;
+use App\Models\hrm\PayrollRate;
+use App\Models\core\User;
+use App\Models\hrm\GovernmentContributionRate;
 use App\Traits\HasPagePermissions;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;

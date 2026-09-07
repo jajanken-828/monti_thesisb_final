@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\man;
 
 use App\Http\Controllers\Controller;
-use App\Models\ManufacturingSupervisorRole;
-use App\Models\User;
+use App\Models\man\ManufacturingSupervisorRole;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
+use App\Models\crm\Client;
+use App\Models\crm\CrmLogoPartner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 
@@ -27,9 +29,10 @@ class ClientAuthController extends Controller
             'phone' => 'required|string|max:20',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'company_address' => 'required|string',
+            'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 
-        Client::create([
+        $client = Client::create([
             'company_name' => $request->company_name,
             'business_type' => $request->business_type,
             'tin_number' => $request->tin_number,
@@ -40,6 +43,15 @@ class ClientAuthController extends Controller
             'company_address' => $request->company_address,
             'status' => 'pending', // default pending
         ]);
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('crm-logos', 'public');
+            CrmLogoPartner::create([
+                'client_id' => $client->id,
+                'logo_path' => $path,
+                'original_name' => $request->file('logo')->getClientOriginalName(),
+            ]);
+        }
 
         return redirect()->route('client.login')->with('message', 'Registration submitted. Please wait for admin approval.');
     }

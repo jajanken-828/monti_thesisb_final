@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\warehouse;
 
 use App\Http\Controllers\Controller;
-use App\Models\Warehouse;
-use App\Models\User;
-use App\Models\UserModuleAccess;
-use App\Models\WarehouseStockItem;
+use App\Models\war\Warehouse;
+use App\Models\core\User;
+use App\Models\core\UserModuleAccess;
+use App\Models\war\WarehouseStockItem;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;

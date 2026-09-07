@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\warehouse;
 
 use App\Http\Controllers\Controller;
-use App\Models\WarehouseReject;
+use App\Models\war\WarehouseReject;
 use Inertia\Inertia;
 
 class RejectController extends Controller

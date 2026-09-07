@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CrmMeeting;
+use App\Models\crm\Client;
+use App\Models\crm\CrmMeeting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -16,7 +16,7 @@ class ApprovalController extends Controller
 
     public function index()
     {
-        $pendingClients = Client::where('status', 'pending')->with('meetings')->get();
+        $pendingClients = Client::where('status', 'pending')->with(['meetings', 'logo'])->get();
 
         $permissions = $this->getPagePermissionsForModule('CRM');
 

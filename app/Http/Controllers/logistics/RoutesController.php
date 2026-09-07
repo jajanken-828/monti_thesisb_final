@@ -4,8 +4,8 @@ namespace App\Http\Controllers\logistics;
 
 use App\Http\Controllers\Controller;
 use App\Models\logistics\Route;
-use App\Models\Client;
-use App\Models\CeoLocation;
+use App\Models\crm\Client;
+use App\Models\ceo\CeoLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 

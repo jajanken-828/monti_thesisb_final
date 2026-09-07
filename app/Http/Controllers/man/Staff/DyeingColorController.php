@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\DyeJob;
-use App\Models\DyeJobChemical;
-use App\Models\Fabric;
-use App\Models\Machine;
-use App\Models\MachineReport;
-use App\Models\ManufacturingInventoryItem;
+use App\Models\man\DyeJob;
+use App\Models\man\DyeJobChemical;
+use App\Models\man\Fabric;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
+use App\Models\man\ManufacturingInventoryItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;

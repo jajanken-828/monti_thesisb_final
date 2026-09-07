@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\logistics;
 
 use App\Http\Controllers\Controller;
-use App\Models\CeoLocation;
+use App\Models\ceo\CeoLocation;
 use App\Models\logistics\Delivery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

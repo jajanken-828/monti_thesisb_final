@@ -5,7 +5,7 @@ namespace App\Http\Controllers\logistics;
 use App\Http\Controllers\Controller;
 use App\Models\logistics\Truck;
 use App\Models\logistics\Driver;
-use App\Models\WarehousePackage;
+use App\Models\war\WarehousePackage;
 use App\Models\logistics\Delivery;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;

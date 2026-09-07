@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\hrm;
 
 use App\Http\Controllers\Controller;
-use App\Models\TraineeGrade;
-use App\Models\User;
+use App\Models\hrm\TraineeGrade;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Traits\HasPagePermissions;
@@ -15,13 +15,9 @@ class TraineeController extends Controller
 
     public function index(Request $request)
     {
-        // DYNAMIC MODULE DETECTION
-        $routeName    = $request->route()->getName();
-        $modulePrefix = explode('.', $routeName)[0];
-        $module       = strtoupper($modulePrefix);
-
+        // HRM now manages ALL trainees across the whole ERP
+        // Fetch all users with position 'trainee', regardless of their role (module)
         $trainees = User::where('position', 'trainee')
-            ->where('role', $module)
             ->with('traineeGrade')
             ->orderBy('created_at', 'desc')
             ->get()
@@ -31,18 +27,19 @@ class TraineeController extends Controller
                 'id'           => $t->id,
                 'name'         => $t->name,
                 'email'        => $t->email,
-                'role'         => $t->role,
+                'role'         => $t->role,      // their assigned module (original department)
                 'join_date'    => $t->join_date,
                 'trainee_grade' => $t->traineeGrade,
+                'grade_percentage' => $t->traineeGrade?->total_percentage ?? 0,
             ])
             ->values(); // Re-index after filter
 
-        // Get page permissions for the current user (HRM module)
+        // Page permissions are always under HRM module
         $permissions = $this->getPagePermissionsForModule('HRM');
 
         return Inertia::render('Dashboard/HRM/Trainee', [
             'trainees'      => $trainees,
-            'currentModule' => $module,
+            'currentModule' => 'HRM',   // fixed for HRM
             'permissions'   => $permissions,
         ]);
     }

@@ -13,9 +13,9 @@ const form = useForm({
     representative_name: '',
     address: '',
     email: '',
-    phone_country: '+63', // Default Country Code
-    phone_raw: '', // Stores the exactly 12 digits
-    phone_number: '', // Combined for backend submission
+    phone_country: '+63',
+    phone_raw: '',
+    phone_number: '',
     password: '',
     password_confirmation: '',
 });
@@ -24,7 +24,6 @@ const isLoaded = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
-// Stores dynamic validation warning messages
 const inputWarnings = ref({
     business_name: '',
     representative_name: '',
@@ -47,7 +46,6 @@ const toggleConfirmPassword = () => {
     showConfirmPassword.value = !showConfirmPassword.value;
 };
 
-// Function to trigger temporary red warning text
 const triggerWarning = (field, message) => {
     inputWarnings.value[field] = message;
     if (warningTimeouts[field]) clearTimeout(warningTimeouts[field]);
@@ -56,7 +54,6 @@ const triggerWarning = (field, message) => {
     }, 3000);
 };
 
-// --- 1. PHYSICAL KEYPRESS BLOCKS ---
 const blockNumbersAndSpecial = (e, field) => {
     if (e.key.length === 1 && !/^[a-zA-Z\s]$/.test(e.key)) {
         e.preventDefault();
@@ -85,7 +82,6 @@ const blockSpecialForEmail = (e) => {
     }
 };
 
-// --- 2. PASTE SANITIZATION WATCHERS ---
 watch(() => form.business_name, (val) => {
     const filtered = val.replace(/[^a-zA-Z\s]/g, '');
     if (val !== filtered) {
@@ -126,7 +122,6 @@ watch(() => form.phone_raw, (val) => {
     if (val !== filtered) form.phone_raw = filtered;
 });
 
-// --- 3. HARD SUBMIT LOCKS ---
 const submit = () => {
     if (!/^[a-zA-Z\s]+$/.test(form.business_name)) {
         toast.error('Business Name is required and can only contain letters and spaces.');
@@ -169,7 +164,6 @@ const submit = () => {
         return;
     }
 
-    // Combine Country Code and Phone Number
     form.phone_number = `${form.phone_country}${form.phone_raw}`;
 
     form.post(route('supplier.register.store'), {
@@ -190,26 +184,34 @@ const submit = () => {
         style="background-image: url('/images/threads.jpg');">
         <div class="absolute inset-0 bg-black/35"></div>
 
-        <nav class="relative z-30 px-6 py-5 flex items-center">
-            <Link href="/" class="flex items-center gap-3 group">
-                <div
-                    class="size-10 sm:size-11 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-full w-full object-contain" />
+        <!-- HEADER -->
+        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
+            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
+                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
+                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
+                            MONTI<span class="text-emerald-400">TEXTILE</span>
+                        </span>
+                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
+                            Manufacturing ERP
+                        </span>
+                    </div>
                 </div>
-                <span class="font-black text-2xl tracking-tight text-white drop-shadow-md">
-                    Monti<span class="text-emerald-400">Textile</span>
-                </span>
-            </Link>
-        </nav>
+                <nav class="flex items-center gap-3">
+                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
+                        Home
+                    </Link>
+                </nav>
+            </div>
+        </header>
 
         <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
             <div class="w-full max-w-3xl">
-
-                <div
-                    class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-
+                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
                     <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-
                         <Head title="Join Monti ERP - Vendor Registration" />
 
                         <div class="text-center mb-10">
@@ -223,9 +225,7 @@ const submit = () => {
                         </div>
 
                         <form @submit.prevent="submit" class="space-y-6">
-
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                                 <div class="md:col-span-2">
                                     <h3
                                         class="text-sm font-black uppercase tracking-widest text-emerald-300 border-b border-white/20 pb-2 mb-2">
@@ -260,7 +260,6 @@ const submit = () => {
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-
                                 <div class="md:col-span-2">
                                     <h3
                                         class="text-sm font-black uppercase tracking-widest text-emerald-300 border-b border-white/20 pb-2 mb-2 mt-2">
@@ -375,11 +374,9 @@ const submit = () => {
                                     <InputError class="mt-1 text-red-300"
                                         :message="form.errors.password_confirmation" />
                                 </div>
-
                             </div>
 
-                            <div
-                                class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
                                 <Link :href="route('supplier.login')"
                                     class="group text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center">
                                     <svg class="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform"
@@ -397,9 +394,7 @@ const submit = () => {
                                     <span v-else>Register Business</span>
                                 </PrimaryButton>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>
@@ -413,7 +408,6 @@ const submit = () => {
 .font-mono {
     font-family: 'JetBrains Mono', monospace;
 }
-
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -421,16 +415,24 @@ input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
     -webkit-text-fill-color: white !important;
 }
-
-input,
-select,
-textarea {
+input, select, textarea {
     @apply transition-all duration-300 ease-in-out;
 }
-
-/* Ensure the <option> text is visible inside the transparent select field */
 .custom-select option {
     background-color: #0f172a;
     color: white;
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(16, 185, 129, 0.5);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(16, 185, 129, 0.7);
 }
 </style>

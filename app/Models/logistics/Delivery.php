@@ -2,7 +2,24 @@
 
 namespace App\Models\logistics;
 
-use App\Models\WarehousePackage;
+
+use App\Models\core\User;
+use App\Models\man\Package;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\logistics\Truck;
+use App\Models\logistics\Conductor;
+use App\Models\logistics\Route;
+use App\Models\logistics\ProofOfDelivery;
+use App\Models\logistics\ConductorReport;
+use App\Models\logistics\Driver;
+use App\Models\logistics\DeliveryPackage;
+use App\Models\logistics\Delivery;
+use App\Models\war\WarehousePackage;
+
 use Illuminate\Database\Eloquent\Model;
 
 class Delivery extends Model

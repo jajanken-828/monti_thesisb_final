@@ -27,10 +27,6 @@ onMounted(() => {
     isLoaded.value = true;
 });
 
-/**
- * WATCH FOR GEOFENCE SECURITY ERRORS
- * Triggered when the middleware bounces a user back to login
- */
 watch(() => (page.props.flash as any)?.geofence_error, (message) => {
     if (message) {
         Swal.fire({
@@ -67,7 +63,6 @@ const triggerWarning = (msg: string) => {
     }, 3000);
 };
 
-// --- STRICT REAL-TIME VALIDATIONS ---
 const blockInvalidChars = (e: KeyboardEvent) => {
     if (e.key === ' ' || /[^a-zA-Z0-9@.\-_]/.test(e.key)) {
         e.preventDefault();
@@ -143,33 +138,40 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
 </script>
 
 <template>
-
     <Head title="ERP Secure Authorization | Monti Corp" />
 
     <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
         style="background-image: url('/images/threads.jpg');">
         <div class="absolute inset-0 bg-black/35"></div>
 
-        <nav class="relative z-30 px-6 py-5 flex items-center">
-            <Link href="/" class="flex items-center gap-3 group">
-                <div
-                    class="size-10 sm:size-11 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-full w-full object-contain" />
+        <!-- HEADER -->
+        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
+            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
+                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
+                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
+                            MONTI<span class="text-blue-400">TEXTILE</span>
+                        </span>
+                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
+                            Manufacturing ERP
+                        </span>
+                    </div>
                 </div>
-                <span class="font-black text-2xl tracking-tight text-white drop-shadow-md">
-                    Monti<span class="text-blue-300">Textile</span>
-                </span>
-            </Link>
-        </nav>
+                <nav class="flex items-center gap-3">
+                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
+                        Home
+                    </Link>
+                </nav>
+            </div>
+        </header>
 
         <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
             <div class="w-full max-w-md">
-
-                <div
-                    class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-
+                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
                     <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-
                         <div class="text-center mb-10">
                             <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
                                 System Access
@@ -185,7 +187,6 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
                         </div>
 
                         <form @submit.prevent="submit" class="space-y-6">
-
                             <div>
                                 <InputLabel for="identity" value="Identification" class="text-white/90" />
                                 <TextInput id="identity" type="text"
@@ -249,8 +250,7 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
                                 </label>
                             </div>
 
-                            <div
-                                class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
+                            <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/10 mt-6">
                                 <div class="text-sm font-medium text-slate-300">
                                     Want to be part of MontiTextile?
                                     <Link :href="route('apply')"
@@ -266,9 +266,7 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
                                     <span v-else>Login</span>
                                 </PrimaryButton>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>
@@ -282,7 +280,6 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
 .font-mono {
     font-family: 'JetBrains Mono', monospace;
 }
-
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -290,10 +287,20 @@ input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
     -webkit-text-fill-color: white !important;
 }
-
-input,
-select,
-textarea {
+input, select, textarea {
     @apply transition-all duration-300 ease-in-out;
+}
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.7);
 }
 </style>

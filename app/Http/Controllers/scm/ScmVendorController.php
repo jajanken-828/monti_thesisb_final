@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\scm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Supplier;
-use App\Models\VendorRegistration;
-use App\Models\VendorRequirement;
+use App\Models\pro\Supplier;
+use App\Models\pro\VendorRegistration;
+use App\Models\pro\VendorRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;

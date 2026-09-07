@@ -11,7 +11,8 @@ import {
     RefreshCw,
     Search,
     X,
-    Info
+    Info,
+    Sparkles
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -117,10 +118,10 @@ const checkOrders = () => {
 // Status badge helper
 const statusBadge = (status) => {
     switch (status) {
-        case 'ok': return { class: 'bg-emerald-100 text-emerald-700', label: 'In Stock' };
-        case 'low': return { class: 'bg-amber-100 text-amber-700', label: 'Low Stock' };
-        case 'out': return { class: 'bg-red-100 text-red-600', label: 'Out of Stock' };
-        default: return { class: 'bg-gray-100 text-gray-700', label: status };
+        case 'ok': return { class: 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30', label: 'In Stock' };
+        case 'low': return { class: 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30', label: 'Low Stock' };
+        case 'out': return { class: 'bg-rose-100 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30', label: 'Out of Stock' };
+        default: return { class: 'bg-gray-100 text-gray-700 ring-gray-200 dark:bg-zinc-800 dark:text-gray-300 dark:ring-zinc-700', label: status };
     }
 };
 </script>
@@ -128,68 +129,86 @@ const statusBadge = (status) => {
 <template>
     <Head title="Stock Checker | Inventory" />
     <AuthenticatedLayout>
-        <div class="py-6">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Stock Checker</h1>
-                        <p class="text-slate-500 text-sm mt-0.5 font-medium">Monitor material stock levels and trigger procurement or order checks.</p>
+        <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
+            <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">
+                <!-- Hero header -->
+                <div class="animate-fade-up relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl shadow-indigo-500/20">
+                    <div class="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
+                    <div class="absolute -bottom-24 -left-10 h-64 w-64 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
+                    <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                    <div class="relative flex flex-wrap items-center gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop">
+                            <ShoppingCart class="h-7 w-7" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                <Sparkles class="h-3.5 w-3.5" /> Inventory · Stock Health
+                            </p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Stock Checker</h1>
+                            <p class="text-sm text-blue-100/90">Monitor material stock levels and trigger procurement or order checks.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
+                                {{ pendingOrdersCount }} pending
+                            </span>
+                            <button
+                                @click="checkOrders"
+                                :disabled="checkingOrders"
+                                class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50"
+                            >
+                                <RefreshCw :class="['w-4 h-4', checkingOrders && 'animate-spin']" />
+                                {{ checkingOrders ? 'Checking...' : `Check Orders (${pendingOrdersCount})` }}
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-3">
-                        <button
-                            @click="checkOrders"
-                            :disabled="checkingOrders"
-                            class="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase rounded-2xl hover:opacity-80 transition shadow-lg shadow-slate-200 disabled:opacity-50"
-                        >
-                            <RefreshCw :class="['w-4 h-4', checkingOrders && 'animate-spin']" />
-                            Check Pending Orders ({{ pendingOrdersCount }})
-                        </button>
+
+                    <div class="relative mt-6 flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Search materials..."
+                                class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <div class="mb-6">
-                    <div class="relative max-w-sm">
-                        <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            v-model="searchQuery"
-                            type="text"
-                            placeholder="Search materials..."
-                            class="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 shadow-sm transition"
-                        />
+                <div class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden" style="animation-delay: 80ms">
+                    <div v-if="filteredMaterials.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+                        <div class="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-4 animate-bounce-soft">
+                            <Package class="h-9 w-9 text-indigo-400" />
+                        </div>
+                        <p class="text-sm font-black text-gray-700 dark:text-gray-200">No materials found</p>
+                        <p class="text-xs text-gray-400 mt-1">Try a different search.</p>
+                        <button v-if="searchQuery" @click="searchQuery=''" class="mt-4 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition active:scale-95">Clear filters</button>
                     </div>
-                </div>
-
-                <div class="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
+                    <TransitionGroup v-else name="card" tag="div" class="overflow-x-auto">
+                        <table key="checker-table" class="w-full text-left text-sm">
+                            <thead class="bg-slate-50/80 dark:bg-zinc-800/60 border-b border-gray-100 dark:border-zinc-800">
                                 <tr>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Material ID</th>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Stock</th>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit</th>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reorder Point</th>
-                                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                    <th class="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Material ID</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Name</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Category</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest text-right">Total Stock</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Unit</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Reorder Point</th>
+                                    <th class="px-6 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Status</th>
+                                    <th class="px-6 py-4 text-center text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Action</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
-                                <tr v-if="filteredMaterials.length === 0">
-                                    <td colspan="8" class="px-6 py-20 text-center text-slate-400">
-                                        <Package class="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                        <p class="font-bold uppercase tracking-widest text-xs italic">No materials found</p>
-                                    </td>
-                                </tr>
-                                <tr v-for="mat in filteredMaterials" :key="mat.id" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                                    <td class="px-6 py-5 font-mono text-xs font-bold text-blue-600">{{ mat.mat_id }}</td>
-                                    <td class="px-6 py-5 font-bold text-slate-700 dark:text-slate-200">{{ mat.name }}</td>
-                                    <td class="px-6 py-5 text-slate-500 font-medium">{{ mat.category }}</td>
-                                    <td class="px-6 py-5 text-right font-black text-slate-900 dark:text-white">{{ mat.total_stock.toLocaleString() }}</td>
-                                    <td class="px-6 py-5 font-bold text-slate-500">{{ mat.unit }}</td>
-                                    <td class="px-6 py-5 text-slate-500 font-bold">{{ mat.reorder_point.toLocaleString() }}</td>
+                            <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
+                                <tr v-for="mat in filteredMaterials" :key="mat.id" class="hover:bg-indigo-50/40 dark:hover:bg-indigo-950/10 transition-colors">
+                                    <td class="px-6 py-5 font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ mat.mat_id }}</td>
+                                    <td class="px-6 py-5 font-bold text-gray-900 dark:text-white">{{ mat.name }}</td>
+                                    <td class="px-6 py-5 text-slate-500 dark:text-gray-400 font-medium">{{ mat.category }}</td>
+                                    <td class="px-6 py-5 text-right font-black text-gray-900 dark:text-white">{{ mat.total_stock.toLocaleString() }}</td>
+                                    <td class="px-6 py-5 font-bold text-slate-500 dark:text-gray-400">{{ mat.unit }}</td>
+                                    <td class="px-6 py-5 text-slate-500 dark:text-gray-400 font-bold">{{ mat.reorder_point.toLocaleString() }}</td>
                                     <td class="px-6 py-5">
-                                        <span :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter', statusBadge(mat.status).class]">
+                                        <span :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ring-1', statusBadge(mat.status).class]">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                                             <AlertTriangle v-if="mat.status === 'low'" class="w-3 h-3" />
                                             <CheckCircle v-else-if="mat.status === 'ok'" class="w-3 h-3" />
                                             <AlertCircle v-else class="w-3 h-3" />
@@ -201,70 +220,88 @@ const statusBadge = (status) => {
                                             v-if="mat.status !== 'ok'"
                                             @click="requestProcurement(mat)"
                                             :disabled="processingMaterial === mat.id"
-                                            class="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition shadow-sm disabled:opacity-50"
+                                            class="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
                                         >
                                             <ShoppingCart class="w-3.5 h-3.5" />
                                             {{ processingMaterial === mat.id ? 'Sending...' : 'Procure' }}
                                         </button>
-                                        <span v-else class="text-slate-300 text-[10px] font-black uppercase tracking-widest italic">— Adequate —</span>
+                                        <span v-else class="text-slate-300 dark:text-zinc-600 text-[10px] font-black uppercase tracking-widest">— Adequate —</span>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </TransitionGroup>
                 </div>
             </div>
         </div>
 
         <Teleport to="body">
-            <div v-if="showConfirmModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showConfirmModal = false">
-                <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in duration-200">
-                    <div class="flex flex-col items-center text-center">
-                        <div :class="{
-                            'bg-blue-50 text-blue-600': confirmConfig.type === 'blue',
-                            'bg-amber-50 text-amber-600': confirmConfig.type === 'amber',
-                            'bg-emerald-50 text-emerald-600': confirmConfig.type === 'green'
-                        }" class="h-20 w-20 rounded-full flex items-center justify-center mb-6">
-                            <Info v-if="confirmConfig.type === 'blue'" class="w-10 h-10" />
-                            <AlertTriangle v-if="confirmConfig.type === 'amber'" class="w-10 h-10" />
-                            <CheckCircle v-if="confirmConfig.type === 'green'" class="w-10 h-10" />
-                        </div>
-                        
-                        <h3 class="text-2xl font-black uppercase tracking-tighter mb-2 text-slate-900 dark:text-white leading-none">
-                            {{ confirmConfig.title }}
-                        </h3>
-                        <p class="text-sm font-bold text-slate-500 leading-relaxed px-4">
-                            {{ confirmConfig.message }}
-                        </p>
-                        
-                        <div class="mt-10 flex w-full gap-3">
-                            <button 
-                                @click="showConfirmModal = false" 
-                                class="flex-1 px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-80 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                @click="confirmConfig.action" 
-                                :class="{
-                                    'bg-blue-600': confirmConfig.type === 'blue',
-                                    'bg-amber-600': confirmConfig.type === 'amber',
-                                    'bg-emerald-600': confirmConfig.type === 'green'
-                                }"
-                                class="flex-[1.5] px-6 py-4 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:opacity-90 transition-all"
-                            >
-                                {{ confirmConfig.confirmText }}
-                            </button>
+            <Transition name="modal">
+                <div v-if="showConfirmModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xl" @click.self="showConfirmModal = false">
+                    <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-8 shadow-2xl border border-gray-100 dark:border-zinc-800">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="h-16 w-16 rounded-2xl flex items-center justify-center mb-5 shadow-lg animate-pop text-white" :class="{
+                                'bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700': confirmConfig.type === 'blue',
+                                'bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600': confirmConfig.type === 'amber',
+                                'bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700': confirmConfig.type === 'green'
+                            }">
+                                <Info v-if="confirmConfig.type === 'blue'" class="w-8 h-8" />
+                                <AlertTriangle v-if="confirmConfig.type === 'amber'" class="w-8 h-8" />
+                                <CheckCircle v-if="confirmConfig.type === 'green'" class="w-8 h-8" />
+                            </div>
+
+                            <h3 class="text-lg font-black uppercase tracking-tight mb-2 text-gray-900 dark:text-white">
+                                {{ confirmConfig.title }}
+                            </h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-gray-400 leading-relaxed px-4">
+                                {{ confirmConfig.message }}
+                            </p>
+
+                            <div class="mt-8 flex w-full gap-3">
+                                <button
+                                    @click="showConfirmModal = false"
+                                    class="flex-1 px-6 py-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-gray-300 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-zinc-700 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    @click="confirmConfig.action"
+                                    :class="{
+                                        'bg-indigo-600 shadow-indigo-500/25': confirmConfig.type === 'blue',
+                                        'bg-amber-600 shadow-amber-500/25': confirmConfig.type === 'amber',
+                                        'bg-emerald-600 shadow-emerald-500/25': confirmConfig.type === 'green'
+                                    }"
+                                    class="flex-[1.5] px-6 py-3.5 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg hover:opacity-90 hover:scale-[1.02] active:scale-95 transition-all"
+                                >
+                                    {{ confirmConfig.confirmText }}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </Transition>
         </Teleport>
     </AuthenticatedLayout>
 </template>
 
 <style scoped>
-@keyframes zoom-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-.animate-in { animation-fill-mode: both; }
-.zoom-in { animation: zoom-in 0.2s ease-out; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounceSoft { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float { animation: float 7s ease-in-out infinite; }
+.animate-float-delayed { animation: float 8s ease-in-out 1.2s infinite; }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-bounce-soft { animation: bounceSoft 2.4s ease-in-out infinite; }
+.card-enter-active { transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+.card-enter-from { opacity: 0; transform: translateY(18px) scale(0.98); }
+.card-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; position: absolute; }
+.card-leave-to { opacity: 0; transform: scale(0.96); }
+.card-move { transition: transform 0.4s ease; }
+.modal-enter-active, .modal-leave-active { transition: opacity 0.25s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-active .modal-panel, .modal-leave-active .modal-panel { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease; }
+.modal-enter-from .modal-panel { opacity: 0; transform: translateY(20px) scale(0.97); }
+.modal-leave-to .modal-panel { opacity: 0; transform: translateY(12px) scale(0.98); }
 </style>

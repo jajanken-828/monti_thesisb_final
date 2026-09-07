@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\crm;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\CrmClientAssignment;
-use App\Models\CrmFeedback;
-use App\Models\User;
+use App\Models\crm\Client;
+use App\Models\crm\CrmClientAssignment;
+use App\Models\crm\CrmFeedback;
+use App\Models\core\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -45,14 +45,14 @@ class InvestigationController extends Controller
             
             // Fetch clients with feedback and assignee eagerly loaded
             $clients = Client::whereIn('id', $clientIds)
-                             ->with(['feedback' => function($q) {
+                             ->with(['logo', 'feedback' => function($q) {
                                  $q->latest()->with('assignee');
                              }])
                              ->get();
         } else {
             // Manager/CEO sees all active clients
             $clients = Client::where('status', 'active')
-                             ->with(['feedback' => function($q) {
+                             ->with(['logo', 'feedback' => function($q) {
                                  $q->latest()->with('assignee');
                              }])
                              ->get();

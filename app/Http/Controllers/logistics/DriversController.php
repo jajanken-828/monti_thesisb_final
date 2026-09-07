@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\logistics;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\core\User;
 use App\Models\logistics\Driver;
 use App\Models\logistics\Delivery;
 use Illuminate\Http\Request;

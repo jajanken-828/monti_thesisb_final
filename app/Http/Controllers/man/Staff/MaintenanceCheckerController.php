@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\Machine;
-use App\Models\MachineReport;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 

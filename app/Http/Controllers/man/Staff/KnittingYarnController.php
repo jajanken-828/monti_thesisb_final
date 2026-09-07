@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\man\Staff;
 
-use App\Models\Fabric;
-use App\Models\Machine;
-use App\Models\MachineReport;
-use App\Models\ManufacturingInventoryItem;
-use App\Models\SalesOrder;
+use App\Models\man\Fabric;
+use App\Models\man\Machine;
+use App\Models\man\MachineReport;
+use App\Models\man\ManufacturingInventoryItem;
+use App\Models\ord\SalesOrder;
 use App\Models\inv\Material;
+use App\Models\man\Staff;
+use App\Models\hrm\EmployeeShift;
+
+
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

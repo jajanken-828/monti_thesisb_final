@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\warehouse;
 
 use App\Http\Controllers\Controller;
-use App\Models\Warehouse;
-use App\Models\WarehouseReceiving;
-use App\Models\WarehouseReceivingItem;
-use App\Models\WarehouseStockItem;
+use App\Models\war\Warehouse;
+use App\Models\war\WarehouseReceiving;
+use App\Models\war\WarehouseReceivingItem;
+use App\Models\war\WarehouseStockItem;
 use App\Models\inv\Material;
 use App\Models\Scm\ScmPurchaseOrder;
 use Illuminate\Http\Request;

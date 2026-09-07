@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\logistics;
 
 use App\Http\Controllers\Controller;
-use App\Models\WarehousePackage;
+use App\Models\war\WarehousePackage;
 use App\Models\logistics\Delivery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

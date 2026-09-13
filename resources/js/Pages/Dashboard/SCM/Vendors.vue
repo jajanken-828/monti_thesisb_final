@@ -1,8 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { Building2, CheckCircle, XCircle, Eye, X, Plus, Trash2, AlertTriangle, ChevronRight, Sparkles, Clock } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditVendor = computed(() => canEdit('SCM', 'vendor'));
 
 const props = defineProps({ registrations: Array });
 
@@ -69,6 +73,7 @@ const statusConfig = (s) => ({
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Vendor Registrations</h1>
                             <p class="text-sm text-blue-100/90">Review and manage vendor applications</p>
+                            <span v-if="!canEditVendor" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -144,7 +149,7 @@ const statusConfig = (s) => ({
                                         >
                                             <Eye class="w-4 h-4" />
                                         </button>
-                                        <template v-if="vendor.status === 'pending'">
+                                        <template v-if="vendor.status === 'pending' && canEditVendor">
                                             <button
                                                 @click="openModal(vendor, 'approve')"
                                                 class="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-md"
@@ -353,6 +358,7 @@ const statusConfig = (s) => ({
                                     <div class="flex items-center justify-between mb-3">
                                         <label class="text-xs font-bold text-gray-700 dark:text-gray-200">Compliance Requirements</label>
                                         <button
+                                            v-if="canEditVendor"
                                             @click="addReqLine"
                                             class="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-300 hover:underline transition"
                                         >
@@ -381,6 +387,7 @@ const statusConfig = (s) => ({
                                                 />
                                             </div>
                                             <button
+                                                v-if="canEditVendor"
                                                 @click="removeReqLine(i)"
                                                 class="w-8 h-8 flex-shrink-0 mt-0.5 flex items-center justify-center rounded-lg text-gray-300 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
                                                 :disabled="requirementLines.length === 1"
@@ -405,7 +412,7 @@ const statusConfig = (s) => ({
 
                             <!-- Reject confirm -->
                             <button
-                                v-if="modalMode === 'reject'"
+                                v-if="modalMode === 'reject' && canEditVendor"
                                 @click="submitReject"
                                 :disabled="!rejectionReason.trim()"
                                 class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-zinc-900 dark:bg-white disabled:bg-gray-200 dark:disabled:bg-zinc-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white dark:text-zinc-900 rounded-xl text-sm font-bold transition-all duration-150 active:scale-95"
@@ -416,7 +423,7 @@ const statusConfig = (s) => ({
 
                             <!-- Approve confirm -->
                             <button
-                                v-if="modalMode === 'approve'"
+                                v-if="modalMode === 'approve' && canEditVendor"
                                 @click="submitApprove"
                                 class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-xl text-sm font-bold transition-all duration-150 active:scale-95 shadow-lg"
                             >

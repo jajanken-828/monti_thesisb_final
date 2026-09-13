@@ -171,7 +171,7 @@ class UsersTableSeeder extends Seeder
         );
 
         // --------------------------------------------
-        // 5. Secretary and General Manager (often used in HRM and CEO)
+        // 5. Secretary and Special Officer (often used in HRM and CEO)
         // --------------------------------------------
         // Secretary (can be assigned to HRM or CEO; we'll put HRM)
         DB::table('users')->updateOrInsert(
@@ -189,15 +189,15 @@ class UsersTableSeeder extends Seeder
             ]
         );
 
-        // General Manager (can be for any module; we'll assign to SCM as an example)
+        // Special Officer (can be for any module; we'll assign to SCM as an example)
         DB::table('users')->updateOrInsert(
             ['email' => 'gm@example.com'],
             [
-                'name' => 'General Manager',
+                'name' => 'Special Officer',
                 'email' => 'gm@example.com',
                 'password' => $defaultPassword,
                 'role' => 'SCM',
-                'position' => 'general_manager',
+                'position' => 'special_officer',
                 'email_verified_at' => now(),
                 'is_active' => 1,
                 'created_at' => now(),

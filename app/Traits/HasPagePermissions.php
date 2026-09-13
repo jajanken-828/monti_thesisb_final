@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\core\PagePermission;
+use App\Models\Core\PagePermission;
 
 trait HasPagePermissions
 {
@@ -31,12 +31,17 @@ trait HasPagePermissions
         }
 
         // Module manager bypass: a manager is automatically granted full
-        // edit access to every page within their own module — they should
-        // never be limited by explicit PagePermission rows for pages in
-        // the module they manage.
+        // edit access to every page within their own module — UNLESS explicit
+        // PagePermission rows exist for them, in which case those rows are
+        // the exact access set (mirrors CheckPagePermission).
         if (strtoupper($user->role) === strtoupper($module) && $user->position === 'manager') {
-            $pages = array_keys(config('module_pages.' . strtolower($module), []));
-            return array_fill_keys($pages, 'edit');
+            $hasExplicit = PagePermission::where('user_id', $user->id)
+                ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
+                ->exists();
+            if (! $hasExplicit) {
+                $pages = array_keys(config('module_pages.' . strtolower($module), []));
+                return array_fill_keys($pages, 'edit');
+            }
         }
 
         $permissions = PagePermission::where('user_id', $user->id)

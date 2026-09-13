@@ -6,6 +6,7 @@ import {
     LayoutDashboard, ShoppingCart, ShoppingBag, MessageSquare,
     Receipt, HelpCircle, User, Truck, Navigation, Clock, CalendarDays,
     History, HandCoins, LogOut, Building2, UserCog2, ShieldCheck, MapPin,
+    FileText, Megaphone, Stamp, Bell, Printer, Target, Wrench, Repeat, ClipboardList, Zap,
 } from 'lucide-vue-next'
 
 import { useDropdown, useDynamicDropdowns, useSidebarScroll } from './composables/useSidebarPersistence'
@@ -15,7 +16,8 @@ import { buildNavItems } from './navItems/buildNavItems'
 
 const page = usePage()
 
-const user = computed(() => page.props.auth.user)
+    const user = computed(() => page.props.auth.user)
+    const unreadCount = computed(() => page.props.notifications_unread || 0)
 const client = computed(() => page.props.auth.client)
 const supplier = computed(() => page.props.auth.supplier || (page.props.auth.user?.business_name ? page.props.auth.user : null))
 const currentUrl = computed(() => page.url)
@@ -36,6 +38,7 @@ const moduleDropdowns = {
     INV: useDropdown('inventory'),
     PRO: useDropdown('pro'),
     FIN: useDropdown('fin'),
+    IT: useDropdown('it'),
     WRF: useDropdown('workforce'),
 }
 const qualityCheckerDropdown = useDropdown('quality_checker')
@@ -97,12 +100,40 @@ const navItems = computed(() => {
     const items = []
     const userPosition = user.value?.position?.toLowerCase()
     const isCEO = user.value?.role === 'CEO'
-    const isSecretaryOrGM = user.value?.position === 'secretary' || user.value?.position === 'general_manager'
+    const isSecretaryOrGM = user.value?.position === 'secretary' || user.value?.position === 'special_officer'
 
     if (isCEO) {
+        const isVP = user.value?.position === 'vice_president'
+        if (isVP) {
+            // Vice Presidency: execution arm (operations, directives, workforce).
+            items.push({ label: 'VP Dashboard', href: route('vp.operations'), icon: LayoutDashboard })
+            items.push({ label: 'Downtime Board', href: route('vp.downtime'), icon: Wrench })
+            items.push({ label: 'Shift Handovers', href: route('vp.handovers'), icon: Repeat })
+            items.push({ label: 'Plan vs Actual', href: route('vp.plan'), icon: ClipboardList })
+            items.push({ label: 'Utilities Brief', href: route('vp.utilities'), icon: Zap })
+            items.push({ label: 'Directives', href: route('vp.directives'), icon: Megaphone })
+            items.push({ label: 'Bulletins', href: route('vp.bulletins'), icon: Bell })
+            items.push({ label: 'Workforce Overview', href: route('vp.workforce'), icon: User })
+            items.push({ label: 'Joint Approvals', href: route('ceo.approvals'), icon: Stamp })
+            return items
+        }
         items.push({ label: 'CEO Dashboard', href: route('dashboard'), icon: LayoutDashboard })
+        items.push({ label: 'Inbox', href: route('ceo.inbox'), icon: Bell, badge: unreadCount.value || undefined })
+        items.push({ label: 'Approvals Center', href: route('ceo.approvals'), icon: Stamp })
+        items.push({ label: 'Executive Reports', href: route('ceo.reports'), icon: FileText })
+        items.push({ label: 'Board Pack', href: route('ceo.board-pack'), icon: Printer })
+        items.push({ label: 'Goals & Targets', href: route('ceo.goals'), icon: Target })
+        items.push({ label: 'Audit Trail', href: route('ceo.audit'), icon: History })
         items.push({ label: 'Organization Chart', href: route('ceo.access'), icon: ShieldCheck })
         items.push({ label: 'Geolocation', href: route('ceo.location.index'), icon: MapPin })
+    }
+
+    // ─── SECRETARY WORKSPACE (secretary-exclusive pages + granted modules below) ──
+    if (user.value?.position === 'secretary') {
+        items.push({ label: 'Secretary Dashboard', href: route('secretary.dashboard'), icon: LayoutDashboard })
+        items.push({ label: 'Documents', href: route('secretary.documents'), icon: FileText })
+        items.push({ label: 'Meetings', href: route('secretary.meetings'), icon: CalendarDays })
+        items.push({ label: 'Memos', href: route('secretary.memos'), icon: Megaphone })
     }
 
     if (user.value?.role?.toUpperCase() === 'LOG' && userPosition === 'staff') {
@@ -286,6 +317,7 @@ const logoutRoute = computed(() => isClient.value ? route('client.logout') : (is
                                 :class="isActive(item.href) ? 'text-white' : 'text-gray-400 group-hover:text-indigo-500'" />
                             <span class="truncate">{{ item.label }}</span>
                         </div>
+                        <span v-if="item.badge" class="min-w-[20px] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center flex-shrink-0">{{ item.badge > 99 ? '99+' : item.badge }}</span>
                         <span v-if="isActive(item.href)" class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-white"></span>
                     </Link>
                 </template>

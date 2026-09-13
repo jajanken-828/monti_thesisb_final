@@ -1,14 +1,14 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\hrm\ApplicantController as HrmApplicantController;
+use App\Http\Controllers\Hrm\ApplicantController as HrmApplicantController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\trainee\TraineeAttendanceController;
-use App\Http\Controllers\trainee\TraineePayslipController;
-use App\Http\Controllers\trainee\TraineeTimeKeepingController;
-use App\Http\Controllers\users\AppController;
-use App\Http\Controllers\users\ClockController;
-use App\Http\Controllers\users\LeaveController as UserLeaveController;
+use App\Http\Controllers\Trainee\TraineeAttendanceController;
+use App\Http\Controllers\Trainee\TraineePayslipController;
+use App\Http\Controllers\Trainee\TraineeTimeKeepingController;
+use App\Http\Controllers\Users\AppController;
+use App\Http\Controllers\Users\ClockController;
+use App\Http\Controllers\Users\LeaveController as UserLeaveController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {

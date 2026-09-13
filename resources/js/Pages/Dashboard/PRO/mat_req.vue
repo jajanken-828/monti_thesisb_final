@@ -2,11 +2,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { 
     ClipboardList, Send, ArrowRight, X, CheckCircle, 
     Users, AlertTriangle, Clock, TrendingUp, SearchX, 
     Info, AlertCircle, Loader2, Sparkles, ChevronRight
 } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditRequests = computed(() => canEdit('PRO', 'requests'));
 
 const props = defineProps({
     materialRequests: Array,
@@ -139,6 +143,7 @@ const getUrgencyClass = (u) => {
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Procurement Management</h1>
                             <p class="text-sm text-blue-100/90">Forwarded requests from SCM awaiting RFQ generation · {{ totalRequests }} pending</p>
+                            <span v-if="!canEditRequests" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -234,7 +239,7 @@ const getUrgencyClass = (u) => {
                                     </div>
                                 </div>
                                 <div class="mt-5 sm:mt-0 sm:ml-4 flex-shrink-0">
-                                    <button @click="openRFQ(req)" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 hover:opacity-95 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 active:scale-95">
+                                    <button v-if="canEditRequests" @click="openRFQ(req)" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 hover:opacity-95 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 active:scale-95">
                                         Generate RFQ <ArrowRight class="w-4 h-4" />
                                     </button>
                                 </div>
@@ -309,7 +314,7 @@ const getUrgencyClass = (u) => {
                                 <button v-if="supplierStep" @click="supplierStep = false" class="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition flex items-center gap-1"><ChevronRight class="w-4 h-4 rotate-180" /> Back</button>
                                 <div v-else></div>
                                 <button v-if="!supplierStep" @click="proceedToSuppliers" class="px-8 py-3.5 bg-gray-900 dark:bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition active:scale-95">Next <ArrowRight class="w-4 h-4 inline ml-1" /></button>
-                                <button v-else 
+                                <button v-else-if="canEditRequests"
                                     @click="submitRFQ" 
                                     :disabled="rfqForm.selected_suppliers.length === 0 || rfqForm.processing" 
                                     class="px-8 py-3.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/25 active:scale-95">

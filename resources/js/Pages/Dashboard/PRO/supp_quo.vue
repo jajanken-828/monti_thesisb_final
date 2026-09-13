@@ -1,11 +1,15 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import {
     Eye, CheckCircle, XCircle, AlertTriangle, Ban,
     X, Clock, BadgeCheck, FileText, Send, DollarSign, Sparkles, ArrowUpRight
 } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditQuotations = computed(() => canEdit('PRO', 'quotations'));
 
 const props = defineProps({
     rfqs: Array,
@@ -109,6 +113,7 @@ const confirmDecline = () => {
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Supplier Quotations</h1>
                             <p class="text-sm text-blue-100/90">Review and accept supplier quotes · {{ rfqs.length }} RFQ{{ rfqs.length !== 1 ? 's' : '' }}</p>
+                            <span v-if="!canEditQuotations" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -160,7 +165,7 @@ const confirmDecline = () => {
                                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Unit: {{ formatCurrency(res.unit_price) }} | Total (Inc. VAT): <span class="font-black text-gray-900 dark:text-white">{{ formatCurrency(res.total_price * 1.12) }}</span></p>
                                         </div>
                                         <div class="flex gap-2 flex-shrink-0">
-                                            <template v-if="res.status === 'pending_review'">
+                                            <template v-if="res.status === 'pending_review' && canEditQuotations">
                                                 <button @click="openAccept(rfq, res)"
                                                     class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-black uppercase shadow-lg active:scale-95 transition">Accept</button>
                                                 <button @click="openDecline(rfq, res)"
@@ -341,7 +346,7 @@ const confirmDecline = () => {
                             <div class="p-5 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-gray-50/60 dark:bg-zinc-800/40">
                                 <button @click="showAcceptModal = false"
                                     class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-2xl text-sm font-black uppercase text-gray-600 dark:text-gray-300 hover:bg-gray-100 transition active:scale-95">Cancel</button>
-                                <button @click="confirmAccept" :disabled="isLoading"
+                                <button v-if="canEditQuotations" @click="confirmAccept" :disabled="isLoading"
                                     class="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 active:scale-95 disabled:opacity-50">
                                     <CheckCircle class="w-4 h-4" /> {{ isLoading ? 'Processing...' : 'Confirm Order' }}
                                 </button>
@@ -392,7 +397,7 @@ const confirmDecline = () => {
                             <div class="p-5 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-gray-50/60 dark:bg-zinc-800/40">
                                 <button @click="showDeclineModal = false"
                                     class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-2xl text-sm font-black uppercase text-gray-600 dark:text-gray-300 hover:bg-gray-100 transition active:scale-95">Cancel</button>
-                                <button @click="confirmDecline" :disabled="isLoading || !declineReason.trim()"
+                                <button v-if="canEditQuotations" @click="confirmDecline" :disabled="isLoading || !declineReason.trim()"
                                     class="flex-1 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 text-white rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 active:scale-95 disabled:opacity-50">
                                     <Ban class="w-4 h-4" /> {{ isLoading ? 'Processing...' : 'Confirm Decline' }}
                                 </button>

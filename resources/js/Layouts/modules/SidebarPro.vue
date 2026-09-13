@@ -1,5 +1,5 @@
 <script>
-import { LayoutDashboard, FileText, Send, ShieldCheck, ShoppingCart } from 'lucide-vue-next'
+import { LayoutDashboard, FileText, Send, ShieldCheck, ShoppingCart, ClipboardList } from 'lucide-vue-next'
 
 export const proModule = {
     key: 'PRO',
@@ -13,6 +13,7 @@ export const proModule = {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, canAccessModule, hasModulePermission, grantedModules } = ctx
         const all = [
             { label: 'Dashboard', href: route('pro.manager.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+            { label: 'Material Requests', href: route('pro.manager.material-requests'), icon: ClipboardList, permKey: 'requests' },
             { label: 'Quotations', href: route('pro.manager.supplier-quotations'), icon: FileText, permKey: 'quotations' },
             { label: 'Receipts', href: route('pro.manager.receipt'), icon: Send, permKey: 'receipt' },
         ]

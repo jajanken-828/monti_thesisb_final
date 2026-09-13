@@ -47,19 +47,19 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\core\User::class),
+            'model' => env('AUTH_MODEL', App\Models\Core\User::class),
         ],
 
         // ✅ Added for B2B E-commerce Clients
         'clients' => [
             'driver' => 'eloquent',
-            'model' => App\Models\crm\Client::class,
+            'model' => App\Models\Crm\Client::class,
         ],
 
         // ✅ Added for Raw Material Suppliers
         'suppliers' => [
             'driver' => 'eloquent',
-            'model' => App\Models\pro\Supplier::class,
+            'model' => App\Models\Pro\Supplier::class,
         ],
     ],
 

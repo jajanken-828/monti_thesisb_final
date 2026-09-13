@@ -2,7 +2,7 @@
 
 namespace App\Models\Scm;
 
-use App\Models\pro\Supplier;
+use App\Models\Pro\Supplier;
 use Illuminate\Database\Eloquent\Model;
 
 class RfqResponse extends Model

@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\core\PagePermission;
-use App\Models\work\WorkforcePermission;
-use App\Models\crm\CrmPagePermission;
-use App\Models\core\UserModuleAccess;
-use App\Models\crm\CrmClientAssignment;
+use App\Models\Core\PagePermission;
+use App\Models\Work\WorkforcePermission;
+use App\Models\Crm\CrmPagePermission;
+use App\Models\Core\UserModuleAccess;
+use App\Models\Crm\CrmClientAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
@@ -38,14 +38,17 @@ class HandleInertiaRequests extends Middleware
             // 2. Auto‑grant full access for module managers/staff on their own module
             $augmentedPermissions = $this->augmentPermissionsForModuleUser($user, $explicitPermissions);
 
-            // ---- View/edit levels have been removed ----
-            // Any page a user has been granted (explicitly or via the module
-            // auto-grant above) is now full access — view AND edit. We keep
-            // the 'permission_level' key in the payload (set to 'edit') only
-            // for frontend backward compatibility; it no longer represents a
-            // real restriction.
+            // ---- View/edit levels are significant ----
+            // Every entry keeps its real permission_level ('view' or 'edit';
+            // legacy NULL rows are treated as 'edit'). The frontend uses these
+            // levels to hide mutating buttons from view-only users, while
+            // CheckPagePermission enforces them on the backend. Presence-only
+            // consumers (sidebar filtering) are unaffected.
             $pagePermissionsList = array_map(function ($perm) {
-                $perm['permission_level'] = 'edit';
+                $perm['permission_level'] = strtolower($perm['permission_level'] ?? 'edit');
+                if (! in_array($perm['permission_level'], ['view', 'edit'], true)) {
+                    $perm['permission_level'] = 'edit';
+                }
                 return $perm;
             }, $augmentedPermissions);
 
@@ -99,6 +102,14 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),
             ],
+            // Executive inbox badge (CEO role only; everyone else gets 0).
+            'notifications_unread' => function () use ($user) {
+                if (! $user || ($user->role ?? null) !== 'CEO') {
+                    return 0;
+                }
+
+                return \App\Models\Ceo\ExecutiveNotification::where('is_read', false)->count();
+            },
         ];
     }
 
@@ -113,8 +124,9 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Augment the permission list so that managers/staff of a module get
-     * full access on all pages of that module, unless an explicit
-     * permission record already exists for that page.
+     * full access on all pages of that module — UNLESS explicit permission
+     * rows already exist for them in that module, in which case the explicit
+     * grants are the exact access set (no auto-grant of the remaining pages).
      */
     protected function augmentPermissionsForModuleUser($user, array $explicitPermissions): array
     {
@@ -122,6 +134,14 @@ class HandleInertiaRequests extends Middleware
         $position = $user->position;
 
         if (!in_array($position, ['manager', 'staff'])) {
+            return $explicitPermissions;
+        }
+
+        $hasExplicit = collect($explicitPermissions)->contains(function ($perm) use ($module) {
+            return strtoupper((string) ($perm['module'] ?? '')) === $module;
+        });
+
+        if ($hasExplicit) {
             return $explicitPermissions;
         }
 
@@ -153,18 +173,19 @@ class HandleInertiaRequests extends Middleware
     {
         $map = [
             'HRM' => ['dashboard', 'employee', 'application', 'interview', 'trainee', 'onboarding', 'access', 'payroll', 'analytics'],
-            'CRM' => ['dashboard', 'leads', 'interviews', 'trainees', 'approvals', 'customer_profiles', 'investigation', 'access'],
-            'SCM' => ['sales-orders', 'procurement-orders', 'vendors', 'access'],
-            'FIN' => ['dashboard'],
-            'MAN' => ['dashboard', 'production', 'rejected', 'inventory', 'access'],
+            'CRM' => ['dashboard', 'leads', 'approvals', 'customer_profiles', 'investigation', 'socials', 'access'],
+            'SCM' => ['sales', 'procurement', 'vendor', 'access'],
+            'FIN' => ['dashboard', 'receivables', 'payables', 'expenses', 'payroll', 'reports'],
+            'MAN' => ['dashboard', 'production', 'reject', 'inventory', 'access'],
             'INV' => ['dashboard', 'materials', 'products', 'bom', 'checker', 'access'],
-            'ORD' => ['orders', 'productions', 'delivery', 'access'],
-            'WAR' => ['index', 'receiving', 'monitor', 'packages', 'rejects', 'access'],
-            'ECO' => ['dashboard', 'store', 'inquiries', 'credit', 'push', 'access'],
-            'PRO' => ['dashboard'],
+            'ORD' => ['dashboard', 'orders', 'productions', 'delivery', 'returns', 'access'],
+            'WAR' => ['warehouse', 'receiving', 'monitor', 'packages', 'reject', 'access'],
+            'ECO' => ['dashboard', 'store', 'inquiry', 'supplier', 'credit', 'push', 'access'],
+            'PRO' => ['dashboard', 'requests', 'quotations', 'receipt', 'access'],
             'PROJ' => ['dashboard'],
-            'IT' => ['dashboard'],
-            'LOG' => ['dashboard', 'fleet', 'drivers', 'load', 'dispatch', 'routes', 'tracking', 'access'],
+            'IT' => ['dashboard', 'tickets', 'assets', 'monitoring', 'knowledge', 'changes', 'access', 'access_control', 'access_logs'],
+            'LOG' => ['dashboard', 'load', 'dispatch', 'fleet', 'drivers', 'routes', 'tracking', 'proof', 'reports', 'access'],
+            'WRF' => ['dashboard', 'scheduler', 'leave', 'absent'],
         ];
 
         return $map[$module] ?? [];

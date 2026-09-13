@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\pro\Supplier;
-use App\Models\pro\VendorRegistration;
+use App\Models\Pro\Supplier;
+use App\Support\NotifiesExecutive;
+use App\Models\Pro\VendorRegistration;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -41,14 +44,16 @@ class SupplierAuthController extends Controller
                             ->first();
 
             if (!$registration) {
-                // Not approved or registration missing – log them out immediately
+                // Not approved or registration missing – log them out immediately.
+                // NOTE: generic message so attackers cannot distinguish bad
+                // credentials from pending/rejected vendor approval.
                 Auth::guard('supplier')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 RateLimiter::hit($this->throttleKey($request));
 
                 return back()->withErrors([
-                    'email' => 'Your vendor registration is still pending SCM approval or has been rejected.',
+                    'email' => 'Invalid credentials.',
                 ])->onlyInput('email');
             }
 
@@ -103,7 +108,7 @@ class SupplierAuthController extends Controller
             'address' => ['required', 'string', 'max:500'],
             'email' => ['required', 'email', 'unique:suppliers,email'],
             'phone_number' => ['required', 'string', 'max:50'],
-            'password' => ['required', 'confirmed', 'min:8'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         // Check if a vendor registration already exists for this email
@@ -125,7 +130,7 @@ class SupplierAuthController extends Controller
                 'address' => $validated['address'],
                 'email' => $validated['email'],
                 'phone_number' => $validated['phone_number'],
-                'password' => bcrypt($validated['password']),
+                'password' => Hash::make($validated['password']),
             ]);
 
             // 2. Create the Vendor Registration ticket (status = pending)
@@ -139,9 +144,11 @@ class SupplierAuthController extends Controller
                 'status' => 'pending',
             ]);
 
-            DB::commit();
+              DB::commit();
 
-            return redirect()->route('supplier.login')->with('status', 'Registration successful! Please wait for SCM approval before logging in.');
+              NotifiesExecutive::push('vendor', "New vendor registration: {$supplier->business_name}", "{$supplier->representative_name} ({$supplier->email}) applied and awaits approval.", 'ceo.approvals');
+
+              return redirect()->route('supplier.login')->with('status', 'Registration successful! Please wait for SCM approval before logging in.');
         } catch (\Exception $e) {
             DB::rollBack();
 

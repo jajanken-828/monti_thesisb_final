@@ -36,7 +36,7 @@ class CheckRole
         $allowedRoles = array_map('strtoupper', $roles);
 
         // For secretaries and general managers: they retain their original role's permissions
-        if (in_array($user->position, ['secretary', 'general_manager'])) {
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             if (in_array($user->role, $allowedRoles)) {
                 return $next($request);
             }

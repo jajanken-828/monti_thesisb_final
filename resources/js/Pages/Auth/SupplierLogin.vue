@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import AuthLayout from '@/Layouts/AuthLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
@@ -40,60 +41,25 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
-        style="background-image: url('/images/threads.jpg');">
-        <div class="absolute inset-0 bg-black/35"></div>
+    <AuthLayout
+        title="Supplier Portal"
+        highlight="Portal"
+        subtitle="Welcome back! Access requests for quotation, manage purchase orders, and process invoices securely."
+        badge="Supplier Gateway"
+        accent="emerald"
+    >
+        <Head title="Supplier Portal Login | Monti Textile" />
 
-        <!-- HEADER -->
-        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
-            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
-                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
-                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
-                            MONTI<span class="text-emerald-400">TEXTILE</span>
-                        </span>
-                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
-                            Manufacturing ERP
-                        </span>
-                    </div>
-                </div>
-                <nav class="flex items-center gap-3">
-                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
-                        Home
-                    </Link>
-                </nav>
-            </div>
-        </header>
+        <div v-if="$page.props.status"
+            class="auth-status mb-6 p-4 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-sm font-medium text-emerald-200 backdrop-blur-sm">
+            {{ $page.props.status }}
+        </div>
 
-        <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
-            <div class="w-full max-w-md">
-                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-                    <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-                        <Head title="Supplier Portal Login | Monti Textile" />
-
-                        <div class="text-center mb-10">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
-                                Supplier Portal
-                            </h1>
-                            <p class="mt-3 text-slate-200 text-base sm:text-lg max-w-md mx-auto">
-                                Welcome back! Access requests for quotation, manage purchase orders, and process
-                                invoices securely.
-                            </p>
-                        </div>
-
-                        <div v-if="$page.props.status"
-                            class="mb-6 p-4 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-sm font-medium text-emerald-200 backdrop-blur-sm">
-                            {{ $page.props.status }}
-                        </div>
-
-                        <form @submit.prevent="submit" class="space-y-6">
+        <form @submit.prevent="submit" class="space-y-6">
                             <div>
                                 <InputLabel for="email" value="Business Email" class="text-white/90" />
                                 <TextInput id="email" type="email"
-                                    class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-emerald-400 focus:ring-emerald-400/40"
+                                    class="auth-input mt-1 block w-full"
                                     v-model="form.email" required autofocus autocomplete="username"
                                     placeholder="supplier@company.com" />
                                 <InputError class="mt-1 text-red-300" :message="form.errors.email" />
@@ -110,7 +76,7 @@ const submit = () => {
 
                                 <div class="relative">
                                     <TextInput id="password" :type="showPassword ? 'text' : 'password'"
-                                        class="mt-1 pr-12 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-emerald-400 focus:ring-emerald-400/40"
+                                        class="auth-input mt-1 block w-full pr-12"
                                         v-model="form.password" required autocomplete="current-password"
                                         placeholder="••••••••" />
 
@@ -161,44 +127,12 @@ const submit = () => {
                                 </div>
 
                                 <PrimaryButton
-                                    class="w-full sm:w-auto px-10 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg shadow-emerald-700/30 transition-all duration-200"
+                                    class="auth-btn w-full px-5 py-2.5 text-xs font-bold text-white sm:w-auto"
                                     :class="{ 'opacity-60 cursor-wait': form.processing }" :disabled="form.processing">
                                     <span v-if="form.processing">Authenticating...</span>
                                     <span v-else>Sign In</span>
                                 </PrimaryButton>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </AuthLayout>
 </template>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
-    -webkit-text-fill-color: white !important;
-}
-input, select, textarea {
-    @apply transition-all duration-300 ease-in-out;
-}
-::-webkit-scrollbar {
-    width: 6px;
-}
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(16, 185, 129, 0.5);
-    border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(16, 185, 129, 0.7);
-}
-</style>

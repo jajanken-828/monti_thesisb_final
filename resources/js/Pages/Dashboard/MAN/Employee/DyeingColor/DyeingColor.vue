@@ -2,6 +2,10 @@
 import { ref, computed, watch } from 'vue';
 import { useForm, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 import {
     Droplet, X, Plus, Trash2, AlertTriangle, CheckCircle2,
     FlaskConical, Palette, Layers, Package, Blend, Sparkles, ChevronRight,
@@ -141,6 +145,7 @@ const submitDye = () => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Dyeing Color
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Dyeing Color Workspace</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ fabrics?.length ?? 0 }} fabric{{ (fabrics?.length ?? 0) !== 1 ? 's' : '' }} pending dyeing</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -245,7 +250,7 @@ const submitDye = () => {
                                 class="flex-1 flex items-center justify-center gap-1.5 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-xs font-bold px-3 py-2.5 rounded-2xl transition active:scale-95">
                                 <Layers class="w-3.5 h-3.5" /> View Recipe
                             </button>
-                            <button @click="openDyeModal(fabric)" type="button"
+                            <button v-if="canEditProduction" @click="openDyeModal(fabric)" type="button"
                                 class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/20 transition active:scale-95">
                                 <Droplet class="w-3.5 h-3.5" /> Dye Fabric
                             </button>
@@ -323,7 +328,7 @@ const submitDye = () => {
                             class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-800 text-sm font-bold rounded-2xl transition active:scale-95">
                             Close
                         </button>
-                        <button @click="() => { openDyeModal(recipeModalFabric); closeRecipeModal(); }" type="button"
+                        <button v-if="canEditProduction" @click="() => { openDyeModal(recipeModalFabric); closeRecipeModal(); }" type="button"
                             class="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold rounded-2xl transition flex items-center justify-center gap-1.5 active:scale-95">
                             <Droplet class="w-4 h-4" /> Dye Fabric
                         </button>
@@ -491,7 +496,7 @@ const submitDye = () => {
                                 class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-800 text-sm font-bold rounded-2xl transition active:scale-95">
                                 Cancel
                             </button>
-                            <button type="button" @click="submitDye" :disabled="!canSubmit"
+                            <button v-if="canEditProduction" type="button" @click="submitDye" :disabled="!canSubmit"
                                 class="flex-1 py-2.5 text-sm font-bold rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                                 :class="canSubmit ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'">
                                 {{ form.processing ? 'Recording…' : 'Submit Dye Job' }}

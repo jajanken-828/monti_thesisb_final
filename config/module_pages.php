@@ -3,12 +3,11 @@
 return [
     'hrm' => [
         'dashboard'    => 'Dashboard',
-        'employees'    => 'Employees',
-        'applications' => 'Applications',
+        'employee'     => 'Employees',
+        'application'  => 'Applications',
         'interview'    => 'Interview',
         'trainee'      => 'Trainee',
         'onboarding'   => 'Onboarding',
-        'reject'       => 'Rejected',
         'payroll'      => 'Payroll',
         'analytics'    => 'Analytics',
         'access'       => 'Access Control',
@@ -17,25 +16,24 @@ return [
     'crm' => [
         'dashboard'          => 'Dashboard',
         'leads'              => 'Leads',
-        'interviews'         => 'Interviews',
-        'trainees'           => 'Trainees',
         'approvals'          => 'Approvals',
         'customer_profiles'  => 'Customer Profiles',
         'investigation'      => 'Investigation',
+        'socials'            => 'Socials',
         'access'             => 'Access Control',
     ],
 
     'scm' => [
-        'sales-orders'        => 'Sales Orders',
-        'procurement-orders'  => 'Procurement Orders',
-        'vendors'             => 'Vendors',
-        'access'              => 'Access Control',
+        'sales'        => 'Sales Orders',
+        'procurement'  => 'Procurement Orders',
+        'vendor'       => 'Vendors',
+        'access'       => 'Access Control',
     ],
 
     'man' => [
         'dashboard'  => 'Dashboard',
         'production' => 'Production',
-        'rejected'   => 'Rejected',
+        'reject'     => 'Rejected',
         'inventory'  => 'Inventory',
         'access'     => 'Access Control',
     ],
@@ -59,18 +57,19 @@ return [
     ],
 
     'war' => [
-        'index'     => 'Overview',
+        'warehouse' => 'Overview',
         'receiving' => 'Receiving',
         'monitor'   => 'Monitor',
         'packages'  => 'Packages',
-        'rejects'   => 'Rejects',
+        'reject'    => 'Rejects',
         'access'    => 'Access Control',
     ],
 
     'eco' => [
         'dashboard' => 'Dashboard',
         'store'     => 'Store',
-        'inquiries' => 'Inquiries',
+        'inquiry'   => 'Inquiries',
+        'supplier'  => 'Suppliers',
         'credit'    => 'Credit',
         'push'      => 'Push',
         'access'    => 'Access Control',
@@ -78,28 +77,23 @@ return [
 
     'log' => [
         'dashboard' => 'Dashboard',
-        'fleet'     => 'Fleet',
-        'drivers'   => 'Drivers',
         'load'      => 'Load',
         'dispatch'  => 'Dispatch',
+        'fleet'     => 'Fleet',
+        'drivers'   => 'Drivers',
         'routes'    => 'Routes',
         'tracking'  => 'Tracking',
+        'proof'     => 'Proof of Delivery',
+        'reports'   => 'Reports',
         'access'    => 'Access Control',
     ],
 
     'pro' => [
         'dashboard' => 'Dashboard',
-        'interview' => 'Interview',
-        'trainee'   => 'Trainee',
-        'access'    => 'Access Control',
-
-        'manager' => [
-            'dashboard'            => 'Dashboard',
-            'material-requests'    => 'Material Requests',
-            'supplier-quotations'  => 'Supplier Quotations',
-            'receipt'              => 'Receipt',
-            'access'               => 'Access Control',
-        ],
+        'requests' => 'Material Requests',
+        'quotations' => 'Quotations',
+        'receipt' => 'Receipt',
+        'access' => 'Access Control',
     ],
 
     'proj' => [
@@ -108,6 +102,14 @@ return [
 
     'it' => [
         'dashboard' => 'Dashboard',
+        'tickets' => 'Service Desk',
+        'assets' => 'Assets',
+        'monitoring' => 'Monitoring',
+        'knowledge' => 'Knowledge Base',
+        'changes' => 'Changes',
+        'access' => 'Access Control',
+        'access_control' => 'Org Access Control',
+        'access_logs' => 'Access Logs',
     ],
 
     'fin' => [

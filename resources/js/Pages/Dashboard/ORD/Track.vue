@@ -8,7 +8,7 @@
                     <Link :href="route('ord.delivery')" class="inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:underline">
                         <ChevronLeft class="h-4 w-4" /> All deliveries
                     </Link>
-                    <button @click="sync" :disabled="syncing" class="ml-auto rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-500 disabled:opacity-50">
+                    <button v-if="canEditDelivery" @click="sync" :disabled="syncing" class="ml-auto rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black text-white hover:bg-indigo-500 disabled:opacity-50">
                         {{ syncing ? 'Syncing…' : 'Sync POD to job orders' }}
                     </button>
                 </div>
@@ -101,12 +101,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { BadgeCheck, Check, ChevronLeft, Package, Truck } from 'lucide-vue-next';
 
 const props = defineProps({ delivery: Object, linkedOrders: Array, timeline: Array });
+
+const { canEdit } = usePageAccess();
+const canEditDelivery = computed(() => canEdit('ORD', 'delivery'));
 
 const syncing = ref(false);
 const sync = () => {

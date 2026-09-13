@@ -29,11 +29,12 @@
                                 {{ isBulkInquiry ? 'Bulk Inquiry' : `SKU: ${inquiry.product?.sku}` }}
                                 · {{ inquiry.client?.email }}
                             </p>
+                            <span v-if="!canEditInquiry" class="mt-1 inline-block text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">View only</span>
                         </div>
                         <span :class="statusBadge(inquiry.status)" class="flex-shrink-0 hidden sm:inline-flex !bg-white/15 !text-white ring-1 ring-white/25 backdrop-blur items-center gap-1.5">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" /> {{ formatStatus(inquiry.status) }}
                         </span>
-                        <button @click="openRejectModal"
+                        <button v-if="canEditInquiry" @click="openRejectModal"
                             class="flex items-center gap-1.5 px-3 py-2 bg-white/15 ring-1 ring-white/25 backdrop-blur text-white rounded-xl text-xs font-bold uppercase hover:bg-red-500/80 transition flex-shrink-0 active:scale-95">
                             <XCircle class="h-3.5 w-3.5" />
                             <span class="hidden sm:inline">Reject</span>
@@ -89,12 +90,12 @@
                                                         <span class="truncate text-indigo-700 dark:text-indigo-300">{{ file.file_name }}</span>
                                                     </a>
                                                     <div class="absolute bottom-1 right-1 flex gap-1">
-                                                        <button v-if="file.approved_by_client && !file.is_po"
+                                                        <button v-if="file.approved_by_client && !file.is_po && canEditInquiry"
                                                             @click="openRecipeModal(file)"
                                                             class="px-2 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-[8px] font-black uppercase shadow-sm hover:scale-105 transition">
                                                             Create Recipe
                                                         </button>
-                                                        <button v-if="file.is_po"
+                                                        <button v-if="file.is_po && canEditInquiry"
                                                             @click="openJobOrderModal(file)"
                                                             class="px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-[8px] font-black uppercase shadow-sm hover:scale-105 transition">
                                                             Create Job Order
@@ -128,12 +129,12 @@
                                                     <span class="truncate">{{ file.file_name }}</span>
                                                 </a>
                                                 <div class="absolute bottom-1 right-1 flex gap-1">
-                                                    <button v-if="file.approved_by_client && !file.is_po"
+                                                    <button v-if="file.approved_by_client && !file.is_po && canEditInquiry"
                                                         @click="openRecipeModal(file)"
                                                         class="px-2 py-1 bg-blue-600 text-white rounded-lg text-[8px] font-black uppercase shadow-sm hover:bg-blue-700 transition">
                                                         Create Recipe
                                                     </button>
-                                                    <button v-if="file.is_po"
+                                                    <button v-if="file.is_po && canEditInquiry"
                                                         @click="openJobOrderModal(file)"
                                                         class="px-2 py-1 bg-amber-400 text-amber-900 rounded-lg text-[8px] font-black uppercase shadow-sm hover:bg-amber-500 transition">
                                                         Create Job Order
@@ -150,7 +151,7 @@
                         <!-- Reply box -->
                         <div class="flex-shrink-0 border-t border-gray-100 dark:border-zinc-800 p-3 sm:p-4 bg-white/60 dark:bg-zinc-900/60 backdrop-blur">
                             <!-- File previews -->
-                            <div v-if="selectedFiles.length" class="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
+                            <div v-if="canEditInquiry && selectedFiles.length" class="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
                                 <div v-for="(file, i) in selectedFiles" :key="i"
                                     class="relative h-12 w-12 flex-shrink-0 bg-gray-100 dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden">
                                     <img v-if="file.type.startsWith('image/')" :src="objectUrl(file)"
@@ -165,7 +166,7 @@
                                 </div>
                             </div>
                             <!-- Input row -->
-                            <div class="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/60 rounded-2xl px-3 py-2 border border-gray-200 dark:border-zinc-700 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/10 transition">
+                            <div v-if="canEditInquiry" class="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/60 rounded-2xl px-3 py-2 border border-gray-200 dark:border-zinc-700 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/10 transition">
                                 <input v-model="newMessage" type="text"
                                     placeholder="Reply to client…"
                                     class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
@@ -183,6 +184,7 @@
                                     <Loader2 v-else class="h-4 w-4 animate-spin" />
                                 </button>
                             </div>
+                            <p v-else class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl">View only — replies disabled.</p>
                         </div>
                     </div>
 
@@ -199,14 +201,15 @@
                                 <span class="ml-auto h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                             </div>
                             <div class="p-4 space-y-2.5">
-                                <button @click="openQuotationModal"
+                                <button v-if="canEditInquiry" @click="openQuotationModal"
                                     class="w-full py-3 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white rounded-2xl text-xs font-black uppercase tracking-wide hover:scale-[1.01] hover:shadow-xl hover:shadow-indigo-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
                                     <FileText class="h-4 w-4" /> Issue Quotation
                                 </button>
-                                <button @click="openMeetingModal"
+                                <button v-if="canEditInquiry" @click="openMeetingModal"
                                     class="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-2xl text-xs font-black uppercase tracking-wide hover:scale-[1.01] hover:shadow-xl hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
                                     <Calendar class="h-4 w-4" /> Set Meeting
                                 </button>
+                                <p v-if="!canEditInquiry" class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl text-center">View only — actions disabled.</p>
                             </div>
                         </div>
 
@@ -867,10 +870,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import {
     ArrowLeft, Send, Loader2, FileText, X, Package, Trash2,
     Plus, Paperclip, ClipboardList, XCircle, Calendar, ChevronDown
 } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditInquiry = computed(() => canEdit('ECO', 'inquiry'));
 
 const props = defineProps({
     inquiry:        { type: Object,  required: true },

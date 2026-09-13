@@ -9,13 +9,14 @@ import { warehouseModule } from '../modules/SidebarWarehouse.vue'
 import { inventoryModule } from '../modules/SidebarInventory.vue'
 import { proModule } from '../modules/SidebarPro.vue'
 import { finModule } from '../modules/SidebarFin.vue'
+import { itModule } from '../modules/SidebarIt.vue'
 import { workforceModule } from '../modules/SidebarWorkforce.vue'
 
 // Order matters here — it's the order modules appear in the sidebar.
 // HRM/CRM/MAN/LOG render under "Core Modules", the rest under "Feature Modules".
 const CORE_AND_FEATURE_MODULES = [
     hrmModule, crmModule, manModule, logModule,
-    ecoModule, ordModule, scmModule, warehouseModule, inventoryModule, proModule, finModule,
+    ecoModule, ordModule, scmModule, warehouseModule, inventoryModule, proModule, finModule, itModule,
 ]
 
 /**

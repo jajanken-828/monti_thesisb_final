@@ -7,6 +7,10 @@ import {
     ArrowRight, Send, MapPin, LayoutList, AlertCircle, ChevronUp, ChevronDown,
     Eye, ClipboardList, Calendar, Hash, Info, CheckCircle, ArrowUpRight
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditMonitor = computed(() => canEdit('WAR', 'monitor'));
 
 const props = defineProps({
     warehouse: Object,
@@ -257,7 +261,7 @@ const allowDrop = (e) => e.preventDefault();
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <LayoutList class="h-3.5 w-3.5" /> Warehouse · Layout
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Warehouse Monitor</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Warehouse Monitor <span v-if="!canEditMonitor" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">{{ warehouse.name }} · {{ rows }} × {{ cols }} grid · drag stock onto shelves</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -269,14 +273,14 @@ const allowDrop = (e) => e.preventDefault();
                         </div>
                     </div>
                     <div class="relative mt-6 flex flex-wrap items-center gap-2">
-                        <button v-if="!editMode" @click="editMode = true" class="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"><Edit2 class="w-3.5 h-3.5" /> Edit Layout</button>
-                        <button v-else @click="triggerConfirm('Apply Layout', 'Save grid changes?', 'Save', 'blue', saveLayout)" class="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-5 py-2.5 text-xs font-black uppercase tracking-wide text-emerald-950 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"><Save class="w-3.5 h-3.5" /> Save Layout</button>
+                        <button v-if="!editMode && canEditMonitor" @click="editMode = true" class="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"><Edit2 class="w-3.5 h-3.5" /> Edit Layout</button>
+                        <button v-if="editMode && canEditMonitor" @click="triggerConfirm('Apply Layout', 'Save grid changes?', 'Save', 'blue', saveLayout)" class="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-5 py-2.5 text-xs font-black uppercase tracking-wide text-emerald-950 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"><Save class="w-3.5 h-3.5" /> Save Layout</button>
                         <button v-if="editMode" @click="editMode = false" class="inline-flex items-center gap-2 rounded-2xl bg-white/15 px-5 py-2.5 text-xs font-black uppercase tracking-wide text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition-all active:scale-95">Cancel</button>
                     </div>
                 </div>
 
                 <!-- Edit-mode grid sizing -->
-                <div v-if="editMode" class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-indigo-200 dark:border-indigo-800 border-dashed p-6 sm:p-8 flex flex-wrap gap-8 shadow-sm">
+                <div v-if="editMode && canEditMonitor" class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-indigo-200 dark:border-indigo-800 border-dashed p-6 sm:p-8 flex flex-wrap gap-8 shadow-sm">
                     <div class="flex flex-col gap-2">
                         <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Rows · {{ rows }}</span>
                         <div class="flex items-center gap-3 bg-slate-50 dark:bg-zinc-800 p-2 rounded-2xl border border-gray-100 dark:border-zinc-700 shadow-sm">
@@ -300,7 +304,7 @@ const allowDrop = (e) => e.preventDefault();
                 <div v-if="unassignedStock.length > 0" class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 p-6 sm:p-8 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300">
                     <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-2"><Package class="w-4 h-4 text-indigo-500" /> Incoming Queue · drag onto a shelf</h3>
                     <TransitionGroup name="card" tag="div" class="flex flex-wrap gap-3">
-                        <div v-for="(item, i) in unassignedStock" :key="item.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" draggable="true" @dragstart="dragStart($event, item)" class="group bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl px-4 py-3 flex items-center gap-3 cursor-move hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/15 hover:-translate-y-0.5 transition-all shadow-sm">
+                        <div v-for="(item, i) in unassignedStock" :key="item.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" :draggable="canEditMonitor" @dragstart="dragStart($event, item)" class="group bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl px-4 py-3 flex items-center gap-3 cursor-move hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-500/15 hover:-translate-y-0.5 transition-all shadow-sm">
                             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow"><Box class="w-4 h-4" /></span>
                             <span class="text-sm tracking-tight text-slate-700 dark:text-slate-200 font-bold">{{ item.material.name }}</span>
                             <span class="bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ item.quantity }}{{ item.unit }}</span>
@@ -334,7 +338,7 @@ const allowDrop = (e) => e.preventDefault();
                                 <div class="flex-1 overflow-y-auto space-y-3 custom-scroll pr-1">
                                     <div v-if="cell.section.stock_items_no_shelf?.length" class="mb-3 space-y-2">
                                         <p class="text-[9px] font-black text-amber-500 tracking-[0.2em] uppercase px-2 mb-1">Common Area</p>
-                                        <div v-for="s in cell.section.stock_items_no_shelf" :key="s.id" draggable="true" @dragstart="dragStart($event, s)"
+                                        <div v-for="s in cell.section.stock_items_no_shelf" :key="s.id" :draggable="canEditMonitor" @dragstart="dragStart($event, s)"
                                              class="flex justify-between items-center bg-amber-50/60 dark:bg-amber-900/10 p-3 rounded-2xl border border-amber-100 dark:border-amber-900/30 cursor-move hover:border-amber-400 transition-all">
                                             <div class="flex items-center gap-2 overflow-hidden">
                                                 <button @click="openDetailsModal(s)" class="text-amber-400 hover:text-amber-600"><Eye class="w-3.5 h-3.5"/></button>
@@ -342,7 +346,7 @@ const allowDrop = (e) => e.preventDefault();
                                             </div>
                                             <div class="flex items-center gap-2 flex-shrink-0">
                                                 <span class="text-[10px] font-black text-amber-600 dark:text-amber-400">{{ s.quantity }}{{ s.unit }}</span>
-                                                <button @click.stop="openUseModal(s)" class="text-[9px] font-black uppercase text-amber-700 dark:text-amber-300 bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-800 px-3 py-1 rounded-lg hover:bg-amber-500 hover:text-white transition-all">Use</button>
+                                                <button v-if="canEditMonitor" @click.stop="openUseModal(s)" class="text-[9px] font-black uppercase text-amber-700 dark:text-amber-300 bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-800 px-3 py-1 rounded-lg hover:bg-amber-500 hover:text-white transition-all">Use</button>
                                             </div>
                                         </div>
                                     </div>
@@ -352,7 +356,7 @@ const allowDrop = (e) => e.preventDefault();
                                             <span class="text-[10px] font-black text-slate-400 tracking-widest uppercase">Shelf {{ shelf.shelf_number }}</span>
                                         </div>
                                         <div v-if="shelf.stock_items?.length" class="space-y-2">
-                                            <div v-for="st in shelf.stock_items" :key="st.id" draggable="true" @dragstart="dragStart($event, st)"
+                                            <div v-for="st in shelf.stock_items" :key="st.id" :draggable="canEditMonitor" @dragstart="dragStart($event, st)"
                                                  class="flex justify-between items-center bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-100 dark:border-zinc-700 shadow-sm cursor-move hover:border-indigo-400 hover:shadow-md transition-all">
                                                 <div class="flex items-center gap-2 overflow-hidden">
                                                     <button @click="openDetailsModal(st)" class="text-slate-300 hover:text-indigo-500"><Eye class="w-3.5 h-3.5"/></button>
@@ -360,7 +364,7 @@ const allowDrop = (e) => e.preventDefault();
                                                 </div>
                                                 <div class="flex items-center gap-2 flex-shrink-0">
                                                     <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-black">{{ st.quantity }}{{ st.unit }}</span>
-                                                    <button @click.stop="openUseModal(st)" class="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 hover:underline">Use</button>
+                                                    <button v-if="canEditMonitor" @click.stop="openUseModal(st)" class="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 hover:underline">Use</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -496,6 +500,7 @@ const allowDrop = (e) => e.preventDefault();
                                 <div class="flex gap-2 mt-6">
                                     <button @click="showUseModal = false" class="flex-1 py-3.5 bg-slate-50 dark:bg-zinc-800 text-slate-500 rounded-2xl text-[10px] font-black uppercase hover:bg-slate-100 transition active:scale-95">Cancel</button>
                                     <button
+                                        v-if="canEditMonitor"
                                         @click="submitUse"
                                         :disabled="materialForm.processing"
                                         class="flex-[2] py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-[10px] font-black uppercase shadow-lg shadow-emerald-500/25 disabled:opacity-50 hover:opacity-90 transition active:scale-95">

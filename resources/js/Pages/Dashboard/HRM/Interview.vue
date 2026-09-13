@@ -43,8 +43,8 @@ const deptColor = computed(() => 'indigo');
 const canEdit = computed(() => {
     // Explicit permission from backend
     if (props.permissions?.interview === 'edit') return true;
-    // Secretary / General Manager
-    if (['secretary', 'general_manager'].includes(user.value?.position)) return true;
+    // Secretary / Special Officer
+    if (['secretary', 'special_officer'].includes(user.value?.position)) return true;
     // CEO
     if (user.value?.role === 'CEO') return true;
     return false;

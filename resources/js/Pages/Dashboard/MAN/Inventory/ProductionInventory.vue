@@ -3,6 +3,10 @@ import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Package, Box, Layers, Edit, AlertCircle, CheckCircle2, Clock, Filter, Sparkles } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditInventory = computed(() => canEdit('MAN', 'inventory'));
 
 const props = defineProps({
     items: Array,
@@ -113,6 +117,7 @@ const usagePercent = (item) => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Inventory
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Production Inventory</h1>
+                            <span v-if="!canEditInventory" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">Materials transferred from Warehouse — available for manufacturing use</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -223,7 +228,7 @@ const usagePercent = (item) => {
                                             </div>
                                         </div>
                                         <button
-                                            v-else
+                                            v-else-if="canEditInventory"
                                             @click="openContainerModal(item)"
                                             class="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all hover:-translate-y-0.5 active:scale-95">
                                             <Edit class="w-3.5 h-3.5" />
@@ -317,9 +322,9 @@ const usagePercent = (item) => {
                                     class="px-4 py-2.5 text-xs font-black uppercase tracking-wide rounded-2xl border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800 transition active:scale-95">
                                     Cancel
                                 </button>
-                                <button
+                                <button v-if="canEditInventory"
                                     type="submit"
-                                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wide transition shadow-lg shadow-indigo-500/25 active:scale-95">
+                                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wide transition shadow-lg shadow-indigo-500/25 active:scale-95" :disabled="!canEditInventory">
                                     Save Container
                                 </button>
                             </div>

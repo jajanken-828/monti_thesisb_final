@@ -29,8 +29,9 @@ const props = defineProps({
     }
 });
 
-// Check if user can edit employees (from RBAC)
-const canEditEmployees = computed(() => props.page_permissions?.employees === 'edit');
+// Check if user can edit employees (from RBAC) — key must match the
+// canonical page identifier enforced by routes ('employee').
+const canEditEmployees = computed(() => props.page_permissions?.employee === 'edit');
 
 // Toast notification
 const showToast = ref(false);
@@ -55,7 +56,7 @@ const getRank = (role, position) => {
     if (role === 'CEO') return 60;
     const pos = (position || '').toLowerCase();
     if (pos === 'secretary') return 50;
-    if (pos === 'general_manager') return 40;
+    if (pos === 'special_officer') return 40;
     if (pos === 'manager') return 30;
     if (pos === 'supervisor') return 20;
     if (pos === 'staff') return 10;
@@ -107,8 +108,8 @@ const filteredEmployees = computed(() => {
     return list;
 });
 
-// Split into three groups: executives (secretary, general_manager), managers, staff (including supervisors)
-const executives = computed(() => filteredEmployees.value.filter(emp => ['secretary', 'general_manager'].includes(emp.position)));
+// Split into three groups: executives (secretary, special_officer), managers, staff (including supervisors)
+const executives = computed(() => filteredEmployees.value.filter(emp => ['secretary', 'special_officer'].includes(emp.position)));
 const managers = computed(() => filteredEmployees.value.filter(emp => emp.position === 'manager'));
 const staff = computed(() => filteredEmployees.value.filter(emp => emp.position === 'staff'));
 
@@ -456,7 +457,7 @@ const confirmActivate = () => {
                 </button>
             </div>
 
-            <!-- Executives Section (Secretary & General Manager) -->
+            <!-- Executives Section (Secretary & Special Officer) -->
             <div class="space-y-4" v-if="executives.length > 0">
                 <div class="flex items-center gap-3">
                     <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200">Executive Leadership</h2>

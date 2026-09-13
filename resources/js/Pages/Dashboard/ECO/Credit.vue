@@ -19,6 +19,7 @@
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Credit Ledger</h1>
                             <p class="text-sm text-blue-100/90">Monitor outstanding balances, approve reviews, and view order history.</p>
+                            <span v-if="!canEditCredit" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -134,12 +135,13 @@
                                     <td class="px-6 py-4 text-right font-black text-gray-900 dark:text-white">₱{{ formatCurrency(order.total_amount) }}</td>
                                     <td class="px-6 py-4 text-center text-xs text-gray-500 dark:text-gray-400">{{ formatDate(order.created_at) }}</td>
                                     <td class="px-6 py-4 text-center">
-                                        <button @click="approveCreditReview(order)" :disabled="approving[order.id]"
+                                        <button v-if="canEditCredit" @click="approveCreditReview(order)" :disabled="approving[order.id]"
                                             class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 active:scale-95 transition disabled:opacity-50 shadow-lg shadow-emerald-500/20">
                                             <CheckCircle v-if="!approving[order.id]" class="h-3 w-3" />
                                             <Loader2 v-else class="h-3 w-3 animate-spin" />
                                             {{ approving[order.id] ? 'Approving...' : 'Approve' }}
                                         </button>
+                                        <span v-else class="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">View only</span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -265,7 +267,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { CreditCard, RefreshCw, Search, Building2, History, X, AlertCircle, CheckCircle, Loader2, Sparkles } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditCredit = computed(() => canEdit('ECO', 'credit'));
 
 const props = defineProps({
     clients: { type: Array, default: () => [] },

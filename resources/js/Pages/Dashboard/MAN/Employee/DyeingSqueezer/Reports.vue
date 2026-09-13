@@ -1,8 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { AlertTriangle, CheckCircle, Wrench, Sparkles, PlusCircle, ClipboardList } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 
 const props = defineProps({
     machines: Array,
@@ -45,13 +49,14 @@ const submitReport = () => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Dyeing Squeezer
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Machine Reports</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ myReports?.length ?? 0 }} report{{ (myReports?.length ?? 0) !== 1 ? 's' : '' }} · {{ machines?.length ?? 0 }} machines</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
                                 {{ machines?.length ?? 0 }} machines
                             </span>
-                            <button @click="showReportForm = !showReportForm"
+                            <button v-if="canEditProduction" @click="showReportForm = !showReportForm"
                                 class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5">
                                 <PlusCircle class="h-4 w-4" /> Report Issue
                             </button>
@@ -85,7 +90,7 @@ const submitReport = () => {
                                     placeholder="Describe the problem..."></textarea>
                             </div>
                             <div class="flex gap-2">
-                                <button type="submit" :disabled="form.processing"
+                                <button v-if="canEditProduction" type="submit" :disabled="form.processing || !canEditProduction"
                                     class="rounded-2xl bg-indigo-600 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50">
                                     Submit Report
                                 </button>

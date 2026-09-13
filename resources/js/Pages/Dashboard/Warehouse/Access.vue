@@ -35,10 +35,10 @@ const searchQuery = ref('');
 const saving = ref(false);
 const savingUserId = ref(null);
 
-// Filtered users (only secretary, general_manager, manager, supervisor)
+// Filtered users (only secretary, special_officer, manager, supervisor)
 const eligibleUsers = computed(() => {
     let users = props.users.filter(u =>
-        ['secretary', 'general_manager', 'manager', 'supervisor'].includes(u.position)
+        ['secretary', 'special_officer', 'manager', 'supervisor'].includes(u.position)
     );
     if (searchQuery.value) {
         const q = searchQuery.value.toLowerCase();

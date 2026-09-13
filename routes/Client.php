@@ -1,14 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auth\ClientAuthController;
-use App\Http\Controllers\client\ClientConversationController;
-use App\Http\Controllers\client\ClientDashboardController;
-use App\Http\Controllers\client\ClientInvoiceController;
-use App\Http\Controllers\client\ClientProductsController;
-use App\Http\Controllers\client\ClientProfileController;
-use App\Http\Controllers\client\ClientReceivingController;
-use App\Http\Controllers\client\ClientSupportController;
-use App\Http\Controllers\client\OrdersController;
+use App\Http\Controllers\Client\ClientConversationController;
+use App\Http\Controllers\Client\ClientDashboardController;
+use App\Http\Controllers\Client\ClientInvoiceController;
+use App\Http\Controllers\Client\ClientProductsController;
+use App\Http\Controllers\Client\ClientProfileController;
+use App\Http\Controllers\Client\ClientReceivingController;
+use App\Http\Controllers\Client\ClientSupportController;
+use App\Http\Controllers\Client\OrdersController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,9 +18,9 @@ use Illuminate\Support\Facades\Route;
 */
 Route::middleware('guest:client')->group(function () {
     Route::get('client/register', [ClientAuthController::class, 'create'])->name('client.register');
-    Route::post('client/register', [ClientAuthController::class, 'store'])->name('client.register.store');
+    Route::post('client/register', [ClientAuthController::class, 'store'])->middleware('throttle:6,1')->name('client.register.store');
     Route::get('client/login', [ClientAuthController::class, 'showLogin'])->name('client.login');
-    Route::post('client/login', [ClientAuthController::class, 'login'])->name('client.login.store');
+    Route::post('client/login', [ClientAuthController::class, 'login'])->middleware('throttle:10,1')->name('client.login.store');
 });
 
 Route::post('client/logout', [ClientAuthController::class, 'logout'])

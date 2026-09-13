@@ -2,7 +2,7 @@
 
 namespace App\Models\Scm;
 
-use App\Models\core\User;
+use App\Models\Core\User;
 use Illuminate\Database\Eloquent\Model;
 
 class ScmAccessPermission extends Model

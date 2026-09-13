@@ -2,6 +2,10 @@
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 import {
     Package, Shirt, Droplet, Factory,
     CheckCircle, XCircle, ArrowRight,
@@ -121,6 +125,7 @@ const pushToLogistics = (packageId) => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Manager
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Production Pipeline</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">Track and advance items through each stage</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -195,7 +200,7 @@ const pushToLogistics = (packageId) => {
                                 </p>
                             </div>
                             <div class="mt-auto flex flex-col sm:flex-row gap-2">
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="passFabric(fabric.id, 'dyeing')"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
@@ -238,13 +243,13 @@ const pushToLogistics = (packageId) => {
                                 </p>
                             </div>
                             <div class="mt-auto flex flex-col sm:flex-row gap-2">
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="passDye(dye.id, 'quality')"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <CheckCircle class="w-3.5 h-3.5" /> Quality Pass
                                 </button>
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="rejectDyeWithReason(dye)"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 hover:bg-rose-100 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
                                 >
@@ -292,13 +297,13 @@ const pushToLogistics = (packageId) => {
                                 </p>
                             </div>
                             <div v-if="job.status === 'softened'" class="mt-auto flex flex-col sm:flex-row gap-2">
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="passSoftener(job.id, 'quality')"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <CheckCircle class="w-3.5 h-3.5" /> Pass to Squeezer
                                 </button>
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="passSoftener(job.id, 'resoften')"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
                                 >
@@ -344,7 +349,7 @@ const pushToLogistics = (packageId) => {
                                 </p>
                             </div>
                             <div class="mt-auto flex flex-col sm:flex-row gap-2">
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="passSqueezer(job.id)"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
@@ -387,7 +392,7 @@ const pushToLogistics = (packageId) => {
                                 </p>
                             </div>
                             <div class="mt-auto">
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="passIron(iron.id)"
                                     class="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
@@ -432,13 +437,13 @@ const pushToLogistics = (packageId) => {
                                 <p class="text-xs text-gray-500 dark:text-gray-400">Operator: {{ pkg.operator }}</p>
                             </div>
                             <div class="mt-auto flex flex-col sm:flex-row gap-2">
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="assignToOrder(pkg.id)"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <ArrowRight class="w-3.5 h-3.5" /> Assign to Order
                                 </button>
-                                <button
+                                <button v-if="canEditProduction"
                                     @click="pushToLogistics(pkg.id)"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >

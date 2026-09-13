@@ -1,8 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { Package, Receipt, Send, Eye, Printer, Wallet, X, Sparkles, ArrowUpRight } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditReceipt = computed(() => canEdit('PRO', 'receipt'));
 
 const props = defineProps({
     purchaseOrders: Array,
@@ -100,6 +104,7 @@ const canPay = (invoice) => !['paid', 'cancelled'].includes(invoice.status);
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Purchase Orders & Invoices</h1>
                             <p class="text-sm text-blue-100/90">Manage POs and track invoices from suppliers</p>
+                            <span v-if="!canEditReceipt" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -145,7 +150,7 @@ const canPay = (invoice) => !['paid', 'cancelled'].includes(invoice.status);
                                     </div>
                                     <div class="text-left sm:text-right flex-shrink-0">
                                         <p class="font-black text-emerald-600 dark:text-emerald-400 text-lg">{{ formatCurrency(po.grand_total) }}</p>
-                                        <button v-if="po.status === 'draft'" @click="sendPO(po.id)"
+                                        <button v-if="po.status === 'draft' && canEditReceipt" @click="sendPO(po.id)"
                                             class="mt-2 px-5 py-2.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:opacity-95 active:scale-95 transition inline-flex items-center gap-1.5"><Send class="w-3.5 h-3.5" /> Send PO</button>
                                     </div>
                                 </div>
@@ -193,7 +198,7 @@ const canPay = (invoice) => !['paid', 'cancelled'].includes(invoice.status);
                                     <span :class="invoiceStatusBadge(inv.status)"
                                         class="text-[10px] font-black uppercase px-2.5 py-1 rounded-full ring-1 inline-flex items-center gap-1 mt-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ inv.status }}</span>
                                     <div>
-                                        <button v-if="canPay(inv)" @click="openPayModal(inv)"
+                                        <button v-if="canPay(inv) && canEditReceipt" @click="openPayModal(inv)"
                                             class="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-xs font-black uppercase shadow-lg shadow-emerald-500/25 hover:opacity-95 active:scale-95 transition">
                                             <Wallet class="w-3.5 h-3.5" /> Pay Invoice
                                         </button>
@@ -273,7 +278,7 @@ const canPay = (invoice) => !['paid', 'cancelled'].includes(invoice.status);
                             <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-zinc-800 bg-gray-50/60 dark:bg-zinc-800/40">
                                 <button @click="closePayModal"
                                     class="px-5 py-2.5 text-xs font-black uppercase rounded-2xl border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-gray-300 hover:bg-gray-100 transition active:scale-95">Cancel</button>
-                                <button @click="submitPayment" :disabled="payForm.processing"
+                                <button v-if="canEditReceipt" @click="submitPayment" :disabled="payForm.processing"
                                     class="px-5 py-2.5 text-xs font-black uppercase rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg disabled:opacity-50 active:scale-95 transition">
                                     {{ payForm.processing ? 'Processing...' : 'Confirm Payment' }}
                                 </button>

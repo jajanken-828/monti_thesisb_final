@@ -22,14 +22,20 @@ class CheckModuleAccess
             abort(403, 'Unauthorized');
         }
 
-        // ── CEO and Admin have access to everything ───────────────────────────
-        if (in_array($user->role, ['CEO', 'admin'])) {
+        // ── Admin has access to everything ──────────────────────────────────
+        if (in_array($user->role, ['admin'])) {
             return $next($request);
         }
 
-        // ── Secretary or General Manager: check granted_modules ───────────────
-        if (in_array($user->position, ['secretary', 'general_manager'])) {
+        // ── Secretary or Special Officer: check granted_modules ───────────────
+        // With no grants saved yet, they fall back to their home (root)
+        // module — mirrors User::canAccessModule(). Once the CEO assigns
+        // explicit grants, only those modules are allowed.
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             $granted = $user->moduleAccess->pluck('module')->toArray();
+            if (empty($granted) && $user->role === $module) {
+                return $next($request);
+            }
             if (in_array($module, $granted)) {
                 return $next($request);
             }

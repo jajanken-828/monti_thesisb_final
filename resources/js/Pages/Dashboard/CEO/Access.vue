@@ -16,8 +16,9 @@ import {
 
 const props = defineProps({
     ceo:                Object,
+    vicePresident:      Object,
     secretary:          Object,
-    generalManagers:    Array,
+    specialOfficers:    Array,
     managers:           Array,
     supervisors:        Array,
     staff:              Array,
@@ -149,6 +150,9 @@ const selectedModules   = ref({});
 const modulePermissions = ref({});
 const staffRoles        = ref({});
 const pagesModal        = ref(null);
+const vpReturnModule    = ref('HRM');
+
+const VP_HOME_MODULES = ['HRM','CRM','MAN','LOG','ECO','ORD','SCM','WAR','INV','PRO','FIN','PROJ','IT'];
 
 function initUser(user) {
     if (!user) return;
@@ -156,8 +160,8 @@ function initUser(user) {
     selectedModules.value[user.id] = [...mods];
 
     const perms = {};
-    for (const gm of (user.granted_modules || [])) {
-        perms[gm.module] = gm.permission_level || 'edit';
+    for (const grant of (user.granted_modules || [])) {
+        perms[grant.module] = grant.permission_level || 'edit';
     }
     modulePermissions.value[user.id] = perms;
 
@@ -169,14 +173,14 @@ function initUser(user) {
 }
 
 [
-    ...(props.generalManagers || []),
+    ...(props.specialOfficers || []),
     ...(props.secretary ? [props.secretary] : []),
     ...(props.supervisors || []),
     ...(props.managers    || []),
     ...(props.staff       || []),
 ].forEach(initUser);
 
-watch(() => props.generalManagers, users => users?.forEach(initUser), { deep: true });
+watch(() => props.specialOfficers, users => users?.forEach(initUser), { deep: true });
 watch(() => props.secretary,       user  => { if (user) initUser(user); }, { deep: true });
 watch(() => props.supervisors,     users => users?.forEach(initUser), { deep: true });
 watch(() => props.managers,        users => users?.forEach(initUser), { deep: true });
@@ -197,7 +201,7 @@ function matchesSearch(user) {
 
 const totalCount = computed(() =>
     (props.managers?.length        || 0) +
-    (props.generalManagers?.length || 0) +
+    (props.specialOfficers?.length || 0) +
     (props.secretary ? 1 : 0) +
     (props.supervisors?.length     || 0) +
     (props.staff?.length           || 0)
@@ -206,8 +210,26 @@ const totalCount = computed(() =>
 const managerByModule = (key) =>
     (props.managers || []).find(m => m.role === key) || null;
 
-const staffByModule = (key) =>
-    (props.staff || []).filter(s => s.role === key);
+// HRM / CRM / LOG side by side on top, Manufacturing full-width below them.
+const orderedCoreModules = computed(() =>
+    [...CORE_MODULES].sort((a, b) => (a.key === 'MAN' ? 1 : 0) - (b.key === 'MAN' ? 1 : 0))
+);
+
+const staffByModule = (key) => {
+    const list = (props.staff || []).filter(s => s.role === key);
+    if (key === 'MAN') {
+        // Legacy MAN-manager accounts (the manager role no longer exists):
+        // surface them here so the CEO can demote/reassign them.
+        (props.managers || []).filter(m => m.role === 'MAN').forEach(m => list.push(m));
+    }
+    return list;
+};
+
+// ─── MAN department branches (4 departments, one supervisor each) ────────────
+const MAN_DEPTS = ['knitting', 'dyeing', 'finishing', 'maintenance'];
+const manSupervisorOf = (dept) => (props.supervisors || []).find(s => s.supervisor_department === dept) || null;
+const manStaffByDept = (dept) => staffByModule('MAN').filter(s => manDeptOf(s.manufacturing_role) === dept);
+const unassignedManStaff = () => staffByModule('MAN').filter(s => !manDeptOf(s.manufacturing_role));
 
 const panelUser = computed(() => selectedUser.value);
 const panelId   = computed(() => selectedUser.value?.id);
@@ -215,7 +237,7 @@ const canAssignModules = computed(() =>
     panelUser.value && (
         panelUser.value.is_manufacturing_supervisor ||
         selectedType.value === 'secretary' ||
-        selectedType.value === 'gm'
+        selectedType.value === 'so'
     )
 );
 
@@ -280,7 +302,7 @@ function saveModules(userId) {
 
 // ─── Position update ─────────────────────────────────────────────────────────
 
-function updatePosition(userId, pos) {
+function updatePosition(userId, pos, extra = {}) {
     const user = panelUser.value;
     const currentPos = user?.position;
 
@@ -288,6 +310,32 @@ function updatePosition(userId, pos) {
         openConfirm({
             title: 'Secretary Slot Occupied',
             message: `Monti Textile only allows ONE secretary. There is already an existing secretary. Please demote the current secretary first before assigning a new one.`,
+            confirmLabel: 'Understood',
+            confirmClass: 'bg-red-600 hover:bg-red-700',
+            icon: 'warning',
+            onConfirm: () => {},
+        });
+        return;
+    }
+
+    // MAN has no manager: the module is handled by the 4 department supervisors.
+    if (pos === 'manager' && user?.role === 'MAN') {
+        openConfirm({
+            title: 'No Manager Role in Manufacturing',
+            message: `Manufacturing has no manager position — promote ${user?.name} to a department supervisor instead (department is derived from their Department Role).`,
+            confirmLabel: 'Understood',
+            confirmClass: 'bg-red-600 hover:bg-red-700',
+            icon: 'warning',
+            onConfirm: () => {},
+        });
+        return;
+    }
+
+    // Only one vice president (second in command).
+    if (pos === 'vice_president' && props.vicePresident && currentPos !== 'vice_president') {
+        openConfirm({
+            title: 'Vice President Slot Occupied',
+            message: `Monti Textile only allows ONE vice president. ${props.vicePresident.name} currently holds the seat. Please demote them first before appointing another.`,
             confirmLabel: 'Understood',
             confirmClass: 'bg-red-600 hover:bg-red-700',
             icon: 'warning',
@@ -313,22 +361,25 @@ function updatePosition(userId, pos) {
     }
 
     const posLabel =
-        pos === 'general_manager' ? 'General Manager' :
+        pos === 'special_officer' ? 'Special Officer' :
         pos === 'secretary'       ? 'Secretary'       :
+        pos === 'vice_president'  ? 'Vice President'  :
         pos === 'staff'           ? 'Staff'            :
                                     'Manager';
 
     let isPromotion = false;
     if (pos === 'manager') {
         isPromotion = (currentPos === 'staff');
-    } else if (pos === 'secretary' || pos === 'general_manager') {
+    } else if (pos === 'secretary' || pos === 'special_officer' || pos === 'vice_president') {
         isPromotion = true;
     }
 
     let title, message, confirmLabel, confirmClass, icon;
     if (isPromotion) {
         title = `Promote to ${posLabel}`;
-        message = `Are you sure you want to promote ${user?.name} to ${posLabel}?`;
+        message = pos === 'vice_president'
+            ? `Are you sure you want to appoint ${user?.name} as Vice President (second in command)? They will mirror the CEO's pages and powers.`
+            : `Are you sure you want to promote ${user?.name} to ${posLabel}?`;
         confirmLabel = 'Promote';
         confirmClass = 'bg-indigo-600 hover:bg-indigo-700';
         icon = 'promote';
@@ -343,7 +394,7 @@ function updatePosition(userId, pos) {
     openConfirm({
         title, message, confirmLabel, confirmClass, icon,
         onConfirm: () => {
-            router.post(route('ceo.access.updatePosition'), { user_id: userId, position: pos }, {
+            router.post(route('ceo.access.updatePosition'), { user_id: userId, position: pos, ...extra }, {
                 preserveScroll: true,
                 onSuccess: () => location.reload(),
                 onError: (err) => showSuccess('Error: ' + (err.error || 'Could not update position.')),
@@ -369,7 +420,7 @@ function saveStaffRole(userId) {
                 ...(props.staff           || []),
                 ...(props.supervisors     || []),
                 ...(props.managers        || []),
-                ...(props.generalManagers || []),
+                ...(props.specialOfficers || []),
                 ...(props.secretary ? [props.secretary] : []),
             ];
             const user = allUsers.find(u => u.id === userId);
@@ -385,6 +436,50 @@ function saveStaffRole(userId) {
                 onSuccess: () => showSuccess('Role assigned successfully!'),
                 onError:   err => showSuccess('Error: ' + (err.error || 'Could not assign.')),
                 onFinish:  () => savingRoles.value.delete(userId),
+            });
+        },
+    });
+}
+
+// ─── MAN department mapping (mirrors ManAccessController::getDepartmentFromRole) ──
+
+const MAN_ROLE_DEPARTMENT = {
+    knitting_yarn: 'knitting', knitting_mechanic: 'knitting',
+    dyeing_color: 'dyeing', dyeing_fabric_softener: 'dyeing', dyeing_squeezer: 'dyeing',
+    dyeing_ironing: 'dyeing', dyeing_packaging: 'dyeing', dyeing_lab_chemist: 'dyeing',
+    checker_quality: 'finishing',
+    maintenance_checker: 'maintenance', pollution_control_operator: 'maintenance', safety_officer: 'maintenance',
+    boiler_operator: 'boiler',
+};
+const MAN_DEPT_LABELS = {
+    knitting: 'Knitting Department',
+    dyeing: 'Dyeing Department',
+    finishing: 'Finishing Department',
+    maintenance: 'Maintenance Department',
+    boiler: 'Boiler Department',
+};
+const manDeptOf = (role) => MAN_ROLE_DEPARTMENT[role] || null;
+
+// ─── Promote a MAN staff member to department supervisor ─────────────────────
+
+function promoteManSupervisor(userId) {
+    const user = panelUser.value;
+    const dept = manDeptOf(user?.manufacturing_role);
+    if (!dept) {
+        showSuccess('Assign a Department Role first — the supervisor department is derived from it.');
+        return;
+    }
+    openConfirm({
+        title: `Promote to ${MAN_DEPT_LABELS[dept]} Supervisor`,
+        message: `Are you sure you want to promote ${user?.name} to ${MAN_DEPT_LABELS[dept]} Supervisor? They will oversee all staff in that department.`,
+        confirmLabel: 'Promote',
+        confirmClass: 'bg-emerald-600 hover:bg-emerald-700',
+        icon: 'promote',
+        onConfirm: () => {
+            router.post(route('man.access.assign-supervisor'), { user_id: userId, is_supervisor: true }, {
+                preserveScroll: true,
+                onSuccess: () => location.reload(),
+                onError: (err) => showSuccess('Error: ' + (err.error || 'Could not promote to supervisor.')),
             });
         },
     });
@@ -587,7 +682,7 @@ async function saveClientAssignments(staffId) {
                                 <div class="text-[10px] font-bold uppercase tracking-wide text-blue-100">Total</div>
                             </div>
                             <div class="rounded-full bg-white/15 px-4 py-2 text-center ring-1 ring-white/25 backdrop-blur min-w-[72px]">
-                                <div class="text-lg font-black text-white">{{ (props.generalManagers?.length || 0) + (props.secretary ? 1 : 0) }}</div>
+                                <div class="text-lg font-black text-white">{{ (props.specialOfficers?.length || 0) + (props.secretary ? 1 : 0) }}</div>
                                 <div class="text-[10px] font-bold uppercase tracking-wide text-blue-100">Elevated</div>
                             </div>
                             <div class="rounded-full bg-emerald-400/90 px-4 py-2 text-center min-w-[72px]">
@@ -651,6 +746,40 @@ async function saveClientAssignments(staffId) {
                         <div class="w-2 h-2 rounded-full bg-violet-300"></div>
                     </div>
 
+                    <!-- ── TIER 1.5: VICE PRESIDENT ─────────────── -->
+                    <div class="tier-label flex items-center gap-2 mb-3">
+                        <div class="h-px w-12 bg-indigo-300/50"></div>
+                        <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Vice President</span>
+                        <span class="text-[10px] text-indigo-400 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">1 only</span>
+                        <div class="h-px w-12 bg-indigo-300/50"></div>
+                    </div>
+
+                    <div v-if="props.vicePresident"
+                         @click="openPanel(props.vicePresident, 'vp')"
+                         :class="['relative group overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border-2 border-indigo-300 dark:border-indigo-700 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 min-w-[240px] max-w-xs',
+                                  matchesSearch(props.vicePresident) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
+                        <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <img v-if="props.vicePresident.profile_photo" :src="props.vicePresident.profile_photo" :alt="props.vicePresident.name"
+                             class="w-11 h-11 rounded-xl object-cover ring-2 ring-indigo-200 shadow shrink-0" />
+                        <div v-else :class="`bg-gradient-to-br ${getAvatarColor(props.vicePresident.name)} w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0`">
+                            {{ getInitials(props.vicePresident.name) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-900 text-sm truncate">{{ props.vicePresident.name }}</div>
+                            <div class="text-xs text-indigo-600 font-medium truncate">{{ props.vicePresident.smart_label }}</div>
+                        </div>
+                        <ChevronRight class="w-4 h-4 text-indigo-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                    <div v-else class="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-indigo-400 text-sm min-w-[200px] justify-center">
+                        <UserCheck class="w-4 h-4" />
+                        No Vice President Assigned
+                    </div>
+
+                    <div class="flex flex-col items-center my-0">
+                        <div class="w-0.5 h-7 bg-gradient-to-b from-indigo-300 to-violet-300"></div>
+                        <div class="w-2 h-2 rounded-full bg-violet-300"></div>
+                    </div>
+
                     <!-- ── TIER 2: SECRETARY ────────────────────── -->
                     <div class="tier-label flex items-center gap-2 mb-3">
                         <div class="h-px w-12 bg-violet-300/50"></div>
@@ -688,35 +817,35 @@ async function saveClientAssignments(staffId) {
                     <!-- ── TIER 3: GENERAL MANAGERS ─────────────── -->
                     <div class="tier-label flex items-center gap-2 mb-3">
                         <div class="h-px w-12 bg-indigo-300/50"></div>
-                        <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">General Managers</span>
-                        <span class="text-[10px] text-indigo-400 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">{{ props.generalManagers?.length || 0 }}</span>
+                        <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Special Officers</span>
+                        <span class="text-[10px] text-indigo-400 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">{{ props.specialOfficers?.length || 0 }}</span>
                         <div class="h-px w-12 bg-indigo-300/50"></div>
                     </div>
 
-                    <div v-if="props.generalManagers && props.generalManagers.length > 0" class="flex flex-wrap justify-center gap-4">
+                    <div v-if="props.specialOfficers && props.specialOfficers.length > 0" class="flex flex-wrap justify-center gap-4">
                         <div
-                            v-for="gm in props.generalManagers"
-                            :key="gm.id"
-                            @click="openPanel(gm, 'gm')"
+                            v-for="so in props.specialOfficers"
+                            :key="so.id"
+                            @click="openPanel(so, 'so')"
                             :class="['group relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 w-56',
-                                     matchesSearch(gm) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
+                                     matchesSearch(so) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
                         >
                             <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <img v-if="gm.profile_photo" :src="gm.profile_photo" :alt="gm.name"
+                            <img v-if="so.profile_photo" :src="so.profile_photo" :alt="so.name"
                                  class="w-10 h-10 rounded-lg object-cover ring-2 ring-indigo-100 shadow shrink-0" />
-                            <div v-else :class="`bg-gradient-to-br ${getAvatarColor(gm.name)} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow shrink-0`">
-                                {{ getInitials(gm.name) }}
+                            <div v-else :class="`bg-gradient-to-br ${getAvatarColor(so.name)} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow shrink-0`">
+                                {{ getInitials(so.name) }}
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-gray-900 text-sm truncate">{{ gm.name }}</div>
-                                <div class="text-[11px] text-indigo-500 font-medium truncate">{{ gm.smart_label }}</div>
+                                <div class="font-semibold text-gray-900 text-sm truncate">{{ so.name }}</div>
+                                <div class="text-[11px] text-indigo-500 font-medium truncate">{{ so.smart_label }}</div>
                             </div>
                             <ChevronRight class="w-3.5 h-3.5 text-indigo-300 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                     </div>
                     <div v-else class="flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-indigo-400 text-sm justify-center">
                         <Crown class="w-4 h-4" />
-                        No General Managers Promoted Yet
+                        No Special Officers Promoted Yet
                     </div>
                 </div>
 
@@ -731,8 +860,9 @@ async function saveClientAssignments(staffId) {
                 </div>
 
                 <!-- ── TIER 4-6: DEPARTMENT COLUMNS ──────────────── -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div v-for="mod in CORE_MODULES" :key="mod.key" class="flex flex-col">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div v-for="mod in orderedCoreModules" :key="mod.key"
+                         :class="['flex flex-col', mod.key === 'MAN' ? 'sm:col-span-2 xl:col-span-3' : '']">
 
                         <div :style="{background: mod.light, borderColor: mod.border}"
                              class="rounded-3xl border-2 px-4 py-3 flex items-center gap-2 mb-2 shadow-sm dark:bg-zinc-900/80 dark:border-zinc-800">
@@ -753,8 +883,8 @@ async function saveClientAssignments(staffId) {
                             <div class="w-0.5 h-4" :style="{background: mod.border}"></div>
                         </div>
 
-                        <!-- Manager Node -->
-                        <div class="mb-2">
+                        <!-- Manager Node (not applicable to MAN: handled by the 4 department supervisors below) -->
+                        <div v-if="mod.key !== 'MAN'" class="mb-2">
                             <div v-if="managerByModule(mod.key)"
                                  @click="openPanel(managerByModule(mod.key), 'manager')"
                                  :class="['group relative overflow-hidden flex items-center gap-3 px-3 py-3 rounded-3xl border-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300',
@@ -782,38 +912,128 @@ async function saveClientAssignments(staffId) {
                             </div>
                         </div>
 
-                        <!-- Supervisors (MAN only) -->
+                        <!-- MAN has no manager: the 4 department supervisors below run the module -->
+                        <div v-if="mod.key === 'MAN'" class="mb-2">
+                            <div class="flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-dashed border-emerald-300 text-emerald-700 bg-emerald-50/60 text-sm">
+                                <Factory class="w-4 h-4" />
+                                <span class="text-xs font-medium">4 Department Supervisors</span>
+                            </div>
+                        </div>
+
+                        <!-- Departments (MAN only): 4 horizontal branches, each with its supervisor + staff -->
                         <template v-if="mod.key === 'MAN'">
                             <div class="flex justify-center my-0.5">
                                 <div class="w-0.5 h-3 bg-emerald-200"></div>
                             </div>
-                            <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-2 py-2 mb-2">
-                                <div class="flex items-center gap-1.5 mb-2 px-1">
-                                    <Factory class="w-3 h-3 text-emerald-600" />
-                                    <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Supervisors</span>
-                                    <span class="text-[10px] text-emerald-500 bg-emerald-100 border border-emerald-200 rounded-full px-1.5">{{ props.supervisors?.length || 0 }}</span>
-                                </div>
-                                <div v-if="props.supervisors && props.supervisors.length > 0" class="space-y-1.5">
-                                    <div
-                                        v-for="sup in props.supervisors"
-                                        :key="sup.id"
-                                        @click="openPanel(sup, 'supervisor')"
-                                        :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-emerald-200 cursor-pointer hover:border-emerald-400 hover:shadow-sm transition-all',
-                                                 matchesSearch(sup) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
-                                    >
-                                        <img v-if="sup.profile_photo" :src="sup.profile_photo"
+                            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 mb-2">
+                                <div v-for="dept in MAN_DEPTS" :key="dept" class="bg-emerald-50/60 border border-emerald-200 rounded-xl px-2 py-2">
+                                    <div class="flex items-center gap-1.5 mb-2 px-1">
+                                        <Factory class="w-3 h-3 text-emerald-600" />
+                                        <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">{{ MAN_DEPT_LABELS[dept] }}</span>
+                                        <span class="text-[10px] text-emerald-500 bg-emerald-100 border border-emerald-200 rounded-full px-1.5">{{ manStaffByDept(dept).length }} staff</span>
+                                    </div>
+                                    <!-- Supervisor seat (one per department) -->
+                                    <div v-if="manSupervisorOf(dept)"
+                                         @click="openPanel(manSupervisorOf(dept), 'supervisor')"
+                                         :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-emerald-300 cursor-pointer hover:border-emerald-500 hover:shadow-sm transition-all mb-1.5',
+                                                  matchesSearch(manSupervisorOf(dept)) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']">
+                                        <img v-if="manSupervisorOf(dept).profile_photo" :src="manSupervisorOf(dept).profile_photo"
                                              class="w-8 h-8 rounded-lg object-cover ring-1 ring-emerald-200 shrink-0" />
-                                        <div v-else :class="`bg-gradient-to-br ${getAvatarColor(sup.name)} w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0`">
-                                            {{ getInitials(sup.name) }}
+                                        <div v-else :class="`bg-gradient-to-br ${getAvatarColor(manSupervisorOf(dept).name)} w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0`">
+                                            {{ getInitials(manSupervisorOf(dept).name) }}
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <div class="text-xs font-semibold text-gray-900 truncate">{{ sup.name }}</div>
-                                            <div class="text-[10px] text-emerald-600 truncate">{{ sup.smart_label }}</div>
+                                            <div class="text-xs font-semibold text-gray-900 truncate">{{ manSupervisorOf(dept).name }}</div>
+                                            <div class="text-[10px] text-emerald-600 truncate">{{ manSupervisorOf(dept).smart_label }}</div>
                                         </div>
                                         <ChevronRight class="w-3 h-3 text-emerald-300 shrink-0" />
                                     </div>
+                                    <div v-else class="text-center py-2 mb-1.5 text-[11px] text-emerald-400 border border-dashed border-emerald-200 rounded-lg bg-white/60">No supervisor — promote one below</div>
+                                    <!-- Department staff -->
+                                    <div v-if="manStaffByDept(dept).length > 0" class="space-y-1.5">
+                                        <div
+                                            v-for="s in manStaffByDept(dept)"
+                                            :key="s.id"
+                                            @click="openPanel(s, s.position === 'manager' ? 'manager' : 'staff')"
+                                            :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border cursor-pointer hover:shadow-sm transition-all',
+                                                     matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 hover:border-gray-300']"
+                                        >
+                                            <img v-if="s.profile_photo" :src="s.profile_photo"
+                                                 class="w-7 h-7 rounded-lg object-cover ring-1 ring-gray-200 shrink-0" />
+                                            <div v-else :class="`bg-gradient-to-br ${getAvatarColor(s.name)} w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shrink-0`">
+                                                {{ getInitials(s.name) }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="text-xs font-semibold text-gray-900 truncate">{{ s.name }}</div>
+                                                <div class="text-[10px] text-gray-500 truncate">{{ s.smart_label }}</div>
+                                            </div>
+                                            <ChevronRight class="w-3 h-3 text-gray-300 shrink-0" />
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-center py-2 text-[11px] text-gray-400">No staff yet</div>
+                                    <!-- Boiler sub-department (nested under Maintenance) -->
+                                    <div v-if="dept === 'maintenance'" class="mt-2 ml-3 pl-3 border-l-2 border-emerald-300">
+                                        <div class="flex items-center gap-1.5 mb-1.5 px-1">
+                                            <Factory class="w-3 h-3 text-emerald-500" />
+                                            <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Boiler Department</span>
+                                            <span class="text-[10px] text-emerald-500 bg-emerald-100 border border-emerald-200 rounded-full px-1.5">{{ manStaffByDept('boiler').length }} staff</span>
+                                        </div>
+                                        <div v-if="manSupervisorOf('boiler')"
+                                             @click="openPanel(manSupervisorOf('boiler'), 'supervisor')"
+                                             :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-emerald-300 cursor-pointer hover:border-emerald-500 hover:shadow-sm transition-all mb-1.5',
+                                                      matchesSearch(manSupervisorOf('boiler')) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']">
+                                            <img v-if="manSupervisorOf('boiler').profile_photo" :src="manSupervisorOf('boiler').profile_photo"
+                                                 class="w-8 h-8 rounded-lg object-cover ring-1 ring-emerald-200 shrink-0" />
+                                            <div v-else :class="`bg-gradient-to-br ${getAvatarColor(manSupervisorOf('boiler').name)} w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0`">
+                                                {{ getInitials(manSupervisorOf('boiler').name) }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="text-xs font-semibold text-gray-900 truncate">{{ manSupervisorOf('boiler').name }}</div>
+                                                <div class="text-[10px] text-emerald-600 truncate">{{ manSupervisorOf('boiler').smart_label }}</div>
+                                            </div>
+                                            <ChevronRight class="w-3 h-3 text-emerald-300 shrink-0" />
+                                        </div>
+                                        <div v-else class="text-center py-2 mb-1.5 text-[11px] text-emerald-400 border border-dashed border-emerald-200 rounded-lg bg-white/60">No head — promote one below</div>
+                                        <div v-if="manStaffByDept('boiler').length > 0" class="space-y-1.5">
+                                            <div
+                                                v-for="s in manStaffByDept('boiler')"
+                                                :key="s.id"
+                                                @click="openPanel(s, s.position === 'manager' ? 'manager' : 'staff')"
+                                                :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border cursor-pointer hover:shadow-sm transition-all',
+                                                         matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 hover:border-gray-300']"
+                                            >
+                                                <img v-if="s.profile_photo" :src="s.profile_photo"
+                                                     class="w-7 h-7 rounded-lg object-cover ring-1 ring-gray-200 shrink-0" />
+                                                <div v-else :class="`bg-gradient-to-br ${getAvatarColor(s.name)} w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shrink-0`">
+                                                    {{ getInitials(s.name) }}
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="text-xs font-semibold text-gray-900 truncate">{{ s.name }}</div>
+                                                    <div class="text-[10px] text-gray-500 truncate">{{ s.smart_label }}</div>
+                                                </div>
+                                                <ChevronRight class="w-3 h-3 text-gray-300 shrink-0" />
+                                            </div>
+                                        </div>
+                                        <div v-else class="text-center py-2 text-[11px] text-gray-400">No boiler staff yet</div>
+                                    </div>
                                 </div>
-                                <div v-else class="text-center py-2 text-[11px] text-emerald-400">No supervisors</div>
+                            </div>
+                            <!-- Staff without a department role -->
+                            <div v-if="unassignedManStaff().length > 0" class="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/60 p-2 mb-2">
+                                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1 mb-1.5">No department role ({{ unassignedManStaff().length }})</div>
+                                <div class="space-y-1.5">
+                                    <div v-for="s in unassignedManStaff()" :key="s.id" @click="openPanel(s, 'staff')"
+                                         class="group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border border-gray-200 cursor-pointer hover:shadow-sm transition-all">
+                                        <div :class="`bg-gradient-to-br ${getAvatarColor(s.name)} w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shrink-0`">
+                                            {{ getInitials(s.name) }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-xs font-semibold text-gray-900 truncate">{{ s.name }}</div>
+                                            <div class="text-[10px] text-gray-500 truncate">{{ s.smart_label }}</div>
+                                        </div>
+                                        <ChevronRight class="w-3 h-3 text-gray-300 shrink-0" />
+                                    </div>
+                                </div>
                             </div>
                         </template>
 
@@ -821,8 +1041,8 @@ async function saveClientAssignments(staffId) {
                             <div class="w-0.5 h-3" :style="{background: mod.border}"></div>
                         </div>
 
-                        <!-- Staff -->
-                        <div class="rounded-xl border p-2 flex-1" :style="{borderColor: mod.border, background: mod.light}">
+                        <!-- Staff (flat list; MAN shows grouped department branches above instead) -->
+                        <div v-if="mod.key !== 'MAN'" class="rounded-xl border p-2 flex-1" :style="{borderColor: mod.border, background: mod.light}">
                             <div class="flex items-center gap-1.5 mb-2 px-1">
                                 <Users class="w-3 h-3" :style="{color: mod.accent}" />
                                 <span class="text-[10px] font-bold uppercase tracking-wider" :style="{color: mod.accent}">Staff</span>
@@ -834,7 +1054,7 @@ async function saveClientAssignments(staffId) {
                                 <div
                                     v-for="s in staffByModule(mod.key)"
                                     :key="s.id"
-                                    @click="openPanel(s, 'staff')"
+                                    @click="openPanel(s, s.position === 'manager' ? 'manager' : 'staff')"
                                     :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white border cursor-pointer hover:shadow-sm transition-all',
                                              matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 hover:border-gray-300']"
                                 >
@@ -901,7 +1121,7 @@ async function saveClientAssignments(staffId) {
                                                 <span class="text-[11px] font-semibold px-2 py-0.5 rounded-lg border"
                                                       :class="{
                                                         'bg-amber-50 text-amber-700 border-amber-200': selectedType === 'secretary',
-                                                        'bg-indigo-50 text-indigo-700 border-indigo-200': selectedType === 'gm',
+                                                        'bg-indigo-50 text-indigo-700 border-indigo-200': selectedType === 'so',
                                                         'bg-blue-50 text-blue-700 border-blue-200': selectedType === 'manager',
                                                         'bg-emerald-50 text-emerald-700 border-emerald-200': selectedType === 'supervisor',
                                                         'bg-slate-50 text-slate-600 border-slate-200': selectedType === 'staff',
@@ -951,7 +1171,7 @@ async function saveClientAssignments(staffId) {
                                     <div v-if="panelTab === 'access'" class="px-5 py-4 space-y-5">
 
                                         <!-- Position controls (secretary / gm) -->
-                                        <div v-if="selectedType === 'secretary' || selectedType === 'gm'" class="panel-section">
+                                        <div v-if="selectedType === 'secretary' || selectedType === 'so'" class="panel-section">
                                             <div class="panel-section-title">
                                                 <GitBranch class="w-4 h-4 text-indigo-500" />
                                                 Promote / Demote
@@ -962,14 +1182,40 @@ async function saveClientAssignments(staffId) {
                                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                                                     <UserCheck class="w-3.5 h-3.5" /> Secretary
                                                 </button>
-                                                <button @click="updatePosition(panelId, 'general_manager')"
-                                                    :disabled="panelUser.position === 'general_manager'"
+                                                <button @click="updatePosition(panelId, 'special_officer')"
+                                                    :disabled="panelUser.position === 'special_officer'"
                                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                                                    <Crown class="w-3.5 h-3.5" /> General Manager
+                                                    <Crown class="w-3.5 h-3.5" /> Special Officer
                                                 </button>
                                                 <button @click="updatePosition(panelId, 'manager')"
+                                                    v-if="panelUser.role !== 'MAN'"
                                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 text-gray-600 bg-gray-50 hover:bg-gray-100 transition-all">
                                                     <UserCog class="w-3.5 h-3.5" /> Demote to Manager
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Vice President (second in command: full CEO mirror) -->
+                                        <div v-if="selectedType === 'vp'" class="panel-section">
+                                            <div class="panel-section-title">
+                                                <Crown class="w-4 h-4 text-indigo-500" />
+                                                Vice President
+                                            </div>
+                                            <div class="mt-3 flex items-center gap-2 px-3 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+                                                <ShieldCheck class="w-4 h-4 text-indigo-500 shrink-0" />
+                                                <span class="text-xs text-indigo-700 font-medium">Mirrors the CEO: dashboard, reports, audit trail, geolocation, and full module oversight.</span>
+                                            </div>
+                                            <div class="flex flex-wrap items-end gap-2 mt-3">
+                                                <div class="flex-1 min-w-[160px]">
+                                                    <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Return to module as staff</label>
+                                                    <select v-model="vpReturnModule"
+                                                        class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-red-300 text-gray-700">
+                                                        <option v-for="m in VP_HOME_MODULES" :key="m" :value="m">{{ m }}</option>
+                                                    </select>
+                                                </div>
+                                                <button @click="updatePosition(panelId, 'staff', { role: vpReturnModule })"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 text-red-600 bg-red-50 hover:bg-red-100 transition-all">
+                                                    <UserMinus class="w-3.5 h-3.5" /> Demote to Staff
                                                 </button>
                                             </div>
                                         </div>
@@ -985,9 +1231,9 @@ async function saveClientAssignments(staffId) {
                                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 transition-all">
                                                     <UserCheck class="w-3.5 h-3.5" /> Promote to Secretary
                                                 </button>
-                                                <button @click="updatePosition(panelId, 'general_manager')"
+                                                <button @click="updatePosition(panelId, 'special_officer')"
                                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all">
-                                                    <Crown class="w-3.5 h-3.5" /> Promote to General Manager
+                                                    <Crown class="w-3.5 h-3.5" /> Promote to Special Officer
                                                 </button>
                                                 <button @click="updatePosition(panelId, 'staff')"
                                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-gray-200 text-red-600 bg-red-50 hover:bg-red-100 transition-all">
@@ -1000,8 +1246,8 @@ async function saveClientAssignments(staffId) {
                                             </div>
                                         </div>
 
-                                        <!-- Promote staff to manager -->
-                                        <div v-if="selectedType === 'staff' && panelUser.position === 'staff'" class="panel-section">
+                                        <!-- Promote staff to manager (all modules EXCEPT MAN: it has no manager) -->
+                                        <div v-if="selectedType === 'staff' && panelUser.position === 'staff' && panelUser.role !== 'MAN'" class="panel-section">
                                             <div class="panel-section-title">
                                                 <GitBranch class="w-4 h-4 text-green-500" />
                                                 Promote to Manager
@@ -1014,6 +1260,42 @@ async function saveClientAssignments(staffId) {
                                                 Promote to Manager
                                             </button>
                                             <p class="text-xs text-gray-500 mt-2">Promoting this staff member will give them manager‑level access to their core module.</p>
+                                            <div class="border-t border-gray-100 mt-3 pt-3">
+                                                <button
+                                                    @click="updatePosition(panelId, 'vice_president')"
+                                                    :disabled="!!props.vicePresident"
+                                                    :title="props.vicePresident ? `Seat occupied by ${props.vicePresident.name} — demote them first` : 'Appoint as second in command'"
+                                                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                >
+                                                    <Crown class="w-3.5 h-3.5" />
+                                                    Appoint Vice President
+                                                </button>
+                                                <p class="text-xs text-gray-500 mt-2">Second in command: full CEO mirror of pages and powers. Only one seat.</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Promote MAN staff to department supervisor (department derived from their role) -->
+                                        <div v-if="selectedType === 'staff' && panelUser.position === 'staff' && panelUser.role === 'MAN'" class="panel-section">
+                                            <div class="panel-section-title">
+                                                <Factory class="w-4 h-4 text-emerald-500" />
+                                                Promote to Supervisor
+                                            </div>
+                                            <button
+                                                @click="promoteManSupervisor(panelId)"
+                                                :disabled="!manDeptOf(panelUser.manufacturing_role) || !!manSupervisorOf(manDeptOf(panelUser.manufacturing_role))"
+                                                :title="manSupervisorOf(manDeptOf(panelUser.manufacturing_role)) ? `Seat occupied by ${manSupervisorOf(manDeptOf(panelUser.manufacturing_role)).name} — demote them first` : ''"
+                                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            >
+                                                <UserCog class="w-3.5 h-3.5" />
+                                                {{ manDeptOf(panelUser.manufacturing_role) ? `Promote to ${MAN_DEPT_LABELS[manDeptOf(panelUser.manufacturing_role)]} Supervisor` : 'Promote to Supervisor' }}
+                                            </button>
+                                            <p class="text-xs text-gray-500 mt-2">
+                                                {{ !manDeptOf(panelUser.manufacturing_role)
+                                                    ? 'Assign a Department Role above first — the supervisor department is derived from it.'
+                                                    : manSupervisorOf(manDeptOf(panelUser.manufacturing_role))
+                                                        ? `${manSupervisorOf(manDeptOf(panelUser.manufacturing_role)).name} currently holds this seat — demote them first (one supervisor per department).`
+                                                        : `This staff belongs to ${MAN_DEPT_LABELS[manDeptOf(panelUser.manufacturing_role)]} and will supervise all of its staff.` }}
+                                            </p>
                                         </div>
 
                                         <!-- Module Access (elevated + supervisors) -->
@@ -1096,7 +1378,9 @@ async function saveClientAssignments(staffId) {
                                                     <option :value="null">-- Unassigned --</option>
                                                     <option value="knitting">Knitting</option>
                                                     <option value="dyeing">Dyeing</option>
+                                                    <option value="finishing">Finishing</option>
                                                     <option value="maintenance">Maintenance</option>
+                                                    <option value="boiler">Boiler</option>
                                                 </select>
                                                 <button
                                                     @click="saveStaffRole(panelId)"

@@ -1,14 +1,14 @@
 <?php
 
-use App\Http\Controllers\crm\AccessController as CrmAccessController;
-use App\Http\Controllers\crm\ApprovalController;
-use App\Http\Controllers\crm\CrmDashboardController;
-use App\Http\Controllers\crm\CustomerProfileController;
+use App\Http\Controllers\Crm\AccessController as CrmAccessController;
+use App\Http\Controllers\Crm\ApprovalController;
+use App\Http\Controllers\Crm\CrmDashboardController;
+use App\Http\Controllers\Crm\CustomerProfileController;
 
-use App\Http\Controllers\crm\InvestigationController;
-use App\Http\Controllers\crm\LeadController;
-use App\Http\Controllers\crm\SocialsController;
-use App\Http\Controllers\crm\CrmLogoPartnerController;
+use App\Http\Controllers\Crm\InvestigationController;
+use App\Http\Controllers\Crm\LeadController;
+use App\Http\Controllers\Crm\SocialsController;
+use App\Http\Controllers\Crm\CrmLogoPartnerController;
 
 use Illuminate\Support\Facades\Route;
 

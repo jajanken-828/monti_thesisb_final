@@ -1,8 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ClipboardList, Send, X, AlertCircle, CheckCircle, Sparkles, Package } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditProcurement = computed(() => canEdit('SCM', 'procurement'));
 
 const props = defineProps({ procurementRequests: Array });
 
@@ -54,6 +58,7 @@ const handleSendAction = () => {
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Procurement Requests</h1>
                             <p class="text-sm text-blue-100/90">Direct materials queue for SCM processing.</p>
+                            <span v-if="!canEditProcurement" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -94,7 +99,7 @@ const handleSendAction = () => {
                             </div>
                         </div>
 
-                        <button @click="confirmSend(req)"
+                        <button v-if="canEditProcurement" @click="confirmSend(req)"
                             class="relative shrink-0 px-6 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition shadow-lg active:scale-95">
                             <Send class="w-4 h-4" /> Send to Procurement
                         </button>
@@ -134,6 +139,7 @@ const handleSendAction = () => {
                                 Cancel
                             </button>
                             <button
+                                v-if="canEditProcurement"
                                 @click="handleSendAction"
                                 class="flex-[1.5] px-6 py-4 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95"
                             >

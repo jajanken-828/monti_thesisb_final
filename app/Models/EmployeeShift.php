@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\core\User;
+use App\Models\Core\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;

@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import AuthLayout from '@/Layouts/AuthLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
@@ -62,15 +63,45 @@ const blockSpecialForEmail = (e) => {
     }
 };
 
-// --- 2. PASTE SANITIZATION WATCHERS ---
+// --- 2. PASTE SANITIZATION (paste bypasses keypress, so clean + warn) ---
+const sanitizeNamePaste = (e) => {
+    e.preventDefault();
+    const raw = e.clipboardData?.getData('text') ?? '';
+    const cleaned = raw.replace(/[^a-zA-Z\s]/g, '').slice(0, 255);
+    if (!cleaned) {
+        triggerWarning('name', 'Nothing valid to paste.');
+        return;
+    }
+    if (cleaned !== raw) triggerWarning('name', 'Pasted text was cleaned up.');
+    form.name = (form.name + cleaned).slice(0, 255);
+};
+
+const sanitizeEmailPaste = (e) => {
+    e.preventDefault();
+    const raw = e.clipboardData?.getData('text') ?? '';
+    const cleaned = raw.replace(/\s+/g, '').replace(/[^a-zA-Z0-9@.\-]/g, '').slice(0, 255);
+    if (!cleaned) {
+        triggerWarning('email', 'Nothing valid to paste.');
+        return;
+    }
+    if (cleaned !== raw) triggerWarning('email', 'Pasted text was cleaned up.');
+    form.email = (form.email + cleaned).slice(0, 255);
+};
+
 watch(() => form.name, (val) => {
     const filtered = val.replace(/[^a-zA-Z\s]/g, '');
-    if (val !== filtered) form.name = filtered;
+    if (val !== filtered) {
+        form.name = filtered;
+        triggerWarning('name', 'Invalid character removed.');
+    }
 });
 
 watch(() => form.email, (val) => {
     const filtered = val.replace(/[^a-zA-Z0-9@.\-]/g, '');
-    if (val !== filtered) form.email = filtered;
+    if (val !== filtered) {
+        form.email = filtered;
+        triggerWarning('email', 'Invalid character removed.');
+    }
 });
 
 // --- 3. HARD SUBMIT LOCKS ---
@@ -122,52 +153,27 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
-        style="background-image: url('/images/threads.jpg');">
-        <div class="absolute inset-0 bg-black/35"></div>
+    <AuthLayout
+        title="Personnel Registration"
+        highlight="Registration"
+        subtitle="Provide accurate details for your employee record. All accounts are subject to administrative approval."
+        badge="Employee Registration"
+        accent="blue"
+        wide
+    >
+        <Head title="Employee Registration | Monti Corp" />
 
-        <nav class="relative z-30 px-6 py-5 flex items-center">
-            <Link href="/" class="flex items-center gap-3 group">
-                <div
-                    class="size-10 sm:size-11 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-full w-full object-contain" />
-                </div>
-                <span class="font-black text-2xl tracking-tight text-white drop-shadow-md">
-                    Monti<span class="text-blue-300">Corp</span>
-                </span>
-            </Link>
-        </nav>
-
-        <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
-            <div class="w-full max-w-3xl">
-
-                <div
-                    class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-
-                    <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-
-                        <Head title="Employee Registration | Monti Corp" />
-
-                        <div class="text-center mb-10">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
-                                Personnel Registration
-                            </h1>
-                            <p class="mt-3 text-slate-200 text-base sm:text-lg max-w-2xl mx-auto">
-                                Provide accurate details for your employee record. All accounts are subject to
-                                administrative approval.
-                            </p>
-                        </div>
-
-                        <form @submit.prevent="submit" class="space-y-6">
+        <form @submit.prevent="submit" class="space-y-6">
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                                 <div>
                                     <InputLabel for="name" value="Full Name (Legal)" class="text-white/90" />
                                     <TextInput id="name" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.name" required autofocus autocomplete="name"
-                                        @keypress="blockNumbersAndSpecial($event, 'name')" placeholder="John Doe" />
+                                        @keypress="blockNumbersAndSpecial($event, 'name')" @paste="sanitizeNamePaste"
+                                        spellcheck="false" placeholder="John Doe" />
                                     <InputError class="mt-1 text-red-300" :message="form.errors.name" />
                                     <p v-if="inputWarnings.name" class="mt-1 text-xs text-red-300 animate-pulse">{{
                                         inputWarnings.name }}</p>
@@ -176,9 +182,10 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="email" value="Corporate Email Address" class="text-white/90" />
                                     <TextInput id="email" type="email"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.email" required autocomplete="username"
-                                        @keypress="blockSpecialForEmail" placeholder="employee@monticorp.com" />
+                                        @keypress="blockSpecialForEmail" @paste="sanitizeEmailPaste"
+                                        spellcheck="false" placeholder="employee@monticorp.com" />
                                     <InputError class="mt-1 text-red-300" :message="form.errors.email" />
                                     <p v-if="inputWarnings.email" class="mt-1 text-xs text-red-300 animate-pulse">{{
                                         inputWarnings.email }}</p>
@@ -187,7 +194,7 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="role" value="Department / Role" class="text-white/90" />
                                     <select id="role" v-model="form.role"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl focus:border-blue-400 focus:ring-blue-400/40 transition-all custom-select"
+                                        class="auth-input mt-1 block w-full"
                                         required>
                                         <option value="" disabled selected>Select Department...</option>
                                         <option value="HRM">HRM (Human Resources)</option>
@@ -199,7 +206,10 @@ const submit = () => {
                                         <option value="WAR">WAR (Warehouse)</option>
                                         <option value="CRM">CRM (Customer Relations)</option>
                                         <option value="ECO">ECO (E-Commerce)</option>
-                                        <option value="none">Trainee / Other</option>
+                                        <option value="PRO">PRO (Procurement)</option>
+                                        <option value="PROJ">PROJ (Projects)</option>
+                                        <option value="IT">IT (Systems)</option>
+                                        <option value="HRM">General / Trainee</option>
                                     </select>
                                     <InputError class="mt-1 text-red-300" :message="form.errors.role" />
                                 </div>
@@ -207,12 +217,12 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="position" value="Position Level" class="text-white/90" />
                                     <select id="position" v-model="form.position"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl focus:border-blue-400 focus:ring-blue-400/40 transition-all custom-select"
+                                        class="auth-input mt-1 block w-full"
                                         required>
                                         <option value="" disabled selected>Select Level...</option>
-                                        <option value="Manager">Department Manager</option>
-                                        <option value="Staff">Department Staff</option>
-                                        <option value="Trainee">Trainee</option>
+                                        <option value="manager">Department Manager</option>
+                                        <option value="staff">Department Staff</option>
+                                        <option value="trainee">Trainee</option>
                                     </select>
                                     <InputError class="mt-1 text-red-300" :message="form.errors.position" />
                                 </div>
@@ -225,7 +235,7 @@ const submit = () => {
                                     <InputLabel for="password" value="Password" class="text-white/90" />
                                     <div class="relative">
                                         <TextInput id="password" :type="showPassword ? 'text' : 'password'"
-                                            class="mt-1 pr-12 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                            class="auth-input mt-1 block w-full pr-12"
                                             v-model="form.password" required autocomplete="new-password"
                                             placeholder="••••••••" />
                                         <button type="button" @click="togglePassword"
@@ -251,7 +261,7 @@ const submit = () => {
                                     <div class="relative">
                                         <TextInput id="password_confirmation"
                                             :type="showConfirmPassword ? 'text' : 'password'"
-                                            class="mt-1 pr-12 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                            class="auth-input mt-1 block w-full pr-12"
                                             v-model="form.password_confirmation" required placeholder="••••••••"
                                             autocomplete="new-password" />
                                         <button type="button" @click="toggleConfirmPassword"
@@ -274,7 +284,7 @@ const submit = () => {
 
                             </div>
 
-                            <div class="bg-blue-900/30 p-4 rounded-xl border border-blue-400/30 mt-6 backdrop-blur-sm">
+                            <div class="bg-blue-900/30 p-4 rounded-lg border border-blue-400/30 mt-6 backdrop-blur-sm">
                                 <p class="text-xs text-blue-200 font-medium">
                                     <span class="font-black uppercase tracking-widest block mb-1">⚠️ Approval
                                         Required</span>
@@ -296,7 +306,7 @@ const submit = () => {
                                 </Link>
 
                                 <PrimaryButton
-                                    class="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-700/30 transition-all duration-200 tracking-widest font-mono uppercase"
+                                    class="auth-btn w-full px-5 py-2.5 text-xs font-bold text-white sm:w-auto"
                                     :class="{ 'opacity-60 cursor-wait': form.processing }" :disabled="form.processing">
                                     <span v-if="form.processing">Processing...</span>
                                     <span v-else>Register Account</span>
@@ -304,38 +314,5 @@ const submit = () => {
                             </div>
 
                         </form>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </AuthLayout>
 </template>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-
-.font-mono {
-    font-family: 'JetBrains Mono', monospace;
-}
-
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
-    -webkit-text-fill-color: white !important;
-}
-
-input,
-select,
-textarea {
-    @apply transition-all duration-300 ease-in-out;
-}
-
-/* Ensure the <option> text is visible inside the transparent select field */
-.custom-select option {
-    background-color: #0f172a;
-    color: white;
-}
-</style>

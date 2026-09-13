@@ -13,7 +13,7 @@ import {
     UserCog, MessageSquare, Navigation, MapPin, Briefcase, Plus, ArrowLeft,
     Paperclip, Loader2, Info, Phone, Mail, Calendar, Tag, Weight, Ruler, Layers,
     ArrowRight, Zap, Activity, DollarSign, Users as UsersIcon, UserCog2, Camera,
-    Sparkles, Palette, Wrench, CheckCircle2, UserPen, Share2
+    Sparkles, Palette, Wrench, CheckCircle2, UserPen, Share2, Megaphone, Cog, Flag, FlaskConical, ArrowRightLeft, Leaf, HardHat, Flame, Stamp, Bell, Printer, Target, Repeat
 } from 'lucide-vue-next'
 
 const page = usePage()
@@ -32,6 +32,7 @@ const isWarehouseOpen = ref(false)
 const isInventoryOpen = ref(false)
 const isProOpen = ref(false)
 const isFinOpen = ref(false)
+const isItOpen = ref(false)
 const isManOpen = ref(false)
 const isOrdOpen = ref(false)
 const isLogisticsOpen = ref(false)
@@ -59,12 +60,14 @@ const toggleWarehouse = () => { isWarehouseOpen.value = !isWarehouseOpen.value }
 const toggleInventory = () => { isInventoryOpen.value = !isInventoryOpen.value }
 const togglePro = () => { isProOpen.value = !isProOpen.value }
 const toggleFin = () => { isFinOpen.value = !isFinOpen.value }
+const toggleIt = () => { isItOpen.value = !isItOpen.value }
 const toggleMan = () => { isManOpen.value = !isManOpen.value }
 const toggleOrd = () => { isOrdOpen.value = !isOrdOpen.value }
 const toggleLogistics = () => { isLogisticsOpen.value = !isLogisticsOpen.value }
 
 // Auth helpers
 const user = computed(() => page.props.auth.user)
+const unreadCount = computed(() => page.props.notifications_unread || 0)
 const client = computed(() => page.props.auth.client)
 const supplier = computed(() => page.props.auth.supplier || (page.props.auth.user?.business_name ? page.props.auth.user : null))
 const currentUrl = computed(() => page.url)
@@ -74,7 +77,7 @@ const isClient = computed(() => !!client.value)
 const isSupplier = computed(() => !!supplier.value || currentUrl.value.startsWith('/supplier'))
 
 const userModuleAccess = computed(() => {
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return page.props.auth.user?.granted_modules || []
     }
     return []
@@ -89,7 +92,7 @@ const grantedModules = computed(() => {
 
 const canAccessModule = (moduleName) => {
     if (user.value?.role === 'CEO') return true
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return userModuleAccess.value.includes(moduleName)
     }
     if (user.value?.is_manufacturing_supervisor) {
@@ -104,7 +107,7 @@ const canAccessModule = (moduleName) => {
 
 const hasLogisticsAccess = computed(() => {
     if (user.value?.role === 'CEO') return true
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return canAccessModule('LOG')
     }
     if (user.value?.is_manufacturing_supervisor) {
@@ -119,7 +122,7 @@ const isConductor = computed(() => user.value?.conductor !== null || user.value?
 
 const canAccessWorkforce = () => {
     if (user.value?.role === 'CEO') return true
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return userModuleAccess.value.includes('WRF')
     }
     if (user.value?.is_manufacturing_supervisor) {
@@ -152,7 +155,7 @@ const hasModulePermission = (moduleKey, permissionKey) => {
 
 const hasWarehouseAccess = computed(() => {
     if (user.value?.role === 'CEO') return true
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return canAccessModule('WAR')
     }
     if (user.value?.is_manufacturing_supervisor) {
@@ -163,7 +166,7 @@ const hasWarehouseAccess = computed(() => {
 
 const hasInventoryAccess = computed(() => {
     if (user.value?.role === 'CEO') return true
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return canAccessModule('INV')
     }
     if (user.value?.is_manufacturing_supervisor) {
@@ -174,7 +177,7 @@ const hasInventoryAccess = computed(() => {
 
 const hasOrdAccess = computed(() => {
     if (user.value?.role === 'CEO') return true
-    if (user.value?.position === 'secretary' || user.value?.position === 'general_manager') {
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
         return canAccessModule('ORD')
     }
     if (user.value?.is_manufacturing_supervisor) {
@@ -197,13 +200,24 @@ const switchManufacturingRole = (role) => {
 const formatRoleLabel = (role) => role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 
 // Helper to generate three links for a role (as an array of link objects)
-const getRoleLinks = (roleWithUnderscores, label, icon, hasReports = true) => {
+const getRoleLinks = (roleWithUnderscores, label, icon, hasReports = true, hasHistory = false, hasFlags = false, hasLab = false) => {
     const roleWithHyphens = roleWithUnderscores.replace(/_/g, '-')
     const routePrefix = `man.staff.${roleWithHyphens}`
     const links = [
         { label: 'Dashboard', href: route(`${routePrefix}.dashboard`), icon: LayoutDashboard },
         { label: label, href: route(`${routePrefix}.page`), icon: icon }
     ]
+    if (hasHistory) {
+        links.push({ label: 'My History', href: route(`${routePrefix}.history`), icon: History })
+    }
+    if (hasFlags) {
+        links.push({ label: 'Flag Reports', href: route(`${routePrefix}.flag-reports`), icon: Flag })
+    }
+    if (hasLab) {
+        links.push({ label: 'Tests & CoA', href: route(`${routePrefix}.tests`), icon: ClipboardCheck })
+        links.push({ label: 'Lab Inventory', href: route(`${routePrefix}.inventory`), icon: Boxes })
+        links.push({ label: 'Bulk Transfer', href: route(`${routePrefix}.transfer`), icon: ArrowRightLeft })
+    }
     if (hasReports) {
         links.push({ label: 'Reports', href: route(`${routePrefix}.reports`), icon: FileText })
     }
@@ -211,7 +225,7 @@ const getRoleLinks = (roleWithUnderscores, label, icon, hasReports = true) => {
 }
 
 // Helper to create a dropdown item for a role (used inside MAN module)
-const createRoleDropdown = (roleKey, roleLabel, roleIcon, hasReports = true) => {
+const createRoleDropdown = (roleKey, roleLabel, roleIcon, hasReports = true, hasHistory = false, hasFlags = false, hasLab = false) => {
     const isOpen = getRoleDropdownState(roleKey, false)
     return {
         label: roleLabel,
@@ -219,67 +233,82 @@ const createRoleDropdown = (roleKey, roleLabel, roleIcon, hasReports = true) => 
         isDropdown: true,
         isOpen: isOpen,
         toggle: () => toggleRoleDropdown(roleKey),
-        children: getRoleLinks(roleKey, roleLabel, roleIcon, hasReports)
+        children: getRoleLinks(roleKey, roleLabel, roleIcon, hasReports, hasHistory, hasFlags, hasLab)
     }
+}
+
+// Department staff roles for supervisor view (returns array of dropdown items)
+// 4 departments — no manufacturing manager. hasHistory mirrors the backend:
+// only the 6 production roles expose a `history` route.
+const MAN_STAFF_CONFIG = {
+    knitting_yarn:          { label: 'Knitting Yarn',          icon: Sparkles, hasReports: true,  hasHistory: true,  hasFlags: true },
+    knitting_mechanic:      { label: 'Knitting Mechanic',      icon: Cog,      hasReports: true,  hasHistory: true },
+    dyeing_color:           { label: 'Dyeing Color',           icon: Palette,  hasReports: true,  hasHistory: true },
+    dyeing_fabric_softener: { label: 'Dyeing Fabric Softener', icon: Palette,  hasReports: true,  hasHistory: true },
+    dyeing_squeezer:        { label: 'Dyeing Squeezer',        icon: Palette,  hasReports: true,  hasHistory: true },
+    dyeing_ironing:         { label: 'Dyeing Ironing',         icon: Palette,  hasReports: true,  hasHistory: true },
+    dyeing_packaging:       { label: 'Dyeing Packaging',       icon: Palette,  hasReports: true,  hasHistory: true },
+    dyeing_lab_chemist:     { label: 'Lab Chemist',            icon: FlaskConical, hasReports: false, hasHistory: true, hasLab: true },
+    checker_quality:        { label: 'Checker Quality',        icon: CheckCircle2, hasReports: false, hasHistory: false },
+    maintenance_checker:    { label: 'Maintenance Checker',    icon: Wrench,   hasReports: true,  hasHistory: false },
+    pollution_control_operator: { label: 'Pollution Control', icon: Leaf,     hasReports: false, hasHistory: true },
+    safety_officer:         { label: 'Safety Officer',         icon: HardHat,  hasReports: false, hasHistory: true },
+    boiler_operator:        { label: 'Boiler Operator',        icon: Flame,    hasReports: true,  hasHistory: true },
+}
+
+const DEPARTMENT_ROLES = {
+    knitting: ['knitting_yarn', 'knitting_mechanic'],
+    dyeing: ['dyeing_color', 'dyeing_fabric_softener', 'dyeing_squeezer', 'dyeing_ironing', 'dyeing_packaging', 'dyeing_lab_chemist'],
+    finishing: ['checker_quality'],
+    maintenance: ['maintenance_checker', 'pollution_control_operator', 'safety_officer'],
+    boiler: ['boiler_operator'],
 }
 
 // Department staff roles for supervisor view (returns array of dropdown items)
 const departmentStaffRoles = computed(() => {
     const dept = supervisedDepartment.value
-    if (dept === 'knitting') {
-        return [createRoleDropdown('knitting_yarn', 'Knitting Yarn', Sparkles, true)]
-    } else if (dept === 'dyeing') {
-        return [
-            createRoleDropdown('dyeing_color', 'Dyeing Color', Palette, true),
-            createRoleDropdown('dyeing_fabric_softener', 'Dyeing Fabric Softener', Palette, true),
-            createRoleDropdown('dyeing_squeezer', 'Dyeing Squeezer', Palette, true),
-            createRoleDropdown('dyeing_ironing', 'Dyeing Ironing', Palette, true),
-            createRoleDropdown('dyeing_packaging', 'Dyeing Packaging', Palette, false)
-        ]
-    } else if (dept === 'maintenance') {
-        return [createRoleDropdown('maintenance_checker', 'Maintenance Checker', Wrench, true)]
-    }
-    return []
+    return (DEPARTMENT_ROLES[dept] || []).map((roleKey) => {
+        const config = MAN_STAFF_CONFIG[roleKey]
+        return createRoleDropdown(roleKey, config.label, config.icon, config.hasReports, config.hasHistory, config.hasFlags, config.hasLab)
+    })
 })
 
 // --- Helper to get filtered children for each module
 const getFilteredHrmChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('hrm.dashboard'), icon: LayoutDashboard },
-        { label: 'Employees', href: route('hrm.employees.index'), icon: Users },
-        { label: 'Applications', href: route('hrm.applications.index'), icon: FileText },
-        { label: 'Interviews', href: route('hrm.interview.index'), icon: Eye },
-        { label: 'Trainees', href: route('hrm.trainee.index'), icon: Award },
-        { label: 'Onboarding', href: route('hrm.onboarding.index'), icon: UserPlus },
-        { label: 'Archive', href: route('hrm.applications.rejected'), icon: Archive },
-        { label: 'Payroll', href: route('hrm.payroll'), icon: HandCoins },
-        { label: 'Analytics', href: route('hrm.analytics'), icon: ChartNoAxesCombined },
-        { label: 'Access Control', href: route('hrm.access.index'), icon: ShieldCheck },
+        { label: 'Dashboard', href: route('hrm.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Employees', href: route('hrm.employees.index'), icon: Users, permKey: 'employee' },
+        { label: 'Applications', href: route('hrm.applications.index'), icon: FileText, permKey: 'application' },
+        { label: 'Interviews', href: route('hrm.interview.index'), icon: Eye, permKey: 'interview' },
+        { label: 'Trainees', href: route('hrm.trainee.index'), icon: Award, permKey: 'trainee' },
+        { label: 'Onboarding', href: route('hrm.onboarding.index'), icon: UserPlus, permKey: 'onboarding' },
+        { label: 'Archive', href: route('hrm.applications.rejected'), icon: Archive, permKey: 'application' },
+        { label: 'Payroll', href: route('hrm.payroll'), icon: HandCoins, permKey: 'payroll' },
+        { label: 'Analytics', href: route('hrm.analytics'), icon: ChartNoAxesCombined, permKey: 'analytics' },
+        { label: 'Access Control', href: route('hrm.access.index'), icon: ShieldCheck, permKey: 'access' },
     ]
     if (user.value?.role === 'CEO') return all
     if (user.value?.position === 'manager' && user.value?.role === 'HRM') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('HRM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('HRM')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('HRM')) return all
-    return all.filter(child => hasHrmPermission(child.label.toLowerCase()))
+    return all.filter(child => hasHrmPermission(child.permKey))
 }
 
 const getFilteredCrmChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('crm.dashboard'), icon: LayoutDashboard },
-        { label: 'Leads', href: route('crm.lead'), icon: FileUser },
-        { label: 'Interviews', href: route('crm.interview.index'), icon: Eye },
-        { label: 'Trainees', href: route('crm.trainee.index'), icon: Award },
-        { label: 'Approvals', href: route('crm.approval.index'), icon: ClipboardCheck },
-        { label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Users },
-        { label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle },
-        { label: 'Socials', href: route('crm.socials.index'), icon: Share2 },
-        { label: 'Access Control', href: route('crm.access.index'), icon: ShieldCheck },
+        { label: 'Dashboard', href: route('crm.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Leads', href: route('crm.lead'), icon: FileUser, permKey: 'leads' },
+        { label: 'Approvals', href: route('crm.approval.index'), icon: ClipboardCheck, permKey: 'approvals' },
+        { label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Users, permKey: 'customer_profiles' },
+        { label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' },
+        { label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' },
+        { label: 'Access Control', href: route('crm.access.index'), icon: ShieldCheck, permKey: 'access' },
     ]
     if (user.value?.role === 'CEO') return all
     if (user.value?.position === 'manager' && user.value?.role === 'CRM') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('CRM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('CRM')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('CRM')) return all
-    return all.filter(child => hasCrmPermission(child.label.toLowerCase()))
+    return all.filter(child => hasCrmPermission(child.permKey))
 }
 
 const getFilteredWorkforceChildren = () => {
@@ -291,26 +320,34 @@ const getFilteredWorkforceChildren = () => {
     ]
     if (user.value?.role === 'CEO') return all
     if (user.value?.position === 'manager' && user.value?.role === 'WRF') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('WRF')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('WRF')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('WRF')) return all
     return all.filter(child => hasWorkforcePermission(child.label.toLowerCase()))
 }
 
 const getFilteredManChildren = () => {
+    // Quality Checker is its own Finishing department: the Finishing
+    // supervisor reaches it via their Department Staff dropdown below,
+    // so the overview entry is shown only to CEO / secretary / GM.
+    const isElevatedMan = user.value?.role === 'CEO' || (user.value?.position === 'secretary' || user.value?.position === 'special_officer')
+    const showQualityChecker = isElevatedMan
     const managerChildren = [
         { label: 'Dashboard', href: route('man.manager.dashboard'), icon: Factory },
         { label: 'Production Orders', href: route('man.manager.production'), icon: ClipboardList },
         { label: 'Rejected Items', href: route('man.manager.rejected'), icon: XCircle },
-        { label: 'Quality Checker', href: route('man.manager.checker-quality.dashboard'), icon: CheckCircle2 },
-        { label: 'Interviews', href: route('man.interview.index'), icon: Eye },
-        { label: 'Trainees', href: route('man.trainee.index'), icon: Award },
     ]
+    if (showQualityChecker) {
+        managerChildren.push(
+            { label: 'Quality Checker Dashboard', href: route('man.staff.checker-quality.dashboard'), icon: CheckCircle2 },
+            { label: 'Quality Checker Production', href: route('man.staff.checker-quality.production'), icon: ClipboardList },
+        )
+    }
     const isManufacturingManager = user.value?.position === 'manager' && user.value?.role === 'MAN'
-    if (user.value?.role === 'CEO' || (user.value?.position === 'secretary' || user.value?.position === 'general_manager') || isManufacturingManager) {
+    if (isElevatedMan || isManufacturingManager) {
         managerChildren.push({ label: 'Access Control', href: route('man.access.manage'), icon: ShieldCheck })
     }
     let children = []
-    if (user.value?.role === 'CEO' || (user.value?.position === 'manager' && user.value?.role === 'MAN') || (user.value?.position === 'secretary' || user.value?.position === 'general_manager') || isManufacturingSupervisor.value) {
+    if (user.value?.role === 'CEO' || (user.value?.position === 'manager' && user.value?.role === 'MAN') || (user.value?.position === 'secretary' || user.value?.position === 'special_officer') || isManufacturingSupervisor.value) {
         children = [...managerChildren]
         if (isManufacturingSupervisor.value && supervisedDepartment.value) {
             const staffDropdowns = departmentStaffRoles.value
@@ -321,18 +358,9 @@ const getFilteredManChildren = () => {
         }
     } else {
         const manufacturingRole = user.value?.manufacturing_role
-        const staffRoleConfig = {
-            knitting_yarn:          { label: 'Knitting Yarn',          icon: Sparkles, hasReports: true },
-            dyeing_color:           { label: 'Dyeing Color',           icon: Palette,  hasReports: true },
-            dyeing_fabric_softener: { label: 'Dyeing Fabric Softener', icon: Palette,  hasReports: true },
-            dyeing_squeezer:        { label: 'Dyeing Squeezer',        icon: Palette,  hasReports: true },
-            dyeing_ironing:         { label: 'Dyeing Ironing',         icon: Palette,  hasReports: true },
-            dyeing_packaging:       { label: 'Dyeing Packaging',       icon: Palette,  hasReports: false },
-            maintenance_checker:    { label: 'Maintenance Checker',    icon: Wrench,   hasReports: true },
-        }
-        const config = staffRoleConfig[manufacturingRole]
+        const config = MAN_STAFF_CONFIG[manufacturingRole]
         if (config) {
-            children = [createRoleDropdown(manufacturingRole, config.label, config.icon, config.hasReports)]
+            children = [createRoleDropdown(manufacturingRole, config.label, config.icon, config.hasReports, config.hasHistory, config.hasFlags, config.hasLab)]
         }
     }
     return children
@@ -345,8 +373,6 @@ const getFilteredLogisticsChildren = () => {
         { label: 'Dispatch', href: route('logistics.dispatch.index'), icon: Send },
         { label: 'Fleet', href: route('logistics.fleet.index'), icon: Truck },
         { label: 'Drivers', href: route('logistics.drivers.index'), icon: Users },
-        { label: 'Interviews', href: route('logistics.interview.index'), icon: Eye },
-        { label: 'Trainees', href: route('logistics.trainee.index'), icon: Award },
         { label: 'Routes', href: route('logistics.routes'), icon: Navigation },
         { label: 'Proof', href: route('logistics.proof.index'), icon: Camera },
         { label: 'Reports', href: route('logistics.reports.index'), icon: FileText },
@@ -359,119 +385,141 @@ const getFilteredLogisticsChildren = () => {
 
 const getFilteredEcoChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('eco.dashboard'), icon: LayoutDashboard },
-        { label: 'Store', href: route('eco.store'), icon: ShoppingBag },
-        { label: 'Inquiries', href: route('eco.inquiries'), icon: MessageSquare },
-        { label: 'Suppliers', href: route('eco.suppliers'), icon: UsersIcon },
-        { label: 'Credit', href: route('eco.credit'), icon: CreditCard },
-        { label: 'Push Center', href: route('eco.push'), icon: Send },
-        { label: 'Access Control', href: route('eco.access'), icon: ShieldCheck },
+        { label: 'Dashboard', href: route('eco.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Store', href: route('eco.store'), icon: ShoppingBag, permKey: 'store' },
+        { label: 'Inquiries', href: route('eco.inquiries'), icon: MessageSquare, permKey: 'inquiry' },
+        { label: 'Suppliers', href: route('eco.suppliers'), icon: UsersIcon, permKey: 'supplier' },
+        { label: 'Credit', href: route('eco.credit'), icon: CreditCard, permKey: 'credit' },
+        { label: 'Push Center', href: route('eco.push'), icon: Send, permKey: 'push' },
+        { label: 'Access Control', href: route('eco.access'), icon: ShieldCheck, permKey: 'access' },
     ]
     if (user.value?.role === 'CEO') return all
     if (user.value?.position === 'manager' && user.value?.role === 'ECO') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('ECO')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('ECO')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('ECO')) return all
-    return all.filter(child => hasModulePermission('ECO', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('ECO', child.permKey))
 }
 
 const getFilteredOrdChildren = () => {
     const all = [
-        { label: 'Orders', href: route('ord.orders'), icon: ClipboardList },
-        { label: 'Productions', href: route('ord.productions'), icon: Factory },
-        { label: 'Delivery', href: route('ord.delivery'), icon: Truck },
+        { label: 'Orders', href: route('ord.orders'), icon: ClipboardList, permKey: 'orders' },
+        { label: 'Productions', href: route('ord.productions'), icon: Factory, permKey: 'productions' },
+        { label: 'Delivery', href: route('ord.delivery'), icon: Truck, permKey: 'delivery' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('ord.ceo-access.index'), icon: ShieldCheck })
+        all.push({ label: 'Access Control', href: route('ord.ceo-access.index'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
     if (user.value?.position === 'manager' && user.value?.role === 'ORD') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('ORD')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('ORD')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('ORD')) return all
-    return all.filter(child => hasModulePermission('ORD', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('ORD', child.permKey))
 }
 
 const getFilteredScmChildren = () => {
     const all = [
-        { label: 'Sales Orders', href: route('scm.sales-orders'), icon: ShoppingCart },
-        { label: 'Procurement Orders', href: route('scm.procurement-orders'), icon: ClipboardList },
-        { label: 'Vendors', href: route('scm.vendors'), icon: Building2 },
+        { label: 'Sales Orders', href: route('scm.sales-orders'), icon: ShoppingCart, permKey: 'sales' },
+        { label: 'Procurement Orders', href: route('scm.procurement-orders'), icon: ClipboardList, permKey: 'procurement' },
+        { label: 'Vendors', href: route('scm.vendors'), icon: Building2, permKey: 'vendor' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('scm.access.index'), icon: ShieldCheck })
+        all.push({ label: 'Access Control', href: route('scm.access.index'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
     if (user.value?.position === 'manager' && user.value?.role === 'SCM') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('SCM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('SCM')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('SCM')) return all
-    return all.filter(child => hasModulePermission('SCM', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('SCM', child.permKey))
 }
 
 const getFilteredWarehouseChildren = () => {
     const all = [
-        { label: 'All Warehouses', href: route('warehouse.index'), icon: Warehouse },
-        { label: 'Monitor', href: route('warehouse.monitor', { warehouse: 'placeholder' }), icon: Eye },
-        { label: 'Receiving', href: route('warehouse.receiving'), icon: Truck },
-        { label: 'Packages', href: route('warehouse.packages'), icon: Package },
-        { label: 'Rejects', href: route('warehouse.rejects'), icon: XCircle },
+        { label: 'All Warehouses', href: route('warehouse.index'), icon: Warehouse, permKey: 'warehouse' },
+        { label: 'Monitor', href: route('warehouse.monitor', { warehouse: 'placeholder' }), icon: Eye, permKey: 'monitor' },
+        { label: 'Receiving', href: route('warehouse.receiving'), icon: Truck, permKey: 'receiving' },
+        { label: 'Packages', href: route('warehouse.packages'), icon: Package, permKey: 'packages' },
+        { label: 'Rejects', href: route('warehouse.rejects'), icon: XCircle, permKey: 'reject' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('warehouse.access'), icon: ShieldCheck })
+        all.push({ label: 'Access Control', href: route('warehouse.access'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
     if (user.value?.position === 'manager' && user.value?.role === 'WAR') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('WAR')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('WAR')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('WAR')) return all
-    return all.filter(child => hasModulePermission('WAR', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('WAR', child.permKey))
 }
 
 const getFilteredInventoryChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('inv.dashboard'), icon: LayoutDashboard },
-        { label: 'Materials', href: route('inv.materials'), icon: Spool },
-        { label: 'Products', href: route('inv.products'), icon: Package },
-        { label: 'Bill of Materials', href: route('inv.bom'), icon: Layers },
-        { label: 'Stock Checker', href: route('inv.checker'), icon: AlertCircle },
+        { label: 'Dashboard', href: route('inv.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Materials', href: route('inv.materials'), icon: Spool, permKey: 'materials' },
+        { label: 'Products', href: route('inv.products'), icon: Package, permKey: 'products' },
+        { label: 'Bill of Materials', href: route('inv.bom'), icon: Layers, permKey: 'bom' },
+        { label: 'Stock Checker', href: route('inv.checker'), icon: AlertCircle, permKey: 'checker' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('inv.access'), icon: ShieldCheck })
+        all.push({ label: 'Access Control', href: route('inv.access'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
     if (user.value?.position === 'manager' && user.value?.role === 'INV') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('INV')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('INV')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('INV')) return all
-    return all.filter(child => hasModulePermission('INV', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('INV', child.permKey))
 }
 
 const getFilteredProChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('pro.manager.dashboard'), icon: LayoutDashboard },
-        { label: 'Quotations', href: route('pro.manager.supplier-quotations'), icon: FileText },
-        { label: 'Receipts', href: route('pro.manager.receipt'), icon: Send },
+        { label: 'Dashboard', href: route('pro.manager.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Material Requests', href: route('pro.manager.material-requests'), icon: ClipboardList, permKey: 'requests' },
+        { label: 'Quotations', href: route('pro.manager.supplier-quotations'), icon: FileText, permKey: 'quotations' },
+        { label: 'Receipts', href: route('pro.manager.receipt'), icon: Send, permKey: 'receipt' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('pro.access.index'), icon: ShieldCheck })
+        all.push({ label: 'Access Control', href: route('pro.access.index'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
     if (user.value?.position === 'manager' && user.value?.role === 'PRO') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('PRO')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('PRO')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('PRO')) return all
-    return all.filter(child => hasModulePermission('PRO', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('PRO', child.permKey))
 }
 
 const getFilteredFinChildren = () => {
     const all = [
-        { label: 'Overview', href: route('fin.manager.dashboard'), icon: LayoutDashboard },
-        { label: 'Receivables', href: route('fin.manager.receivables'), icon: HandCoins },
-        { label: 'Payables', href: route('fin.manager.payables'), icon: Receipt },
-        { label: 'Expenses', href: route('fin.manager.expenses'), icon: Wallet },
-        { label: 'Payroll', href: route('fin.manager.payroll'), icon: Users },
-        { label: 'Reports', href: route('fin.manager.reports'), icon: TrendingUp },
+        { label: 'Overview', href: route('fin.manager.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Receivables', href: route('fin.manager.receivables'), icon: HandCoins, permKey: 'receivables' },
+        { label: 'Payables', href: route('fin.manager.payables'), icon: Receipt, permKey: 'payables' },
+        { label: 'Expenses', href: route('fin.manager.expenses'), icon: Wallet, permKey: 'expenses' },
+        { label: 'Payroll', href: route('fin.manager.payroll'), icon: Users, permKey: 'payroll' },
+        { label: 'Reports', href: route('fin.manager.reports'), icon: TrendingUp, permKey: 'reports' },
     ]
     if (user.value?.role === 'CEO') return all
     if (user.value?.position === 'manager' && user.value?.role === 'FIN') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'general_manager') && canAccessModule('FIN')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('FIN')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('FIN')) return all
-    return all.filter(child => hasModulePermission('FIN', child.label.toLowerCase()))
+    return all.filter(child => hasModulePermission('FIN', child.permKey))
+}
+
+const getFilteredItChildren = () => {
+    const all = [
+        { label: 'Dashboard', href: route('it.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Service Desk', href: route('it.tickets'), icon: HelpCircle, permKey: 'tickets' },
+        { label: 'Assets', href: route('it.assets'), icon: Boxes, permKey: 'assets' },
+        { label: 'Monitoring', href: route('it.monitoring'), icon: Activity, permKey: 'monitoring' },
+        { label: 'Knowledge Base', href: route('it.knowledge'), icon: Book, permKey: 'knowledge' },
+        { label: 'Changes', href: route('it.changes'), icon: RefreshCw, permKey: 'changes' },
+        { label: 'Access Control', href: route('it.access-control'), icon: Users, permKey: 'access_control' },
+        { label: 'Access Logs', href: route('it.access-logs'), icon: FileText, permKey: 'access_logs' },
+    ]
+    if (user.value?.role === 'CEO') {
+        all.push({ label: 'Access Control', href: route('it.access'), icon: ShieldCheck, permKey: 'access' })
+        return all
+    }
+    if (user.value?.position === 'manager' && user.value?.role === 'IT') return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('IT')) return all
+    if (isManufacturingSupervisor.value && grantedModules.value.includes('IT')) return all
+    return all.filter(child => hasModulePermission('IT', child.permKey))
 }
 
 // Navigation items computed
@@ -507,8 +555,35 @@ const navItems = computed(() => {
     const isCEO = user.value?.role === 'CEO'
 
     if (isCEO) {
+        const isVP = user.value?.position === 'vice_president'
+        if (isVP) {
+            // Vice Presidency: execution arm (operations, directives, workforce).
+            items.push({ label: 'VP Dashboard', href: route('vp.operations'), icon: LayoutDashboard })
+            items.push({ label: 'Downtime Board', href: route('vp.downtime'), icon: Wrench })
+            items.push({ label: 'Shift Handovers', href: route('vp.handovers'), icon: Repeat })
+            items.push({ label: 'Plan vs Actual', href: route('vp.plan'), icon: ClipboardList })
+            items.push({ label: 'Utilities Brief', href: route('vp.utilities'), icon: Zap })
+            items.push({ label: 'Directives', href: route('vp.directives'), icon: Megaphone })
+            items.push({ label: 'Bulletins', href: route('vp.bulletins'), icon: Bell })
+            items.push({ label: 'Workforce Overview', href: route('vp.workforce'), icon: User })
+            items.push({ label: 'Joint Approvals', href: route('ceo.approvals'), icon: Stamp })
+            return items
+        }
         items.push({ label: 'CEO Dashboard', href: route('dashboard'), icon: LayoutDashboard })
+        items.push({ label: 'Inbox', href: route('ceo.inbox'), icon: Bell, badge: unreadCount.value || undefined })
+        items.push({ label: 'Approvals Center', href: route('ceo.approvals'), icon: Stamp })
+        items.push({ label: 'Executive Reports', href: route('ceo.reports'), icon: FileText })
+        items.push({ label: 'Board Pack', href: route('ceo.board-pack'), icon: Printer })
+        items.push({ label: 'Goals & Targets', href: route('ceo.goals'), icon: Target })
+        items.push({ label: 'Audit Trail', href: route('ceo.audit'), icon: History })
         items.push({ label: 'Organization Chart', href: route('ceo.access'), icon: ShieldCheck })
+    }
+
+    if (user.value?.position === 'secretary') {
+        items.push({ label: 'Secretary Dashboard', href: route('secretary.dashboard'), icon: LayoutDashboard })
+        items.push({ label: 'Documents', href: route('secretary.documents'), icon: FileText })
+        items.push({ label: 'Meetings', href: route('secretary.meetings'), icon: CalendarDays })
+        items.push({ label: 'Memos', href: route('secretary.memos'), icon: Megaphone })
     }
 
     if (userRole === 'LOG' && userPosition === 'staff') {
@@ -541,6 +616,7 @@ const navItems = computed(() => {
         { key: 'INV', label: 'Inventory', icon: Boxes, childrenGetter: getFilteredInventoryChildren, isOpen: isInventoryOpen, toggle: toggleInventory, condition: hasInventoryAccess.value },
         { key: 'PRO', label: 'Procurement', icon: ShoppingCart, childrenGetter: getFilteredProChildren, isOpen: isProOpen, toggle: togglePro, condition: canAccessModule('PRO') },
         { key: 'FIN', label: 'Finance', icon: Wallet, childrenGetter: getFilteredFinChildren, isOpen: isFinOpen, toggle: toggleFin, condition: canAccessModule('FIN') },
+        { key: 'IT', label: 'IT & Systems', icon: Cog, childrenGetter: getFilteredItChildren, isOpen: isItOpen, toggle: toggleIt, condition: canAccessModule('IT') },
     ]
 
     const coreModules = []
@@ -751,6 +827,7 @@ const logoutRoute = computed(() => {
                                     <component :is="item.icon" class="h-5 w-5 flex-shrink-0" />
                                 </div>
                                 <span class="truncate tracking-tight">{{ item.label }}</span>
+                                <span v-if="item.badge" class="ml-2 min-w-[20px] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-black inline-flex items-center justify-center">{{ item.badge > 99 ? '99+' : item.badge }}</span>
                             </div>
                         </Link>
                     </template>

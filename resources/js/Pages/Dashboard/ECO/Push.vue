@@ -21,6 +21,7 @@
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Push Center</h1>
                             <p class="text-sm text-blue-100/90">Forward approved job orders to SCM in one click.</p>
+                            <span v-if="!canEditPush" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <button @click="refreshData" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition active:scale-95">
                             <RefreshCw class="h-4 w-4" />
@@ -136,7 +137,7 @@
                                     class="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex justify-center items-center gap-2 active:scale-95">
                                     <Eye class="h-4 w-4" /> Summary
                                 </button>
-                                <button @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
+                                <button v-if="canEditPush" @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
                                     class="flex-1 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
                                     <Loader2 v-if="pushing[jo.id]" class="h-4 w-4 animate-spin" />
                                     Push SCM
@@ -267,7 +268,7 @@
                                                 class="p-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-95">
                                                 <Eye class="h-4 w-4" />
                                             </button>
-                                            <button @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
+                                            <button v-if="canEditPush" @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
                                                 class="px-5 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
                                                 <Loader2 v-if="pushing[jo.id]" class="h-3 w-3 animate-spin" />
                                                 Push SCM
@@ -639,7 +640,7 @@
                                 class="flex-1 py-3.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 text-xs font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors active:scale-95">
                                 Close Summary
                             </button>
-                            <button @click="openConfirmFromSummary"
+                            <button v-if="canEditPush" @click="openConfirmFromSummary"
                                 class="flex-1 py-3.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                                 <Send class="h-4 w-4" />
                                 Push to SCM
@@ -656,7 +657,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditPush = computed(() => canEdit('ECO', 'push'));
 
 // ── Props ──────────────────────────────────────────────────────────────────
 const props = defineProps({

@@ -48,8 +48,8 @@
                                     <td class="px-3 py-2.5">{{ job.client_name }}</td>
                                     <td class="px-3 py-2.5 text-gray-500 text-xs">{{ job.product_name }} · {{ job.quantity }} kg</td>
                                     <td class="px-3 py-2.5 text-xs font-bold">{{ job.expected_ship_date || '—' }}</td>
-                                    <td class="px-3 py-2.5 text-right">
-                                        <button @click="release(job)" class="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-black text-white hover:bg-emerald-500 active:scale-95">Release</button>
+                                     <td class="px-3 py-2.5 text-right">
+                                        <button v-if="canEditProductions" @click="release(job)" class="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-black text-white hover:bg-emerald-500 active:scale-95">Release</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -203,8 +203,10 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { Factory, Sparkles } from 'lucide-vue-next';
 
 defineProps({
@@ -214,6 +216,9 @@ defineProps({
         default: () => [],
     },
 });
+
+const { canEdit } = usePageAccess();
+const canEditProductions = computed(() => canEdit('ORD', 'productions'));
 
 const release = (job) => {
     if (!confirm(`Release ${job.jo_number} (${job.quantity} kg) to production?`)) return;

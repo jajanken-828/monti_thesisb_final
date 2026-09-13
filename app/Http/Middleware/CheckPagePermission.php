@@ -33,23 +33,28 @@ class CheckPagePermission
             abort(403, 'Unauthorized.');
         }
 
-        // CEO bypasses all checks
-        if ($user->role === 'CEO') {
-            return $next($request);
-        }
+        // NOTE (overseer model): the President has no page bypass — executive
+        // oversight runs through the CEO module (dashboard, reports, audit,
+        // approvals), not direct module pages.
 
         // Determine the module from the route name or URI
         $module = $this->detectModule($request);
 
-        // Module-native managers and staff automatically have full access
+        // Module-native managers and staff automatically have full access —
+        // UNLESS explicit page_permissions rows exist for them in this module.
+        // Explicit grants are then the exact access set (this is what makes
+        // "give this employee only 2 pages" actually restrict them).
         if ($module && strtoupper($user->role) === $module) {
             if (in_array($user->position, ['manager', 'staff'])) {
-                return $next($request);
+                if (! $this->hasExplicitModuleGrants($user, $module)) {
+                    return $next($request);
+                }
+                // Fall through to the strict row check below.
             }
         }
 
-        // Secretaries and General Managers have full access to their root module
-        if (in_array($user->position, ['secretary', 'general_manager'])) {
+        // Secretaries and Special Officers have full access to their root module
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             $rootModule = $this->getRootModuleForUser($user);
             if ($module && $rootModule && strtoupper($module) === $rootModule) {
                 return $next($request);
@@ -69,12 +74,15 @@ class CheckPagePermission
         // enforce the required level ('edit' implies 'view').
         // NOTE: first() (not value()) is used so a legacy row whose
         // permission_level is NULL is still recognised as a grant.
-        $record = method_exists($user, 'pagePermissions')
-            ? $user->pagePermissions()
-                ->where('module', $module)
-                ->where('page', $page)
-                ->first(['permission_level'])
-            : null;
+        // Module/page matching is case-tolerant: writers store UPPER module
+        // codes but legacy rows may differ.
+        $record = null;
+        if (method_exists($user, 'pagePermissions')) {
+            $record = $user->pagePermissions()
+                ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
+                ->get(['module', 'page', 'permission_level'])
+                ->first(fn ($row) => strtolower((string) $row->page) === strtolower($page));
+        }
 
         if ($record !== null) {
             // Legacy rows created before permission_level existed have NULL;
@@ -93,6 +101,22 @@ class CheckPagePermission
         }
 
         abort(403, "You do not have permission to access the '{$page}' page in the {$module} module.");
+    }
+
+    /**
+     * Whether the user has ANY explicit page_permissions rows for a module
+     * (case-tolerant). Used to decide if explicit grants override the
+     * native manager/staff full-access shortcut.
+     */
+    protected function hasExplicitModuleGrants($user, string $module): bool
+    {
+        if (! method_exists($user, 'pagePermissions')) {
+            return false;
+        }
+
+        return $user->pagePermissions()
+            ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
+            ->exists();
     }
 
     /**
@@ -152,7 +176,7 @@ class CheckPagePermission
      * Get the root module for a secretary or general manager.
      * Mirrors the logic in CeoAccessController.
      *
-     * @param \App\Models\User $user
+     * @param \App\Models\Core\User $user
      * @return string|null
      */
     protected function getRootModuleForUser($user): ?string

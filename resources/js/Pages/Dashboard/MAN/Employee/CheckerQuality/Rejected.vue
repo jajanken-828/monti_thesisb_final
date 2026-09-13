@@ -1,8 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { XCircle, ArrowLeft, RefreshCw, Archive, Shirt, Package, Sparkles, ClipboardList } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditReject = computed(() => canEdit('MAN', 'reject'));
 
 const props = defineProps({
     rejectedFabrics: Array,  // { id, code, yarn_type, weight, rejection_reason, rejection_action, rejected_at, sales_order }
@@ -63,6 +67,7 @@ const submitTotalReject = () => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Quality Rejects
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Rejected Items</h1>
+                            <span v-if="!canEditReject" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ (rejectedFabrics?.length || 0) + (rejectedForms?.length || 0) }} items rejected</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -128,14 +133,14 @@ const submitTotalReject = () => {
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex gap-2">
-                                            <button
+                                            <button v-if="canEditReject"
                                                 @click="recolorFabric(fabric.id)"
                                                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-[11px] font-black uppercase hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                                 title="Send back for recoloring"
                                             >
                                                 <RefreshCw class="w-3.5 h-3.5" /> Recolor
                                             </button>
-                                            <button
+                                            <button v-if="canEditReject"
                                                 @click="openWarehouseModal(fabric)"
                                                 class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 rounded-xl text-[11px] font-black uppercase hover:bg-gray-200 dark:hover:bg-zinc-700 transition active:scale-95"
                                                 title="Totally reject and send to warehouse"
@@ -225,7 +230,7 @@ const submitTotalReject = () => {
                             </div>
                             <div class="flex justify-end gap-2">
                                 <button @click="showWarehouseModal = false" class="px-4 py-2.5 rounded-2xl border border-gray-200 dark:border-zinc-700 text-xs font-black uppercase tracking-wide hover:bg-gray-50 dark:hover:bg-zinc-800 transition active:scale-95">Cancel</button>
-                                <button @click="submitTotalReject" class="px-4 py-2.5 rounded-2xl bg-rose-600 text-white text-xs font-black uppercase tracking-wide hover:bg-rose-700 shadow-lg shadow-rose-500/25 transition active:scale-95">Confirm</button>
+                                <button v-if="canEditReject" @click="submitTotalReject" class="px-4 py-2.5 rounded-2xl bg-rose-600 text-white text-xs font-black uppercase tracking-wide hover:bg-rose-700 shadow-lg shadow-rose-500/25 transition active:scale-95">Confirm</button>
                             </div>
                         </div>
                     </div>

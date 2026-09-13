@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import AuthLayout from '@/Layouts/AuthLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
@@ -144,56 +145,22 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
-        style="background-image: url('/images/threads.jpg');">
-        <div class="absolute inset-0 bg-black/35"></div>
+    <AuthLayout
+        title="Apply for Partnership"
+        highlight="Partnership"
+        subtitle="Please fill in your company details to request access to the Monti Textile B2B Partner Portal."
+        badge="Partner Registration"
+        accent="sky"
+        wide
+    >
+        <Head title="Monti Textile - Partner Registration" />
 
-        <!-- HEADER -->
-        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
-            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
-                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
-                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
-                            MONTI<span class="text-blue-400">TEXTILE</span>
-                        </span>
-                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
-                            Manufacturing ERP
-                        </span>
-                    </div>
-                </div>
-                <nav class="flex items-center gap-3">
-                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
-                        Home
-                    </Link>
-                </nav>
-            </div>
-        </header>
-
-        <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
-            <div class="w-full max-w-3xl">
-                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-                    <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-                        <Head title="Monti Textile - Partner Registration" />
-
-                        <div class="text-center mb-10">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
-                                Apply for Partnership
-                            </h1>
-                            <p class="mt-3 text-slate-200 text-base sm:text-lg max-w-2xl mx-auto">
-                                Please fill in your company details to request access to the Monti Textile B2B Partner
-                                Portal.
-                            </p>
-                        </div>
-
-                        <form @submit.prevent="submit" class="space-y-6">
+        <form @submit.prevent="submit" class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <InputLabel for="company_name" value="Company Name" class="text-white/90" />
                                     <TextInput id="company_name" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.company_name" required
                                         @keypress="blockNumbersAndSpecial($event, 'company_name')"
                                         placeholder="Your Company Name" />
@@ -205,7 +172,7 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="business_type" value="Business Type" class="text-white/90" />
                                     <TextInput id="business_type" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.business_type" required
                                         placeholder="e.g. Garment Manufacturer, Retailer, Exporter" />
                                     <InputError class="mt-1 text-red-300" :message="form.errors.business_type" />
@@ -214,7 +181,7 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="tin_number" value="TIN Number" class="text-white/90" />
                                     <TextInput id="tin_number" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.tin_number" maxlength="14" placeholder="000-000-000-000" />
                                     <InputError class="mt-1 text-red-300" :message="form.errors.tin_number" />
                                 </div>
@@ -222,7 +189,7 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="contact_person" value="Contact Person" class="text-white/90" />
                                     <TextInput id="contact_person" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.contact_person" required
                                         @keypress="blockNumbersAndSpecial($event, 'contact_person')"
                                         placeholder="Full Name" />
@@ -234,7 +201,7 @@ const submit = () => {
                                 <div>
                                     <InputLabel for="email" value="Business Email" class="text-white/90" />
                                     <TextInput id="email" type="email"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.email" required autocomplete="username"
                                         placeholder="company@example.com" />
                                     <InputError class="mt-1 text-red-300" :message="form.errors.email" />
@@ -244,11 +211,12 @@ const submit = () => {
                                     <InputLabel for="phone_raw" value="Phone Number" class="text-white/90" />
                                     <div class="flex">
                                         <span
-                                            class="inline-flex items-center px-4 py-3 bg-white/10 border border-r-0 border-white/30 rounded-l-xl text-white">
+                                            class="inline-flex items-center px-4 py-2 bg-white/10 border border-r-0 border-white/20 rounded-l-lg text-sm text-white">
                                             {{ form.phone_country }}
                                         </span>
                                         <TextInput id="phone_raw" type="tel"
-                                            class="flex-1 block py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-r-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                            class="auth-input flex-1 block"
+                                            style="border-top-left-radius: 0; border-bottom-left-radius: 0;"
                                             v-model="form.phone_raw" @keypress="blockNonNumeric($event, 'phone_raw')"
                                             placeholder="9171234567" maxlength="10" />
                                     </div>
@@ -260,7 +228,7 @@ const submit = () => {
                                 <div class="md:col-span-2">
                                     <InputLabel for="company_address" value="Company Address" class="text-white/90" />
                                     <TextInput id="company_address" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.company_address" required @keypress="blockSpecialForAddress"
                                         placeholder="Full company address" />
                                     <InputError class="mt-1 text-red-300" :message="form.errors.company_address" />
@@ -269,13 +237,13 @@ const submit = () => {
                                 <div class="md:col-span-2">
                                     <InputLabel for="logo" value="Company Logo (optional)" class="text-white/90" />
                                     <div class="mt-1 flex items-center gap-4">
-                                        <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 border border-white/30">
+                                        <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/10 border border-white/20">
                                             <img v-if="logoPreview" :src="logoPreview" alt="Logo preview" class="h-full w-full object-cover" />
                                             <span v-else class="text-xs font-bold text-slate-300">Logo</span>
                                         </div>
                                         <input id="logo" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
                                             @change="handleLogoChange"
-                                            class="block w-full text-sm text-slate-200 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-600 file:px-4 file:py-2.5 file:text-sm file:font-bold file:text-white hover:file:bg-blue-700 file:transition" />
+                                            class="block w-full text-sm text-slate-200 file:mr-4 file:rounded-lg file:border-0 file:bg-sky-600 file:px-4 file:py-2 file:text-sm file:font-bold file:text-white hover:file:bg-sky-500 file:transition" />
                                     </div>
                                     <p class="mt-1 text-xs text-slate-300">PNG, JPG, WEBP or SVG · max 5MB. Shown on your partner profile across MontiERP.</p>
                                     <InputError class="mt-1 text-red-300" :message="form.errors.logo" />
@@ -287,7 +255,7 @@ const submit = () => {
                                     <InputLabel for="password" value="Password" class="text-white/90" />
                                     <div class="relative">
                                         <TextInput id="password" :type="showPassword ? 'text' : 'password'"
-                                            class="mt-1 pr-12 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                            class="auth-input mt-1 block w-full pr-12"
                                             v-model="form.password" required autocomplete="new-password"
                                             placeholder="••••••••" />
                                         <button type="button" @click="togglePassword"
@@ -313,7 +281,7 @@ const submit = () => {
                                     <div class="relative">
                                         <TextInput id="password_confirmation"
                                             :type="showConfirmPassword ? 'text' : 'password'"
-                                            class="mt-1 pr-12 block w-full py-3 px-4 bg-white/15 border-white/30 text-white placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40"
+                                            class="auth-input mt-1 block w-full pr-12"
                                             v-model="form.password_confirmation" required placeholder="••••••••"
                                             autocomplete="new-password" />
                                         <button type="button" @click="toggleConfirmPassword"
@@ -347,37 +315,12 @@ const submit = () => {
                                 </Link>
 
                                 <PrimaryButton
-                                    class="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-700/30 transition-all duration-200"
+                                    class="auth-btn w-full px-5 py-2.5 text-xs font-bold text-white sm:w-auto"
                                     :class="{ 'opacity-60 cursor-wait': form.processing }" :disabled="form.processing">
                                     <span v-if="form.processing">Submitting...</span>
                                     <span v-else>Apply for Partnership</span>
                                 </PrimaryButton>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </AuthLayout>
 </template>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-
-input, select, textarea {
-    @apply transition-all duration-300 ease-in-out;
-}
-::-webkit-scrollbar {
-    width: 6px;
-}
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.5);
-    border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.7);
-}
-</style>

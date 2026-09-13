@@ -2,7 +2,7 @@
 
 namespace App\Models\Scm;
 
-use App\Models\inv\Material;
+use App\Models\Inv\Material;
 use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

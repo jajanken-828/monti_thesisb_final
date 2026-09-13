@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\hrm\AccessController;
-use App\Http\Controllers\hrm\InterviewController;
-use App\Http\Controllers\hrm\TraineeController;
-use App\Http\Controllers\proj\ProjDashboardController;
+use App\Http\Controllers\Hrm\AccessController;
+use App\Http\Controllers\Hrm\InterviewController;
+use App\Http\Controllers\Hrm\TraineeController;
+use App\Http\Controllers\Proj\ProjDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*

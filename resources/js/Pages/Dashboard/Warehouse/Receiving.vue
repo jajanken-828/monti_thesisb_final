@@ -7,6 +7,10 @@ import {
     Eye, ClipboardList, Search, Calendar, User, 
     Info, Hash, ArrowDownToLine, AlertCircle, Loader2
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditReceiving = computed(() => canEdit('WAR', 'receiving'));
 
 const props = defineProps({
     receivings: { type: Array, default: () => [] },
@@ -136,7 +140,7 @@ const filteredReceivings = computed(() => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <ArrowDownToLine class="h-3.5 w-3.5" /> Warehouse · Inbound
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Receiving Unit</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Receiving Unit <span v-if="!canEditReceiving" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">Manage incoming supply deliveries and store as unique lots</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -182,7 +186,7 @@ const filteredReceivings = computed(() => {
                                         <p class="text-base font-black text-gray-900 dark:text-white leading-tight uppercase truncate">{{ getPOMaterialDisplay(po) }}</p>
                                         <p class="text-xs font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1.5"><User class="w-3 h-3" /> {{ po.supplier_name }}</p>
                                     </div>
-                                    <button @click="selectPO(po)" class="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-wider rounded-2xl hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/25">
+                                    <button v-if="canEditReceiving" @click="selectPO(po)" class="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-wider rounded-2xl hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/25">
                                         Receive
                                     </button>
                                 </div>
@@ -332,7 +336,7 @@ const filteredReceivings = computed(() => {
 
                         <div class="px-6 sm:px-8 py-5 border-t border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 bg-slate-50/60 dark:bg-zinc-800/40 flex-shrink-0">
                             <button @click="showReceiveModal = false" class="flex-1 py-3.5 text-xs font-black uppercase rounded-2xl border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-800 transition-colors active:scale-95">Cancel</button>
-                            <button @click="submitReceive" :disabled="receiveForm.processing || !receiveForm.warehouse_id" class="flex-[2] inline-flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-[0.2em] rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 transition shadow-xl shadow-emerald-500/25 disabled:opacity-40 active:scale-95">
+                            <button v-if="canEditReceiving" @click="submitReceive" :disabled="receiveForm.processing || !receiveForm.warehouse_id" class="flex-[2] inline-flex items-center justify-center gap-2 py-3.5 text-xs font-black uppercase tracking-[0.2em] rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 transition shadow-xl shadow-emerald-500/25 disabled:opacity-40 active:scale-95">
                                 <CheckCircle class="w-4 h-4" />
                                 {{ receiveForm.processing ? 'Processing...' : 'Finalize & Update Stock' }}
                             </button>

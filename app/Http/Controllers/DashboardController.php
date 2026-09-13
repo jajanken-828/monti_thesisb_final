@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\logistics\Driver;
+use App\Models\Logistics\Driver;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -54,6 +54,16 @@ class DashboardController extends Controller
                     'days_remaining' => 12,
                 ],
             ]);
+        }
+
+        // ---- Secretary redirect (own executive workspace) ----
+        if ($position === 'secretary') {
+            return redirect()->route('secretary.dashboard');
+        }
+
+        // ---- Vice President redirect (own execution workspace) ----
+        if ($user->position === 'vice_president') {
+            return redirect()->route('vp.operations');
         }
 
         // ---- CEO redirect ----
@@ -111,8 +121,8 @@ class DashboardController extends Controller
                 'staff'   => 'proj.employee.dashboard',
             ],
             'IT' => [
-                'manager' => 'it.manager.dashboard',
-                'staff'   => 'it.employee.dashboard',
+                'manager' => 'it.dashboard',
+                'staff'   => 'it.dashboard',
             ],
             'LOG' => [
                 'manager' => 'logistics.dashboard',
@@ -120,9 +130,9 @@ class DashboardController extends Controller
             ],
         ];
 
-        // Check for secretary or general_manager positions – they might have granted modules,
+        // Check for secretary or special_officer positions – they might have granted modules,
         // but we'll redirect to the dashboard of their primary role if set, else to the generic dashboard.
-        if (in_array($position, ['secretary', 'general_manager'])) {
+        if (in_array($position, ['secretary', 'special_officer'])) {
             // If the user has a module access grant, we could redirect to that module's main page.
             // For simplicity, redirect to the root dashboard (or to a default).
             // But we can also use the role mapping if they have a primary role.

@@ -1,9 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ShoppingCart, Eye, X, Loader2, CheckCircle, Clock, AlertCircle, Send, Check, Package, AlertTriangle, Info, Sparkles } from 'lucide-vue-next';
 import axios from 'axios';
+
+const { canEdit } = usePageAccess();
+const canEditSales = computed(() => canEdit('SCM', 'sales'));
 
 const props = defineProps({ orders: Array });
 
@@ -160,6 +164,7 @@ const getMaterialStatusBadge = (status) => {
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Sales Orders</h1>
                             <p class="text-sm text-blue-100/90">{{ orders.length }} order(s) pending</p>
+                            <span v-if="!canEditSales" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -233,14 +238,14 @@ const getMaterialStatusBadge = (status) => {
                                         class="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all flex justify-center items-center gap-1.5 active:scale-95">
                                     <Eye class="h-3.5 w-3.5" /> View
                                 </button>
-                                <button v-if="['pushed_to_scm', 'inv_check'].includes(order.stage)"
+                                <button v-if="['pushed_to_scm', 'inv_check'].includes(order.stage) && canEditSales"
                                         @click="checkInventoryInstant(order)"
                                         :disabled="actionLoading[order.id]"
                                         class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition disabled:opacity-50 flex justify-center items-center gap-1.5 shadow-md active:scale-95">
                                     <Loader2 v-if="actionLoading[order.id] === 'check'" class="h-3.5 w-3.5 animate-spin" />
                                     Check Inv
                                 </button>
-                                <button v-if="order.stage === 'inv_checked' && order.inv_check_sufficient"
+                                <button v-if="order.stage === 'inv_checked' && order.inv_check_sufficient && canEditSales"
                                         @click="openPushToProductionConfirm(order)"
                                         :disabled="actionLoading[order.id]"
                                         class="flex-1 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition disabled:opacity-50 flex justify-center items-center gap-1.5 shadow-md active:scale-95">
@@ -315,14 +320,14 @@ const getMaterialStatusBadge = (status) => {
                                                     class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-indigo-600 hover:text-white transition-all">
                                                 <Eye class="h-4 w-4" />
                                             </button>
-                                            <button v-if="['pushed_to_scm', 'inv_check'].includes(order.stage)"
+                                            <button v-if="['pushed_to_scm', 'inv_check'].includes(order.stage) && canEditSales"
                                                     @click="checkInventoryInstant(order)"
                                                     :disabled="actionLoading[order.id]"
                                                     class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition disabled:opacity-50 flex items-center gap-1.5 shadow-md active:scale-95">
                                                 <Loader2 v-if="actionLoading[order.id] === 'check'" class="h-3 w-3 animate-spin" />
                                                 Check Inv
                                             </button>
-                                            <button v-if="order.stage === 'inv_checked' && order.inv_check_sufficient"
+                                            <button v-if="order.stage === 'inv_checked' && order.inv_check_sufficient && canEditSales"
                                                     @click="openPushToProductionConfirm(order)"
                                                     :disabled="actionLoading[order.id]"
                                                     class="px-4 py-2.5 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition disabled:opacity-50 flex items-center gap-1.5 shadow-md active:scale-95">
@@ -462,7 +467,7 @@ const getMaterialStatusBadge = (status) => {
                                 class="flex-1 py-4 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 text-xs font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors active:scale-95">
                                 Close
                             </button>
-                            <button v-if="!inventoryCheckLoading && inventoryResult"
+                            <button v-if="!inventoryCheckLoading && inventoryResult && canEditSales"
                                 @click="proceedWithInventoryCheck"
                                 :disabled="actionLoading[currentCheckOrder?.id] === 'check'"
                                 class="flex-1 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
@@ -659,12 +664,12 @@ const getMaterialStatusBadge = (status) => {
                             Close
                         </button>
                         <!-- Quick action from modal -->
-                        <button v-if="selectedOrder && ['pushed_to_scm', 'inv_check'].includes(selectedOrder.stage)"
+                        <button v-if="selectedOrder && ['pushed_to_scm', 'inv_check'].includes(selectedOrder.stage) && canEditSales"
                                 @click="() => { showDetailModal = false; checkInventoryInstant(selectedOrder); }"
                                 class="flex-1 py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-widest transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 active:scale-95">
                             Check Inventory
                         </button>
-                        <button v-if="selectedOrder && selectedOrder.stage === 'inv_checked' && selectedOrder.inv_check_sufficient"
+                        <button v-if="selectedOrder && selectedOrder.stage === 'inv_checked' && selectedOrder.inv_check_sufficient && canEditSales"
                                 @click="() => { showDetailModal = false; openPushToProductionConfirm(selectedOrder); }"
                                 class="flex-1 py-4 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2 active:scale-95">
                             Push to Manufacturing

@@ -52,8 +52,9 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">{{ user.role }} · {{ user.position }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
-                                            <label class="relative inline-flex items-center cursor-pointer">
+                                            <label class="relative inline-flex items-center" :class="{ 'cursor-pointer': canEditAccess, 'cursor-not-allowed opacity-60': !canEditAccess }">
                                                 <input type="checkbox" class="sr-only peer" v-model="user.has_access"
+                                                    :disabled="!canEditAccess"
                                                     @change="updateAccess(user.id, $event.target.checked)">
                                                 <div
                                                     class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-indigo-600">
@@ -85,11 +86,16 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3'
+import { computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ShieldCheck, Sparkles } from 'lucide-vue-next';
 
 const props = defineProps({
     users: Array
 })
+
+const { canEdit } = usePageAccess();
+const canEditAccess = computed(() => canEdit('ORD', 'access'));
 
 const updateAccess = (userId, canAccess) => {
     router.post(route('ord.ceo-access.update'), {

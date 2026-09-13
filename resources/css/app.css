@@ -66,3 +66,183 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ==========================================================================
+   MontiERP Auth design system — mirrors Welcome.vue (landing) styling:
+   landingTheme backdrop, bg-white/5 panels, white/10 borders, rounded-lg
+   controls, pill badges with ping dot, gradient headline words.
+   Accent via [data-accent] on .auth-scope: blue | sky | emerald
+   ========================================================================== */
+
+.auth-scope[data-accent='blue'] {
+  --auth-focus-ring: rgba(96, 165, 250, 0.55);
+  --auth-btn: #2563eb;
+  --auth-btn-hover: #3b82f6;
+  --auth-btn-shadow: rgba(37, 99, 235, 0.3);
+  --auth-pill-bg: rgba(59, 130, 246, 0.15);
+  --auth-pill-border: rgba(96, 165, 250, 0.2);
+  --auth-pill-text: #93c5db;
+  --auth-pill-dot: #60a5fa;
+  --auth-gradient-from: #60a5fa;
+  --auth-gradient-to: #818cf8;
+  --auth-selection: rgba(96, 165, 250, 0.4);
+}
+.auth-scope[data-accent='sky'] {
+  --auth-focus-ring: rgba(56, 189, 248, 0.55);
+  --auth-btn: #0284c7;
+  --auth-btn-hover: #0ea5e9;
+  --auth-btn-shadow: rgba(2, 132, 199, 0.3);
+  --auth-pill-bg: rgba(14, 165, 233, 0.15);
+  --auth-pill-border: rgba(56, 189, 248, 0.2);
+  --auth-pill-text: #7dd3fc;
+  --auth-pill-dot: #38bdf8;
+  --auth-gradient-from: #38bdf8;
+  --auth-gradient-to: #818cf8;
+  --auth-selection: rgba(56, 189, 248, 0.4);
+}
+.auth-scope[data-accent='emerald'] {
+  --auth-focus-ring: rgba(52, 211, 153, 0.55);
+  --auth-btn: #059669;
+  --auth-btn-hover: #10b981;
+  --auth-btn-shadow: rgba(5, 150, 105, 0.3);
+  --auth-pill-bg: rgba(16, 185, 129, 0.15);
+  --auth-pill-border: rgba(52, 211, 153, 0.2);
+  --auth-pill-text: #6ee7b7;
+  --auth-pill-dot: #34d399;
+  --auth-gradient-from: #34d399;
+  --auth-gradient-to: #22d3ee;
+  --auth-selection: rgba(52, 211, 153, 0.4);
+}
+
+/* Panel card — same treatment as Welcome's bg-white/5 sections */
+.auth-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Badge pill — same treatment as Welcome's hero pill */
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--auth-pill-bg);
+  border: 1px solid var(--auth-pill-border);
+  color: var(--auth-pill-text);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+@media (min-width: 640px) {
+  .auth-badge {
+    font-size: 9px;
+  }
+}
+
+/* Gradient headline word — same treatment as Welcome's "Weave" */
+.auth-gradient-word {
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-image: linear-gradient(to right, var(--auth-gradient-from), var(--auth-gradient-to));
+}
+
+/* Inputs — same treatment as Welcome's careers search field */
+.auth-scope input.auth-input,
+.auth-scope select.auth-input,
+.auth-scope textarea.auth-input {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: #fff;
+  caret-color: #fff;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.auth-scope input.auth-input::placeholder,
+.auth-scope textarea.auth-input::placeholder {
+  color: #94a3b8;
+}
+.auth-scope input.auth-input:hover,
+.auth-scope select.auth-input:hover,
+.auth-scope textarea.auth-input:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.auth-scope input.auth-input:focus,
+.auth-scope select.auth-input:focus,
+.auth-scope textarea.auth-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 2px var(--auth-focus-ring);
+}
+.auth-scope input.auth-input::selection,
+.auth-scope textarea.auth-input::selection {
+  background: var(--auth-selection);
+  color: #fff;
+}
+.auth-scope select.auth-input option {
+  background-color: #1e293b;
+  color: #fff;
+}
+.auth-scope input.auth-input[type='date'],
+.auth-scope input.auth-input[type='time'],
+.auth-scope input.auth-input[type='number'] {
+  color-scheme: dark;
+}
+.auth-scope input.auth-input:-webkit-autofill,
+.auth-scope input.auth-input:-webkit-autofill:hover,
+.auth-scope input.auth-input:-webkit-autofill:focus,
+.auth-scope input.auth-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 60px rgba(255, 255, 255, 0.1) inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Primary button — same treatment as Welcome's Login / Learn More buttons */
+.auth-scope .auth-btn {
+  background: var(--auth-btn);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px var(--auth-btn-shadow);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.auth-scope .auth-btn:hover:not(:disabled) {
+  background: var(--auth-btn-hover);
+}
+.auth-scope .auth-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Ghost button — same treatment as Welcome's "Be our Partner" button */
+.auth-scope .auth-btn-ghost {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.auth-scope .auth-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+}
+.auth-scope .auth-btn-ghost:active:not(:disabled) {
+  transform: scale(0.95);
+}

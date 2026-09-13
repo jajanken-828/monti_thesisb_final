@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\hrm\AccessController;
-use App\Http\Controllers\hrm\AnalyticsController;
-use App\Http\Controllers\hrm\ApplicantController as HrmApplicantController;
-use App\Http\Controllers\hrm\EmployeeController;
-use App\Http\Controllers\hrm\HrmDashboardController;
-use App\Http\Controllers\hrm\InterviewController;
-use App\Http\Controllers\hrm\OnboardingController;
-use App\Http\Controllers\hrm\PayrollController;
-use App\Http\Controllers\hrm\PayrollRatesController;
-use App\Http\Controllers\hrm\PositionController;
-use App\Http\Controllers\hrm\TraineeController;
+use App\Http\Controllers\Hrm\AccessController;
+use App\Http\Controllers\Hrm\AnalyticsController;
+use App\Http\Controllers\Hrm\ApplicantController as HrmApplicantController;
+use App\Http\Controllers\Hrm\EmployeeController;
+use App\Http\Controllers\Hrm\HrmDashboardController;
+use App\Http\Controllers\Hrm\InterviewController;
+use App\Http\Controllers\Hrm\OnboardingController;
+use App\Http\Controllers\Hrm\PayrollController;
+use App\Http\Controllers\Hrm\PayrollRatesController;
+use App\Http\Controllers\Hrm\PositionController;
+use App\Http\Controllers\Hrm\TraineeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -153,7 +153,7 @@ Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->
     // ------------------------------------------------------------------
     // NEW: Payroll Rates Configuration (HRM managers / CEO)
     // ------------------------------------------------------------------
-    Route::prefix('payroll-rates')->name('payroll-rates.')->middleware(['role:CEO,HRM'])->group(function () {
+    Route::prefix('payroll-rates')->name('payroll-rates.')->middleware(['role:HRM'])->group(function () {
         Route::get('/', [PayrollRatesController::class, 'index'])->name('index');
         Route::post('/set', [PayrollRatesController::class, 'storePayrollSet'])->name('store-set');
         Route::put('/set/{payrollSet}', [PayrollRatesController::class, 'updatePayrollSet'])->name('update-set');

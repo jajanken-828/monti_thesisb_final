@@ -18,7 +18,8 @@
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Returns & Claims</h1>
                             <p class="text-sm text-blue-100/90">Shortages, rejects and client returns with resolution tracking</p>
                         </div>
-                        <button @click="showCreate = true" class="rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-indigo-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95">+ File return</button>
+                        <button v-if="canEditReturns" @click="showCreate = true" class="rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-indigo-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95">+ File return</button>
+                        <span v-else class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25">View only</span>
                     </div>
                 </div>
 
@@ -39,7 +40,7 @@
                                         <p v-if="r.resolved_at" class="text-[11px] text-gray-400 mt-0.5">{{ r.resolved_at }} · {{ r.resolved_by }}</p>
                                     </td>
                                     <td class="px-4 py-3">
-                                        <form @submit.prevent="resolveReturn(r)" class="flex justify-end gap-1">
+                                        <form v-if="canEditReturns" @submit.prevent="resolveReturn(r)" class="flex justify-end gap-1">
                                             <select v-model="resolveState[r.id]" class="rounded-xl border px-2 py-1.5 text-xs">
                                                 <option v-for="s in openStatuses" :key="s" :value="s">{{ formatLabel(s) }}</option>
                                             </select>
@@ -94,12 +95,16 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { Sparkles, Undo2 } from 'lucide-vue-next';
 
 const props = defineProps({ returns: Array, types: Array, statuses: Array, deliveredOrders: Array });
+
+const { canEdit } = usePageAccess();
+const canEditReturns = computed(() => canEdit('ORD', 'returns'));
 
 const openStatuses = props.statuses.filter((s) => s !== 'pending');
 const resolveState = reactive({});

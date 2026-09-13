@@ -1,7 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 import {
     Users, Package, Factory, TrendingUp, Search,
     X, ChevronRight, ArrowRight, Briefcase,
@@ -14,6 +18,46 @@ import {
 const props = defineProps({
     stats: Object,
     staff: Array,
+    department: { type: String, default: null },
+    departmentStats: { type: Object, default: null },
+    recentHandovers: { type: Array, default: () => [] },
+    activeBulletins: { type: Array, default: () => [] },
+});
+
+// ─── Shift handover (supervisor logs continuity for their own department) ────
+const showHandoverForm = ref(false);
+const handoverForm = useForm({
+    shift_date: new Date().toISOString().slice(0, 10),
+    shift_type: '', unfinished_work: '', machine_notes: '', hot_jobs: '', safety_notes: '',
+});
+const submitHandover = () => handoverForm.post(route('man.manager.handover.store'), {
+    preserveScroll: true,
+    onSuccess: () => { showHandoverForm.value = false; handoverForm.reset(); },
+});
+
+// ─── Department context (no manufacturing manager: each supervisor sees ─────
+// ─── their own department; CEO / secretary / GM see the generic overview) ──
+const DEPT_LABELS = {
+    knitting: 'Knitting Department',
+    dyeing: 'Dyeing Department',
+    finishing: 'Finishing Department',
+    maintenance: 'Maintenance Department',
+};
+const DEPT_ROLES = {
+    knitting: ['knitting_yarn', 'knitting_mechanic'],
+    dyeing: ['dyeing_color', 'dyeing_fabric_softener', 'dyeing_squeezer', 'dyeing_ironing', 'dyeing_packaging', 'dyeing_lab_chemist'],
+    finishing: ['checker_quality'],
+    maintenance: ['maintenance_checker', 'pollution_control_operator', 'safety_officer'],
+    boiler: ['boiler_operator'],
+};
+const deptLabel = computed(() => (props.department ? (DEPT_LABELS[props.department] ?? props.department) : null));
+const deptStatEntries = computed(() => {
+    if (!props.departmentStats) return [];
+    return Object.entries(props.departmentStats).map(([key, value]) => ({
+        key,
+        label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        value,
+    }));
 });
 
 // Reactive staff list
@@ -153,18 +197,29 @@ const formatRole = (role) => {
     return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
-// Role options
-const roleOptions = [
+// Role options — supervisors only see their own department's roles
+// (mirrors the backend canSuperviseRole enforcement)
+const ALL_ROLE_OPTIONS = [
     { value: '', label: 'Select Role' },
     { value: 'knitting_yarn', label: 'Knitting Yarn' },
+    { value: 'knitting_mechanic', label: 'Knitting Mechanic' },
     { value: 'dyeing_color', label: 'Dyeing Color' },
     { value: 'dyeing_fabric_softener', label: 'Dyeing Fabric Softener' },
     { value: 'dyeing_squeezer', label: 'Dyeing Squeezer' },
     { value: 'dyeing_ironing', label: 'Dyeing Ironing' },
     { value: 'dyeing_packaging', label: 'Dyeing Packaging' },
+    { value: 'dyeing_lab_chemist', label: 'Dyeing Lab Chemist' },
     { value: 'maintenance_checker', label: 'Maintenance Checker' },
+    { value: 'pollution_control_operator', label: 'Pollution Control Operator' },
+    { value: 'safety_officer', label: 'Safety Officer' },
+    { value: 'boiler_operator', label: 'Boiler Operator' },
     { value: 'checker_quality', label: 'Checker Quality' },
 ];
+const roleOptions = computed(() => {
+    if (!props.department || !DEPT_ROLES[props.department]) return ALL_ROLE_OPTIONS;
+    const allowed = new Set(DEPT_ROLES[props.department]);
+    return ALL_ROLE_OPTIONS.filter(o => o.value === '' || allowed.has(o.value));
+});
 
 // Get role icon
 const getRoleIcon = (role) => {
@@ -172,6 +227,9 @@ const getRoleIcon = (role) => {
     if (role.includes('knitting')) return Sparkles;
     if (role.includes('dyeing')) return Palette;
     if (role.includes('maintenance')) return Wrench;
+    if (role.includes('boiler')) return Zap;
+    if (role.includes('pollution')) return Activity;
+    if (role.includes('safety')) return ShieldCheck;
     if (role.includes('checker')) return CheckCircle2;
     return Briefcase;
 };
@@ -200,10 +258,11 @@ const getAvatarColor = (name) => {
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
-                                <Sparkles class="h-3.5 w-3.5" /> MAN · Management
+                                <Sparkles class="h-3.5 w-3.5" /> MAN · {{ deptLabel ?? 'Management' }}
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Manufacturing Dashboard</h1>
-                            <p class="text-sm text-blue-100/90">{{ getGreeting() }}, oversee production and staff</p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">{{ deptLabel ? `${deptLabel} Supervisor Dashboard` : 'Manufacturing Dashboard' }}</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
+                            <p class="text-sm text-blue-100/90">{{ getGreeting() }}, oversee {{ deptLabel ? `your ${deptLabel.toLowerCase()} production and staff` : 'production and staff' }}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
@@ -213,8 +272,67 @@ const getAvatarColor = (name) => {
                     </div>
                 </div>
 
-                <!-- Stats Cards -->
-                <TransitionGroup name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Department overview (supervisor's own department) -->
+                <div v-if="deptStatEntries.length" class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm p-5" style="animation-delay: 60ms">
+                    <h2 class="text-sm font-black text-gray-900 dark:text-white tracking-tight mb-3">{{ deptLabel }} Overview</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+                        <div v-for="entry in deptStatEntries" :key="entry.key" class="rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 p-3">
+                            <p class="text-2xl font-black text-indigo-700 dark:text-indigo-300">{{ entry.value }}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">{{ entry.label }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shift handover + VP bulletins -->
+                <div v-if="department" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+                        <div class="flex items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
+                            <h2 class="text-sm font-black text-gray-900 dark:text-white">Shift Handover — {{ deptLabel }}</h2>
+                            <button v-if="canEditProduction" @click="showHandoverForm = !showHandoverForm" class="ml-auto text-[11px] font-black text-indigo-700 hover:underline">+ Log handover</button>
+                        </div>
+                        <Transition name="modal">
+                            <form v-if="showHandoverForm" @submit.prevent="submitHandover" class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5 border-b border-gray-100 dark:border-zinc-800">
+                                <div><label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Shift Date *</label>
+                                    <input v-model="handoverForm.shift_date" type="date" required class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                                <div><label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Shift</label>
+                                    <input v-model="handoverForm.shift_type" placeholder="Morning / Afternoon / Night" class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                                <div class="sm:col-span-2"><label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Unfinished Work</label>
+                                    <textarea v-model="handoverForm.unfinished_work" rows="2" class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                                <div class="sm:col-span-2"><label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Machine Notes</label>
+                                    <textarea v-model="handoverForm.machine_notes" rows="2" class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                                <div><label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Hot Jobs</label>
+                                    <input v-model="handoverForm.hot_jobs" class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                                <div><label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Safety Notes</label>
+                                    <input v-model="handoverForm.safety_notes" class="w-full rounded-xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                                <div class="sm:col-span-2">
+                                    <button v-if="canEditProduction" type="submit" :disabled="handoverForm.processing || !canEditProduction" class="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-black uppercase text-white hover:bg-indigo-700 active:scale-95 transition disabled:opacity-50">Save Handover</button>
+                                </div>
+                            </form>
+                        </Transition>
+                        <ul class="divide-y divide-gray-100 dark:divide-zinc-800">
+                            <li v-for="h in recentHandovers" :key="h.id" class="px-6 py-3 text-sm">
+                                <p class="font-bold">{{ new Date(h.shift_date).toLocaleDateString() }}{{ h.shift_type ? ` · ${h.shift_type}` : '' }} <span class="font-medium text-gray-400">· {{ h.author?.name }}</span></p>
+                                <p v-if="h.unfinished_work" class="text-xs text-gray-500 mt-0.5">Unfinished: {{ h.unfinished_work }}</p>
+                                <p v-if="h.hot_jobs" class="text-xs text-gray-500">Hot: {{ h.hot_jobs }}</p>
+                            </li>
+                            <li v-if="!recentHandovers?.length" class="px-6 py-6 text-center text-xs text-gray-400">No handovers logged yet for this department.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
+                            <h2 class="text-sm font-black text-gray-900 dark:text-white">VP Bulletins</h2>
+                        </div>
+                        <ul class="divide-y divide-gray-100 dark:divide-zinc-800">
+                            <li v-for="b in activeBulletins" :key="b.id" class="px-6 py-3 text-sm">
+                                <p class="font-bold">{{ b.title }} <span class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase ring-1 bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30">{{ b.priority }}</span></p>
+                                <p class="text-xs text-gray-500 mt-0.5 whitespace-pre-line">{{ b.body }}</p>
+                            </li>
+                            <li v-if="!activeBulletins?.length" class="px-6 py-6 text-center text-xs text-gray-400">No active bulletins from the VP office.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->                <TransitionGroup name="card" tag="div" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div class="group relative overflow-hidden bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm p-5 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 border border-gray-100 dark:border-zinc-800 hover:scale-[1.01] transition-all duration-300">
                         <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                         <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
@@ -358,7 +476,7 @@ const getAvatarColor = (name) => {
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <div class="flex items-center gap-2">
                                     <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-lg"><Users class="w-4 h-4" /></span>
-                                    <h2 class="text-sm font-black tracking-tight text-gray-900 dark:text-white">Manufacturing Staff</h2>
+                                    <h2 class="text-sm font-black tracking-tight text-gray-900 dark:text-white">{{ deptLabel ? `${deptLabel} Staff` : 'Manufacturing Staff' }}</h2>
                                     <span class="px-2 py-1 text-[11px] font-black bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-full">{{ filteredStaff.length }} members</span>
                                 </div>
                                 <div class="relative w-full sm:w-64">
@@ -383,9 +501,10 @@ const getAvatarColor = (name) => {
                                         </p>
                                         <p v-if="user.is_manufacturing_supervisor" class="text-xs mt-1 text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />Supervisor</p>
                                         <div class="mt-3">
-                                            <select v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="w-full rounded-2xl border-gray-200 dark:border-zinc-700 p-2.5 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                                            <select v-if="canEditProduction" v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="w-full rounded-2xl border-gray-200 dark:border-zinc-700 p-2.5 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
                                                 <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                                             </select>
+                                            <p v-else class="text-xs font-bold text-gray-500 dark:text-gray-400">Role changes disabled — view only</p>
                                         </div>
                                     </div>
                                     <ChevronRight class="w-4 h-4 text-gray-400 flex-shrink-0 mt-2" />
@@ -423,9 +542,10 @@ const getAvatarColor = (name) => {
                                             <span v-else class="text-gray-400 text-xs">No</span>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <select v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="rounded-2xl border-gray-200 dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none w-48">
+                                            <select v-if="canEditProduction" v-model="user.newRole" @change="onRoleChange(user.id, user.newRole, user.manufacturing_role, user.name)" class="rounded-2xl border-gray-200 dark:border-zinc-700 px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none w-48">
                                                 <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                                             </select>
+                                            <span v-else class="text-xs text-gray-400">—</span>
                                         </td>
                                     </tr>
                                 </TransitionGroup>
@@ -463,7 +583,7 @@ const getAvatarColor = (name) => {
                         </p>
                         <div class="flex justify-end gap-3">
                             <button @click="closeModal" :disabled="isUpdating" class="px-4 py-2.5 text-xs font-black uppercase tracking-wide text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-zinc-800 rounded-2xl hover:bg-gray-200 dark:hover:bg-zinc-700 transition active:scale-95 disabled:opacity-50">Cancel</button>
-                            <button @click="confirmUpdate" :disabled="isUpdating" class="px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 transition active:scale-95 flex items-center gap-2 disabled:opacity-50">
+                            <button v-if="canEditProduction" @click="confirmUpdate" :disabled="isUpdating" class="px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white bg-indigo-600 rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 transition active:scale-95 flex items-center gap-2 disabled:opacity-50">
                                 <RefreshCw v-if="isUpdating" class="w-4 h-4 animate-spin" /> Confirm Change
                             </button>
                         </div>

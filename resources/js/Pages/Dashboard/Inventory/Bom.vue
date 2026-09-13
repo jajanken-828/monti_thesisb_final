@@ -10,6 +10,10 @@ import {
     Search,
     Sparkles,
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditBom = computed(() => canEdit('INV', 'bom'));
 
 const props = defineProps({
     boms: { type: Array, default: () => [] },
@@ -169,7 +173,7 @@ const getMaterialName = (id) => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Inventory · Formulas
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Recipes</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Recipes <span v-if="!canEditBom" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">Client‑specific fabric formulas (yarn, dye, design, materials). · {{ filteredRecipes.length }} showing</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -233,10 +237,10 @@ const getMaterialName = (id) => {
                                     </td>
                                     <td class="px-5 py-4 text-center">
                                         <div class="flex items-center justify-center gap-2">
-                                            <button @click="openEdit(recipe)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all" title="Edit">
+                                            <button v-if="canEditBom" @click="openEdit(recipe)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all" title="Edit">
                                                 <Edit2 class="w-4 h-4" />
                                             </button>
-                                            <button @click="deleteRecipe(recipe.id)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-400 hover:bg-rose-600 hover:text-white hover:scale-110 transition-all" title="Delete">
+                                            <button v-if="canEditBom" @click="deleteRecipe(recipe.id)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-400 hover:bg-rose-600 hover:text-white hover:scale-110 transition-all" title="Delete">
                                                 <Trash2 class="w-4 h-4" />
                                             </button>
                                         </div>
@@ -334,7 +338,7 @@ const getMaterialName = (id) => {
 
                         <div class="px-6 py-4 border-t border-gray-100 dark:border-zinc-800 flex gap-3 bg-slate-50/80 dark:bg-zinc-800/40">
                             <button @click="showForm = false; resetForm()" class="flex-1 py-2.5 text-sm font-bold rounded-2xl border border-gray-200 dark:border-zinc-700 text-slate-500 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-800 transition">Cancel</button>
-                            <button @click="submitForm" :disabled="processing" class="flex-1 py-2.5 text-sm font-black uppercase tracking-wide rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50">
+                            <button v-if="canEditBom" @click="submitForm" :disabled="processing" class="flex-1 py-2.5 text-sm font-black uppercase tracking-wide rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50">
                                 {{ processing ? 'Saving...' : (editingId ? 'Update Recipe' : 'Create Recipe') }}
                             </button>
                         </div>

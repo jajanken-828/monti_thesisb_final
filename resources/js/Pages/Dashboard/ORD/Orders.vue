@@ -20,9 +20,10 @@
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Orders Worklist</h1>
                             <p class="text-sm text-blue-100/90">Client purchase orders and mill job orders in one pipeline</p>
                         </div>
-                        <button @click="showCreate = true" class="rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-indigo-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95">
+                        <button v-if="canEditOrders" @click="showCreate = true" class="rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-indigo-700 shadow-lg transition-all hover:bg-blue-50 active:scale-95">
                             + New PO
                         </button>
+                        <span v-else class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25">View only</span>
                     </div>
                     <!-- Group tabs -->
                     <div class="relative mt-6 flex flex-wrap gap-2">
@@ -91,7 +92,7 @@
                                     <td class="px-4 py-3">
                                         <div class="flex justify-end gap-1">
                                             <Link :href="route('ord.orders.show', { type: o.type.toLowerCase(), id: o.id })" class="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-black text-white hover:bg-indigo-500">Open</Link>
-                                            <button v-if="o.transitions.includes('confirmed') || o.transitions.includes('approved')" @click="quickTransition(o, o.type === 'PO' ? 'approved' : 'confirmed')" class="rounded-xl bg-green-600 px-3 py-1.5 text-xs font-black text-white hover:bg-green-500">Confirm</button>
+                                            <button v-if="canEditOrders && (o.transitions.includes('confirmed') || o.transitions.includes('approved'))" @click="quickTransition(o, o.type === 'PO' ? 'approved' : 'confirmed')" class="rounded-xl bg-green-600 px-3 py-1.5 text-xs font-black text-white hover:bg-green-500">Confirm</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -170,6 +171,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ClipboardList, Search, Sparkles, X } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -181,6 +183,9 @@ const props = defineProps({
     clients: Array,
     products: Array,
 });
+
+const { canEdit } = usePageAccess();
+const canEditOrders = computed(() => canEdit('ORD', 'orders'));
 
 const local = ref({ group: props.filters.group || 'all', status: props.filters.status || '', client_id: props.filters.client_id || '', search: props.filters.search || '' });
 

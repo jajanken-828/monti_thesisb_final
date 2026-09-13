@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\ceo\CeoLocation;
+use App\Models\Ceo\CeoLocation;
 use Symfony\Component\HttpFoundation\Response;
 
 class GeofenceAccessMiddleware

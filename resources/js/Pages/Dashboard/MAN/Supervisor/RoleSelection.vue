@@ -1,8 +1,12 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { ShieldCheck, Sparkles, ArrowRight, Briefcase } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditAccess = computed(() => canEdit('MAN', 'access'));
 
 const props = defineProps({
     assignedRoles: Array,
@@ -38,6 +42,7 @@ const formatRole = (role) => role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toU
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Supervisor
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Manufacturing Supervisor</h1>
+                            <span v-if="!canEditAccess" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ assignedRoles?.length ?? 0 }} assigned role{{ (assignedRoles?.length ?? 0) !== 1 ? 's' : '' }}</p>
                         </div>
                         <span v-if="activeRole" class="rounded-full bg-emerald-400/90 px-3 py-1.5 text-xs font-black text-emerald-950 flex items-center gap-1.5">
@@ -76,7 +81,7 @@ const formatRole = (role) => role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toU
                             </button>
                         </TransitionGroup>
 
-                        <button @click="switchRole" :disabled="!selectedRole"
+                        <button v-if="canEditAccess" @click="switchRole" :disabled="!selectedRole"
                             class="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 text-xs font-black uppercase tracking-wide shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-95 inline-flex items-center gap-2">
                             Switch to this role <ArrowRight class="h-4 w-4" />
                         </button>

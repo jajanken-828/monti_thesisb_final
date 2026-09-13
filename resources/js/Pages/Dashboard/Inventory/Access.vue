@@ -49,10 +49,10 @@ const initPerms = () => {
 };
 initPerms();
 
-// Filter users (only secretary, general_manager, manager, supervisor)
+// Filter users (only secretary, special_officer, manager, supervisor)
 const eligibleUsers = computed(() => {
     let users = props.users.filter(u =>
-        ['secretary', 'general_manager', 'manager', 'supervisor'].includes(u.position)
+        ['secretary', 'special_officer', 'manager', 'supervisor'].includes(u.position)
     );
     if (searchQuery.value) {
         const q = searchQuery.value.toLowerCase();

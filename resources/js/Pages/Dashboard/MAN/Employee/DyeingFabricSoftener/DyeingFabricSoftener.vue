@@ -3,6 +3,10 @@ import { ref, computed } from 'vue';
 import { useForm, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Shirt, AlertCircle, X, CheckSquare, Square, Sparkles, ClipboardList, ChevronRight } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 
 const props = defineProps({
     fabrics: Array,
@@ -108,6 +112,7 @@ const selectedSoftenerItem = computed(() => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Fabric Softener
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Fabric Softener Workspace</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ fabrics?.length ?? 0 }} fabric{{ (fabrics?.length ?? 0) !== 1 ? 's' : '' }} pending · {{ selectedFabrics.length }} selected</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -128,7 +133,7 @@ const selectedSoftenerItem = computed(() => {
                             <Square v-else class="w-4 h-4" />
                             {{ selectedFabrics.length === fabrics?.length && fabrics?.length ? 'Deselect All' : 'Select All' }}
                         </button>
-                        <button @click="openSoftenerModal" :disabled="selectedFabrics.length === 0"
+                        <button v-if="canEditProduction" @click="openSoftenerModal" :disabled="selectedFabrics.length === 0"
                             class="rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide backdrop-blur transition-all duration-200 active:scale-95 disabled:opacity-50"
                             :class="selectedFabrics.length ? 'bg-white text-indigo-700 shadow-lg scale-105' : 'bg-white/15 text-white'">
                             Apply Softener to Selected ({{ selectedFabrics.length }})
@@ -279,7 +284,7 @@ const selectedSoftenerItem = computed(() => {
                             </div>
 
                             <div class="flex gap-3 pt-2">
-                                <button type="submit" :disabled="form.processing"
+                                <button v-if="canEditProduction" type="submit" :disabled="form.processing || !canEditProduction"
                                     class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2.5 rounded-2xl font-bold transition active:scale-95 disabled:opacity-50">
                                     {{ form.processing ? 'Processing...' : 'Submit Softener Job' }}
                                 </button>

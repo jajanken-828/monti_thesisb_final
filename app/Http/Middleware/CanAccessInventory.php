@@ -13,7 +13,7 @@ class CanAccessInventory
         $user = Auth::user();
 
         // CEO, secretary, general manager always have access
-        if ($user->role === 'CEO' || $user->position === 'secretary' || $user->position === 'general_manager') {
+        if ($user->position === 'secretary' || $user->position === 'special_officer') {
             return $next($request);
         }
 

@@ -18,7 +18,8 @@
                                 <Sparkles class="h-3.5 w-3.5" /> ECO · Permission Management
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">ECO Access</h1>
-                            <p class="text-sm text-blue-100/90">Grant or revoke E-Commerce module access for Secretaries and General Managers.</p>
+                            <p class="text-sm text-blue-100/90">Grant or revoke E-Commerce module access for Secretaries and Special Officers.</p>
+                            <span v-if="!canEditAccess" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -87,19 +88,20 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <button v-if="user.role !== 'CEO'" @click="toggleAccess(user)" :disabled="processing[user.id]"
+                                        <button v-if="user.role !== 'CEO' && canEditAccess" @click="toggleAccess(user)" :disabled="processing[user.id]"
                                             class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50"
                                             :class="user.can_access_eco ? 'bg-gradient-to-r from-indigo-600 to-violet-700 shadow-lg shadow-indigo-500/25' : 'bg-gray-300 dark:bg-zinc-700'">
                                             <span :class="user.can_access_eco ? 'translate-x-6' : 'translate-x-1'"
                                                 class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"></span>
                                         </button>
-                                        <span v-else class="text-xs text-gray-400 font-bold">N/A</span>
+                                        <span v-else-if="user.role === 'CEO'" class="text-xs text-gray-400 font-bold">N/A</span>
+                                        <span v-else class="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">View only</span>
                                     </td>
                                 </tr>
                                 <tr v-if="users.length === 0" key="empty">
                                     <td colspan="4" class="px-6 py-12 text-center">
                                         <User class="mx-auto h-10 w-10 text-gray-200 dark:text-zinc-700 animate-bounce-soft" />
-                                        <p class="mt-2 text-sm font-bold text-gray-400">No eligible users found (Secretaries or General Managers).</p>
+                                        <p class="mt-2 text-sm font-bold text-gray-400">No eligible users found (Secretaries or Special Officers).</p>
                                     </td>
                                 </tr>
                             </TransitionGroup>
@@ -136,8 +138,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { Shield, RefreshCw, User, CheckCircle, XCircle, Info, Sparkles } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditAccess = computed(() => canEdit('ECO', 'access'));
 
 const props = defineProps({
     users: {

@@ -14,6 +14,10 @@ import {
     Info,
     Sparkles
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditChecker = computed(() => canEdit('INV', 'checker'));
 
 const props = defineProps({
     materials: {
@@ -144,7 +148,7 @@ const statusBadge = (status) => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Inventory · Stock Health
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Stock Checker</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Stock Checker <span v-if="!canEditChecker" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">Monitor material stock levels and trigger procurement or order checks.</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -152,6 +156,7 @@ const statusBadge = (status) => {
                                 {{ pendingOrdersCount }} pending
                             </span>
                             <button
+                                v-if="canEditChecker"
                                 @click="checkOrders"
                                 :disabled="checkingOrders"
                                 class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50"
@@ -217,7 +222,7 @@ const statusBadge = (status) => {
                                     </td>
                                     <td class="px-6 py-5 text-center">
                                         <button
-                                            v-if="mat.status !== 'ok'"
+                                            v-if="canEditChecker && mat.status !== 'ok'"
                                             @click="requestProcurement(mat)"
                                             :disabled="processingMaterial === mat.id"
                                             class="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"

@@ -22,6 +22,7 @@ Route::middleware('guest:web,client')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:10,1')
         ->name('login.store');
 
     // Employee ID Login
@@ -29,6 +30,7 @@ Route::middleware('guest:web,client')->group(function () {
         ->name('employee.login');
 
     Route::post('employee-login', [EmployeeLoginController::class, 'store'])
+        ->middleware('throttle:10,1')
         ->name('employee.login.store');
 
     // Registration (Internal Employees)
@@ -36,6 +38,7 @@ Route::middleware('guest:web,client')->group(function () {
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('register.store');
 
     // Password Reset
@@ -43,12 +46,14 @@ Route::middleware('guest:web,client')->group(function () {
         ->name('password.request');
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:6,1')
         ->name('password.store');
 });
 

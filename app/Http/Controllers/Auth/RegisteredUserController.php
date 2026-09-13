@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\core\User;
+use App\Models\Core\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -26,7 +25,7 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|in:HRM,SCM,FIN,MAN,INV,ORD,WAR,CRM,ECO',
+            'role' => 'required|in:HRM,SCM,FIN,MAN,INV,ORD,WAR,CRM,ECO,PRO,PROJ,IT',
             'position' => 'required|in:manager,staff,trainee',
         ]);
 
@@ -56,13 +55,15 @@ class RegisteredUserController extends Controller
             // 'employee_id' => $employeeId,
             'department' => $departmentName,
             'join_date' => now(),
-            'is_active' => true,
+            // New self-registrations stay inactive until HR approves them.
+            // Otherwise anyone could self-grant manager/staff access to any
+            // module. LoginRequest/EmployeeLoginController already reject
+            // inactive accounts, so no session can be obtained before approval.
+            'is_active' => false,
         ]);
 
         // event(new Registered($user)); // <--- Commented out to stop verification email
 
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('login'))->with('status', 'Registration submitted. Please wait for HR approval before signing in.');
     }
 }

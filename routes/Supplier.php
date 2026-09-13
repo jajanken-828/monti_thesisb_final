@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\SupplierAuthController;
-use App\Http\Controllers\SUPPLIERS\SupplierDashboardController;
+use App\Http\Controllers\Suppliers\SupplierDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Route;
 */
 Route::middleware('guest:supplier')->group(function () {
     Route::get('supplier/login', [SupplierAuthController::class, 'showLogin'])->name('supplier.login');
-    Route::post('supplier/login', [SupplierAuthController::class, 'login'])->name('supplier.login.store');
+    Route::post('supplier/login', [SupplierAuthController::class, 'login'])->middleware('throttle:10,1')->name('supplier.login.store');
     Route::get('supplier/register', [SupplierAuthController::class, 'create'])->name('supplier.register');
-    Route::post('supplier/register', [SupplierAuthController::class, 'store'])->name('supplier.register.store');
+    Route::post('supplier/register', [SupplierAuthController::class, 'store'])->middleware('throttle:6,1')->name('supplier.register.store');
 });
 
 Route::post('supplier/logout', [SupplierAuthController::class, 'logout'])

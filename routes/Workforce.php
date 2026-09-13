@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\workforce\AbsentController;
-use App\Http\Controllers\workforce\AccessController as WorkforceAccessController;
-use App\Http\Controllers\workforce\LeaveController as WorkforceLeaveController;
-use App\Http\Controllers\workforce\SchedulerController;
-use App\Http\Controllers\workforce\WorkforceDashboardController;
+use App\Http\Controllers\Workforce\AbsentController;
+use App\Http\Controllers\Workforce\AccessController as WorkforceAccessController;
+use App\Http\Controllers\Workforce\LeaveController as WorkforceLeaveController;
+use App\Http\Controllers\Workforce\SchedulerController;
+use App\Http\Controllers\Workforce\WorkforceDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*

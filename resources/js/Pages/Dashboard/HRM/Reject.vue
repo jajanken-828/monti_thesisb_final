@@ -18,8 +18,9 @@ const props = defineProps({
     }
 });
 
-// Check if user has edit permission (though reject page has no write actions)
-const canEdit = computed(() => props.permissions?.reject === 'edit');
+// Archive lives under the Applications page grant (routes enforce
+// page.permission:application) — it has no write actions of its own.
+const canEdit = computed(() => props.permissions?.application === 'edit');
 
 // Toast notification (for flash messages)
 const showToast = ref(false);
@@ -124,7 +125,7 @@ const openViewModal = (item) => {
                     Review applications that were rejected at various stages.
                 </p>
                 <!-- Permission indicator -->
-                <div v-if="!canEdit && permissions.reject === 'view'" class="mt-2 text-xs text-amber-600 bg-amber-50 inline-block px-2 py-0.5 rounded-full">
+                <div v-if="!canEdit && permissions.application === 'view'" class="mt-2 text-xs text-amber-600 bg-amber-50 inline-block px-2 py-0.5 rounded-full">
                     View only access
                 </div>
                 <div v-else-if="canEdit" class="mt-2 text-xs text-emerald-600 bg-emerald-50 inline-block px-2 py-0.5 rounded-full">

@@ -15,6 +15,10 @@ import {
     CheckCircle, 
     Trash2,
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditReject = computed(() => canEdit('WAR', 'reject'));
 
 const props = defineProps({
     rejects: {
@@ -100,7 +104,7 @@ const formatDate = (date) => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <XCircle class="h-3.5 w-3.5" /> Warehouse · Quality
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Rejected Items</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Rejected Items <span v-if="!canEditReject" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">{{ filteredRejects.length }} of {{ rejects.length }} reject{{ rejects.length !== 1 ? 's' : '' }} showing · receiving or manufacturing</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -188,7 +192,7 @@ const formatDate = (date) => {
                                     </td>
                                     <td class="px-5 py-4 text-center">
                                         <button
-                                            v-if="rej.status === 'pending_return'"
+                                            v-if="canEditReject && rej.status === 'pending_return'"
                                             @click="markReturned(rej)"
                                             :disabled="processing && returningId === rej.id"
                                             class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50"

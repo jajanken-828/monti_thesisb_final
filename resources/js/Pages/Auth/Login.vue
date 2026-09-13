@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import AuthLayout from '@/Layouts/AuthLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
@@ -68,6 +69,23 @@ const blockInvalidChars = (e: KeyboardEvent) => {
         e.preventDefault();
         triggerWarning('Spaces and special characters are not allowed.');
     }
+};
+
+// Pasted text bypasses keypress filters, so sanitize clipboard content
+// directly. Without this, pasting an email with spaces/tabs/newlines would
+// silently fail validation or look broken.
+const sanitizePaste = (e: ClipboardEvent) => {
+    e.preventDefault();
+    const raw = e.clipboardData?.getData('text') ?? '';
+    const cleaned = raw.replace(/\s+/g, '').replace(/[^a-zA-Z0-9@.\-_]/g, '');
+    if (!cleaned) {
+        triggerWarning('Nothing valid to paste.');
+        return;
+    }
+    if (cleaned !== raw) {
+        triggerWarning('Pasted text was cleaned up.');
+    }
+    form.identity = (form.identity + cleaned).slice(0, 255);
 };
 
 watch(() => form.identity, (val) => {
@@ -138,51 +156,17 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
 </script>
 
 <template>
-    <Head title="ERP Secure Authorization | Monti Corp" />
-
-    <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
-        style="background-image: url('/images/threads.jpg');">
-        <div class="absolute inset-0 bg-black/35"></div>
-
-        <!-- HEADER -->
-        <header class="sticky top-0 z-20 w-full border-b border-white/10 bg-black/20 backdrop-blur-md">
-            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
-                <div class="flex items-center gap-3 group cursor-pointer" @click="$inertia.visit('/')">
-                    <div class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                        <img src="/images/applogo.png" alt="Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
-                            MONTI<span class="text-blue-400">TEXTILE</span>
-                        </span>
-                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
-                            Manufacturing ERP
-                        </span>
-                    </div>
-                </div>
-                <nav class="flex items-center gap-3">
-                    <Link href="/" class="text-[9px] sm:text-xs font-semibold text-slate-300 hover:text-white transition-colors">
-                        Home
-                    </Link>
-                </nav>
-            </div>
-        </header>
-
-        <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
-            <div class="w-full max-w-md">
-                <div class="backdrop-blur-lg bg-white/15 border border-white/20 rounded-3xl shadow-2xl shadow-black/30 overflow-hidden">
-                    <div class="px-8 pt-10 pb-10 sm:px-12 sm:pt-12 sm:pb-12">
-                        <div class="text-center mb-10">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
-                                System Access
-                            </h1>
-                            <p class="mt-3 text-slate-200 text-base sm:text-lg max-w-md mx-auto">
-                                Provide your employee ID or corporate email to initialize access.
-                            </p>
-                        </div>
+    <AuthLayout
+        title="System Access"
+        highlight="Access"
+        subtitle="Provide your employee ID or corporate email to initialize access."
+        badge="Employee Portal"
+        accent="blue"
+    >
+        <Head title="ERP Secure Authorization | Monti Corp" />
 
                         <div v-if="status"
-                            class="mb-6 p-4 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-sm font-medium text-emerald-200 backdrop-blur-sm">
+                            class="auth-status mb-6 p-4 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-sm font-medium text-emerald-200 backdrop-blur-sm">
                             {{ status }}
                         </div>
 
@@ -190,13 +174,14 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
                             <div>
                                 <InputLabel for="identity" value="Identification" class="text-white/90" />
                                 <TextInput id="identity" type="text"
-                                    class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-black placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40 font-mono"
+                                    class="auth-input mt-1 block w-full"
                                     v-model="form.identity" required autofocus autocomplete="username"
-                                    :placeholder="identityPlaceholder" @keypress="blockInvalidChars" />
-                                <p v-if="inputWarnings.identity"
+                                    :placeholder="identityPlaceholder" @keypress="blockInvalidChars"
+                                    @paste="sanitizePaste" aria-describedby="identity-warning" spellcheck="false" />
+                                <p v-if="inputWarnings.identity" id="identity-warning"
                                     class="text-xs text-red-300 font-bold mt-1 ml-1 animate-pulse">{{
                                         inputWarnings.identity }}</p>
-                                <InputError class="mt-1 text-red-300" :message="form.errors.identity" />
+                                <InputError class="mt-1 text-red-300" :message="form.errors.identity || (form.errors as any).email || (form.errors as any).employee_id" />
                             </div>
 
                             <div>
@@ -210,7 +195,7 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
 
                                 <div class="relative">
                                     <TextInput id="password" :type="showPassword ? 'text' : 'password'"
-                                        class="mt-1 pr-12 block w-full py-3 px-4 bg-white/15 border border-white/30 text-black placeholder:text-slate-300 rounded-xl focus:border-blue-400 focus:ring-blue-400/40 font-mono"
+                                        class="auth-input mt-1 block w-full pr-12"
                                         v-model="form.password" required autocomplete="current-password"
                                         placeholder="••••••••" />
 
@@ -260,47 +245,12 @@ const identityPlaceholder = computed(() => "user@monticorp.com or EMP-XXXX-X");
                                 </div>
 
                                 <PrimaryButton
-                                    class="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-700/30 transition-all duration-200 tracking-widest font-mono uppercase"
+                                    class="auth-btn w-full px-5 py-2.5 text-xs font-bold text-white sm:w-auto"
                                     :class="{ 'opacity-60 cursor-wait': form.processing }" :disabled="form.processing">
                                     <span v-if="form.processing">Processing...</span>
                                     <span v-else>Login</span>
                                 </PrimaryButton>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </AuthLayout>
 </template>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-
-.font-mono {
-    font-family: 'JetBrains Mono', monospace;
-}
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
-    -webkit-text-fill-color: white !important;
-}
-input, select, textarea {
-    @apply transition-all duration-300 ease-in-out;
-}
-::-webkit-scrollbar {
-    width: 6px;
-}
-::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.5);
-    border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.7);
-}
-</style>

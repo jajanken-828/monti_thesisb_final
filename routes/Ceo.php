@@ -1,8 +1,13 @@
 <?php
 
-use App\Http\Controllers\ceo\CeoAccessController;
-use App\Http\Controllers\ceo\CeoDashboardController;
-use App\Http\Controllers\ceo\GeolocationController;
+use App\Http\Controllers\Ceo\CeoAccessController;
+use App\Http\Controllers\Ceo\CeoApprovalController;
+use App\Http\Controllers\Ceo\CeoAuditController;
+use App\Http\Controllers\Ceo\CeoGoalController;
+use App\Http\Controllers\Ceo\CeoNotificationController;
+use App\Http\Controllers\Ceo\CeoDashboardController;
+use App\Http\Controllers\Ceo\CeoReportsController;
+use App\Http\Controllers\Ceo\GeolocationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +29,35 @@ Route::prefix('dashboard/ceo')->name('ceo.')->middleware(['auth', 'verified', 'r
     Route::post('/access/update-profile-photo', [CeoAccessController::class, 'updateProfilePhoto'])->name('access.updateProfilePhoto');
     Route::get('/access/client-assignments/{staffId}', [CeoAccessController::class, 'getClientAssignments'])->name('access.clientAssignments');
     Route::post('/access/assign-clients', [CeoAccessController::class, 'updateClientAssignments'])->name('access.updateClientAssignments');
+
+    // Executive reports (cross-module KPIs + trends, read-only)
+    Route::get('/reports', [CeoReportsController::class, 'index'])->name('reports');
+
+    // Approvals Center (the President's action arm: approve/reject here
+    // instead of editing inside modules)
+    Route::get('/approvals', [CeoApprovalController::class, 'index'])->name('approvals');
+    Route::post('/approvals/payroll/{payroll}/approve', [CeoApprovalController::class, 'approvePayroll'])->name('approvals.payroll.approve');
+    Route::post('/approvals/payroll/{payroll}/reject', [CeoApprovalController::class, 'rejectPayroll'])->name('approvals.payroll.reject');
+    Route::post('/approvals/vendor/{registration}/approve', [CeoApprovalController::class, 'approveVendor'])->name('approvals.vendor.approve');
+    Route::post('/approvals/vendor/{registration}/reject', [CeoApprovalController::class, 'rejectVendor'])->name('approvals.vendor.reject');
+    Route::post('/approvals/credit/{order}/approve', [CeoApprovalController::class, 'approveCredit'])->name('approvals.credit.approve');
+    Route::post('/approvals/credit/{order}/reject', [CeoApprovalController::class, 'rejectCredit'])->name('approvals.credit.reject');
+
+    // Global audit trail (read-only)
+    Route::get('/audit', [CeoAuditController::class, 'index'])->name('audit');
+
+    // Notifications inbox (push-style executive alerts)
+    Route::get('/inbox', [CeoNotificationController::class, 'index'])->name('inbox');
+    Route::patch('/inbox/{notification}/read', [CeoNotificationController::class, 'markRead'])->name('inbox.read');
+    Route::post('/inbox/read-all', [CeoNotificationController::class, 'markAllRead'])->name('inbox.read-all');
+
+    // Board pack (print-ready monthly bundle)
+    Route::get('/board-pack', [CeoReportsController::class, 'boardPack'])->name('board-pack');
+
+    // Goals & targets (actuals computed from module data)
+    Route::get('/goals', [CeoGoalController::class, 'index'])->name('goals');
+    Route::post('/goals', [CeoGoalController::class, 'store'])->name('goals.store');
+    Route::delete('/goals/{goal}', [CeoGoalController::class, 'destroy'])->name('goals.destroy');
 
     // Geolocation Page View (GET)
     Route::get('/location', [GeolocationController::class, 'index'])->name('location.index');

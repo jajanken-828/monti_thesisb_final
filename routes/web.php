@@ -14,58 +14,64 @@
 
 // Core application routes (welcome page, career applications,
 // authenticated dashboard/profile, employee UI, trainee portal)
-require __DIR__.'/core.php';
+require __DIR__.'/Core.php';
 
 // Human Resources Management
-require __DIR__.'/hrm.php';
+require __DIR__.'/Hrm.php';
 
 // Workforce Management (scheduling, leave, absences)
-require __DIR__.'/workforce.php';
+require __DIR__.'/Workforce.php';
 
 // Supply Chain Management
-require __DIR__.'/scm.php';
+require __DIR__.'/Scm.php';
 
 // Financial Operations
-require __DIR__.'/fin.php';
+require __DIR__.'/Fin.php';
 
 // Manufacturing Plant
-require __DIR__.'/man.php';
+require __DIR__.'/Man.php';
 
 // Warehouse
-require __DIR__.'/warehouse.php';
+require __DIR__.'/Warehouse.php';
 
 // Inventory
-require __DIR__.'/inventory.php';
+require __DIR__.'/Inventory.php';
 
 // Order Processing
-require __DIR__.'/ord.php';
+require __DIR__.'/Ord.php';
 
 // Logistics
-require __DIR__.'/log.php';
+require __DIR__.'/Log.php';
 
 // Customer Relationship Management
-require __DIR__.'/crm.php';
+require __DIR__.'/Crm.php';
 
 // E-Commerce
-require __DIR__.'/eco.php';
+require __DIR__.'/Eco.php';
 
 // Procurement
-require __DIR__.'/pro.php';
+require __DIR__.'/Pro.php';
 
 // Project Automation
-require __DIR__.'/proj.php';
+require __DIR__.'/Proj.php';
 
 // IT & Systems Admin
-require __DIR__.'/it.php';
+require __DIR__.'/It.php';
 
 // CEO Dashboard
-require __DIR__.'/ceo.php';
+require __DIR__.'/Ceo.php';
+
+// Vice Presidency (execution arm)
+require __DIR__.'/Vp.php';
+
+// Secretary Workspace (executive office)
+require __DIR__.'/Secretary.php';
 
 // B2B Client Gateway (auth + partner portal)
-require __DIR__.'/client.php';
+require __DIR__.'/Client.php';
 
 // Vendor/Supplier Gateway (auth + supplier portal)
-require __DIR__.'/supplier.php';
+require __DIR__.'/Supplier.php';
 
 /*
 |--------------------------------------------------------------------------

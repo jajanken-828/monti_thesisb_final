@@ -17,14 +17,14 @@
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Logistics · Personnel Registry
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Drivers &amp; Conductors</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Drivers &amp; Conductors <span v-if="!canEditDrivers" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">{{ filteredDrivers.length }} of {{ drivers.length }} driver{{ drivers.length !== 1 ? 's' : '' }} showing</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" /> {{ availableCount }} available
                             </span>
-                            <button @click="openCreateModal"
+                            <button v-if="canEditDrivers" @click="openCreateModal"
                                 class="rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5">
                                 <Plus class="h-4 w-4" /> Add Driver
                             </button>
@@ -219,7 +219,7 @@
                                     class="flex-1 px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl text-[10px] font-black uppercase hover:bg-gray-50 dark:hover:bg-zinc-800 transition active:scale-95">
                                     Cancel
                                 </button>
-                                <button type="submit" :disabled="driverForm.processing"
+                                <button v-if="canEditDrivers" type="submit" :disabled="driverForm.processing"
                                     class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95">
                                     <Loader2 v-if="driverForm.processing" class="h-4 w-4 animate-spin" />
                                     Register Driver
@@ -332,6 +332,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { Users, Plus, Search, Eye, X, Loader2, Star, Truck, Info, Sparkles, CheckCircle2 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditDrivers = computed(() => canEdit('LOG', 'drivers'));
 
 const props = defineProps({
     drivers: {

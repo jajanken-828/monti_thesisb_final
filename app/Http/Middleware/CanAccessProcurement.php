@@ -16,12 +16,12 @@ class CanAccessProcurement
         }
         
         // CEO, secretary, general manager always have access
-        if ($user->role === 'CEO' || in_array($user->position, ['secretary', 'general_manager'])) {
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             return $next($request);
         }
         
         // Check explicit permission
-        $hasAccess = \App\Models\pro\ProAccess::where('user_id', $user->id)
+        $hasAccess = \App\Models\Pro\ProAccess::where('user_id', $user->id)
             ->where('can_access_procurement', true)
             ->exists();
         if (!$hasAccess) {

@@ -21,16 +21,15 @@ class CheckPosition
             abort(403, 'Unauthorized.');
         }
 
-        // CEO always has access
-        if ($user->role === 'CEO') {
-            return $next($request);
-        }
+        // NOTE (overseer model): no President bypass — the executive does not
+        // operate module pages directly (secretary workspace included).
+        // CEO-module pages are gated by role:CEO (CheckRole), not here.
 
         // Normalize all allowed positions to lowercase
         $allowedPositions = array_map('strtolower', $positions);
 
         // For secretaries and general managers: allow if 'manager' is in allowed positions
-        if (in_array($user->position, ['secretary', 'general_manager'])) {
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             if (in_array('manager', $allowedPositions)) {
                 return $next($request);
             }

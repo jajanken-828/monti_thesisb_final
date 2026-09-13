@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\ord\OrdAccessController;
-use App\Http\Controllers\ord\OrdDashboardController;
-use App\Http\Controllers\ord\OrdDeliveryController;
-use App\Http\Controllers\ord\OrdOrdersController;
-use App\Http\Controllers\ord\OrdProductionsController;
-use App\Http\Controllers\ord\OrdReturnsController;
+use App\Http\Controllers\Ord\OrdAccessController;
+use App\Http\Controllers\Ord\OrdDashboardController;
+use App\Http\Controllers\Ord\OrdDeliveryController;
+use App\Http\Controllers\Ord\OrdOrdersController;
+use App\Http\Controllers\Ord\OrdProductionsController;
+use App\Http\Controllers\Ord\OrdReturnsController;
 use Illuminate\Support\Facades\Route;
 
 /*

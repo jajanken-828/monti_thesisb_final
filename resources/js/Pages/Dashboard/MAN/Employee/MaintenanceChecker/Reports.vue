@@ -1,7 +1,12 @@
-<script setup>
+<script setup>import { computed } from 'vue';
+
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { CheckCircle, AlertTriangle, Wrench, Sparkles, ClipboardList, Cog } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 
 const props = defineProps({
     reports: Array,
@@ -41,6 +46,7 @@ const getStatusBadgeClass = (status) => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Maintenance Checker
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Machine Reports</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ reports?.length ?? 0 }} report{{ (reports?.length ?? 0) !== 1 ? 's' : '' }} showing</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -94,7 +100,7 @@ const getStatusBadgeClass = (status) => {
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ new Date(report.created_at).toLocaleString() }}</td>
                                     <td class="px-6 py-4">
-                                        <button v-if="report.status === 'pending'" @click="resolveReport(report.id)"
+                                        <button v-if="report.status === 'pending' && canEditProduction" @click="resolveReport(report.id)"
                                             class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-black flex items-center gap-1 shadow-lg shadow-emerald-500/25 hover:-translate-y-0.5 transition-all active:scale-95">
                                             <CheckCircle class="w-4 h-4" /> Resolve
                                         </button>

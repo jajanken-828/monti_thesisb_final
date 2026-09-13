@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use App\Models\eco\EcoAccess;
+use App\Models\Eco\EcoAccess;
 
 class CheckEcoAccess
 {
@@ -12,7 +12,7 @@ class CheckEcoAccess
         $user = $request->user();
         
         // CEO, secretary, general manager always have access
-        if ($user->role === 'CEO' || in_array($user->position, ['secretary', 'general_manager'])) {
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             return $next($request);
         }
         

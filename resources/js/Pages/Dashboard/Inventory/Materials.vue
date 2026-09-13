@@ -7,6 +7,10 @@ import {
     ShoppingCart, Eye, Info, History, TrendingUp, Save,
     CheckCircle, AlertCircle, Trash2, BadgeCheck, Sparkles
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditMaterials = computed(() => canEdit('INV', 'materials'));
 
 const props = defineProps({
     materials: { type: Array, default: () => [] },
@@ -168,11 +172,11 @@ const statusColor = (status) => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Inventory · Control Center
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Materials Management</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Materials Management <span v-if="!canEditMaterials" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">{{ filteredMaterials.length }} of {{ materials.length }} material{{ materials.length !== 1 ? 's' : '' }} showing</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button @click="showAddModal = true" class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 inline-flex items-center gap-2">
+                            <button v-if="canEditMaterials" @click="showAddModal = true" class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 inline-flex items-center gap-2">
                                 <Plus class="w-4 h-4" /> Add Material
                             </button>
                         </div>
@@ -222,7 +226,7 @@ const statusColor = (status) => {
                                     <td class="px-8 py-5 text-center">
                                         <div class="flex items-center justify-center gap-2">
                                             <button @click="openViewModal(mat)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-200" title="View"><Eye class="w-4 h-4" /></button>
-                                            <button @click="selectedMaterial = mat; procurementForm.required_qty = mat.reorder_point; showProcurementModal = true;" class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 hover:bg-blue-600 hover:text-white hover:scale-110 transition-all duration-200" title="Procure"><ShoppingCart class="w-4 h-4" /></button>
+                                            <button v-if="canEditMaterials" @click="selectedMaterial = mat; procurementForm.required_qty = mat.reorder_point; showProcurementModal = true;" class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 hover:bg-blue-600 hover:text-white hover:scale-110 transition-all duration-200" title="Procure"><ShoppingCart class="w-4 h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -273,7 +277,7 @@ const statusColor = (status) => {
                             </div>
                         </div>
                         <div class="p-6 pt-0">
-                            <button @click="addMaterial" class="w-full py-3.5 bg-indigo-600 text-white font-black uppercase text-xs rounded-2xl hover:bg-indigo-700 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-indigo-500/25">Register Material</button>
+                            <button v-if="canEditMaterials" @click="addMaterial" class="w-full py-3.5 bg-indigo-600 text-white font-black uppercase text-xs rounded-2xl hover:bg-indigo-700 hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-indigo-500/25">Register Material</button>
                         </div>
                     </div>
                 </div>
@@ -304,7 +308,7 @@ const statusColor = (status) => {
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div class="p-5 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-3xl">
                                     <label class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 block mb-2 tracking-widest uppercase">Update Name</label>
-                                    <input v-model="editForm.name" type="text" class="w-full bg-transparent border-0 p-0 text-base font-black focus:ring-0 text-slate-800 dark:text-white outline-none" />
+                                    <input v-model="editForm.name" type="text" :disabled="!canEditMaterials" class="w-full bg-transparent border-0 p-0 text-base font-black focus:ring-0 text-slate-800 dark:text-white outline-none disabled:opacity-60" />
                                 </div>
                                 <div class="p-5 bg-slate-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-800 rounded-3xl opacity-70">
                                     <p class="text-[10px] text-slate-400 mb-2 tracking-widest uppercase font-black">Material ID (Locked)</p>
@@ -317,7 +321,7 @@ const statusColor = (status) => {
                                 <div class="p-5 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-3xl">
                                     <label class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 block mb-2 tracking-widest uppercase">Reorder Threshold</label>
                                     <div class="flex items-center gap-2">
-                                        <input v-model.number="editForm.reorder_point" type="number" class="w-full bg-transparent border-0 p-0 text-2xl font-black focus:ring-0 text-slate-900 dark:text-white outline-none" />
+                                        <input v-model.number="editForm.reorder_point" type="number" :disabled="!canEditMaterials" class="w-full bg-transparent border-0 p-0 text-2xl font-black focus:ring-0 text-slate-900 dark:text-white outline-none disabled:opacity-60" />
                                         <span class="text-xs text-slate-400">{{ selectedMaterial.unit }}</span>
                                     </div>
                                 </div>
@@ -353,7 +357,7 @@ const statusColor = (status) => {
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CheckCircle class="w-4 h-4 text-emerald-500" /> Changes persist in master database</span>
                             <div class="flex gap-3">
                                 <button @click="showViewModal = false" class="px-6 py-3 font-black uppercase text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-white transition">Dismiss</button>
-                                <button @click="submitUpdate" :disabled="editForm.processing" class="px-8 py-3 bg-indigo-600 text-white font-black uppercase text-[11px] rounded-2xl shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+                                <button v-if="canEditMaterials" @click="submitUpdate" :disabled="editForm.processing" class="px-8 py-3 bg-indigo-600 text-white font-black uppercase text-[11px] rounded-2xl shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
                                     <Save class="w-4 h-4" /> {{ editForm.processing ? 'Updating...' : 'Sync Master Profile' }}
                                 </button>
                             </div>
@@ -397,7 +401,7 @@ const statusColor = (status) => {
                         </div>
                         <div class="p-6 pt-0 flex gap-3">
                             <button @click="showProcurementModal = false" class="flex-1 py-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-gray-300 font-black uppercase text-xs rounded-2xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">Cancel</button>
-                            <button @click="submitProcurement" :disabled="procurementForm.processing" class="flex-1 py-3.5 bg-indigo-600 text-white font-black uppercase text-xs rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/25 active:scale-95">
+                            <button v-if="canEditMaterials" @click="submitProcurement" :disabled="procurementForm.processing" class="flex-1 py-3.5 bg-indigo-600 text-white font-black uppercase text-xs rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/25 active:scale-95">
                                 {{ procurementForm.processing ? 'Sending...' : 'Send to SCM' }}
                             </button>
                         </div>

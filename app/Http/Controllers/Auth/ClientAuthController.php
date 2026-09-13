@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\crm\Client;
-use App\Models\crm\CrmLogoPartner;
+use App\Models\Crm\Client;
+use App\Models\Crm\CrmLogoPartner;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,12 +27,13 @@ class ClientAuthController extends Controller
     {
         $request->validate([
             'company_name' => 'required|string|max:255',
-            'business_type' => 'required|string',
+            'business_type' => 'required|string|max:100',
             'contact_person' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:clients',
             'phone' => 'required|string|max:20',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'company_address' => 'required|string',
+            'company_address' => 'required|string|max:1000',
+            'tin_number' => 'nullable|string|max:50',
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 

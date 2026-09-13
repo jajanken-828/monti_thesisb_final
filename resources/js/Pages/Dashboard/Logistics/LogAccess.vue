@@ -17,8 +17,8 @@
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <ShieldCheck class="h-3.5 w-3.5" /> Logistics · Security &amp; Permissions
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Access Control</h1>
-                            <p class="text-sm text-blue-100/90">Grant or revoke Logistics module access for Secretary and General Managers.</p>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Access Control <span v-if="!canEditAccess" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
+                            <p class="text-sm text-blue-100/90">Grant or revoke Logistics module access for Secretary and Special Officers.</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
@@ -38,7 +38,7 @@
                     <div class="relative">
                         <p class="text-sm font-black text-gray-900 dark:text-white">CEO‑Only Section</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                            Only the CEO can manage Logistics access. Secretary and General Managers need explicit permission to view the Logistics module.
+                            Only the CEO can manage Logistics access. Secretary and Special Officers need explicit permission to view the Logistics module.
                         </p>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                                     </td>
                                     <td class="px-8 py-6 text-center">
                                         <div class="flex justify-center">
-                                            <label class="relative inline-flex items-center cursor-pointer">
+                                            <label v-if="canEditAccess" class="relative inline-flex items-center cursor-pointer">
                                                 <input type="checkbox"
                                                     :checked="accessState[user.id] || false"
                                                     @change="toggleAccess(user)"
@@ -95,6 +95,9 @@
                                                     {{ accessState[user.id] ? 'Enabled' : 'Disabled' }}
                                                 </span>
                                             </label>
+                                            <span v-else class="text-xs font-bold" :class="accessState[user.id] ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'">
+                                                {{ accessState[user.id] ? 'Enabled' : 'Disabled' }}
+                                            </span>
                                         </div>
                                     </td>
                                     <td class="px-8 py-6 text-right">
@@ -110,7 +113,7 @@
                                 <ShieldCheck class="h-9 w-9 text-indigo-400" />
                             </div>
                             <p class="text-sm font-black text-gray-700 dark:text-gray-200">No eligible users found.</p>
-                            <p class="text-xs text-gray-400 mt-1">Only Secretary and General Manager accounts appear here.</p>
+                            <p class="text-xs text-gray-400 mt-1">Only Secretary and Special Officer accounts appear here.</p>
                         </div>
                     </div>
                 </div>
@@ -130,8 +133,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { ShieldCheck, RefreshCw, Info, Loader2 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditAccess = computed(() => canEdit('LOG', 'access'));
 
 const props = defineProps({
     users: {

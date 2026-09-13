@@ -24,6 +24,7 @@
                                 {{ supplier?.business_name }}
                             </h1>
                             <p class="text-sm text-blue-100/90 truncate">{{ supplier?.representative_name }} · {{ supplier?.email }}</p>
+                            <span v-if="!canEditSupplier" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -79,7 +80,7 @@
 
                         <!-- Message input -->
                         <div class="border-t border-gray-100 dark:border-zinc-800 p-4 bg-white/60 dark:bg-zinc-900/60">
-                            <form @submit.prevent="sendMessage" class="flex gap-3">
+                            <form v-if="canEditSupplier" @submit.prevent="sendMessage" class="flex gap-3">
                                 <input v-model="newMessage" type="text" placeholder="Type your message..."
                                     class="flex-1 rounded-2xl border-0 bg-gray-100 dark:bg-zinc-800 px-4 py-3 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 outline-none transition" />
                                 <button type="button" @click="triggerFileUpload" class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-500 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/30 transition active:scale-95">
@@ -91,6 +92,7 @@
                                     <Loader2 v-else class="h-5 w-5 animate-spin" />
                                 </button>
                             </form>
+                            <p v-else class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl text-center">View only — messaging disabled.</p>
                         </div>
                     </div>
 
@@ -114,9 +116,10 @@
                                         <option value="video">Video Call</option>
                                         <option value="phone">Phone Call</option>
                                     </select>
-                                    <button type="submit" :disabled="scheduling" class="w-full py-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-2xl font-bold text-sm hover:bg-indigo-600 hover:text-white transition active:scale-95 disabled:opacity-50">
+                                    <button v-if="canEditSupplier" type="submit" :disabled="scheduling" class="w-full py-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-2xl font-bold text-sm hover:bg-indigo-600 hover:text-white transition active:scale-95 disabled:opacity-50">
                                         {{ scheduling ? 'Scheduling...' : 'Send Meeting Invite' }}
                                     </button>
+                                    <p v-else class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl text-center">View only</p>
                                 </div>
                             </form>
                         </div>
@@ -128,9 +131,10 @@
                             <h3 class="relative text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20"><FileText class="h-4 w-4 text-blue-600" /></span> Request Quotation
                             </h3>
-                            <button @click="openRequestModal" class="relative w-full py-2.5 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition">
+                            <button v-if="canEditSupplier" @click="openRequestModal" class="relative w-full py-2.5 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95 transition">
                                 Request Quotation / PO
                             </button>
+                            <p v-else class="relative text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl text-center">View only — requests disabled.</p>
                         </div>
 
                         <!-- Previous requests -->
@@ -201,8 +205,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, nextTick, onMounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ArrowLeft, Shield, Calendar, Paperclip, Send, Loader2, FileText, X, Sparkles, MessagesSquare } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditSupplier = computed(() => canEdit('ECO', 'supplier'));
 
 const props = defineProps({
     supplier: {

@@ -26,7 +26,7 @@ export const hrmModule = {
             { label: 'Interviews', href: route('hrm.interview.index'), icon: Eye, permKey: 'interview' },
             { label: 'Trainees', href: route('hrm.trainee.index'), icon: Award, permKey: 'trainee' },
             { label: 'Onboarding', href: route('hrm.onboarding.index'), icon: UserPlus, permKey: 'onboarding' },
-            { label: 'Archive', href: route('hrm.applications.rejected'), icon: Archive, permKey: 'reject' },
+            { label: 'Archive', href: route('hrm.applications.rejected'), icon: Archive, permKey: 'application' },
             { label: 'Payroll', href: route('hrm.payroll'), icon: HandCoins, permKey: 'payroll' },
             { label: 'Analytics', href: route('hrm.analytics'), icon: ChartNoAxesCombined, permKey: 'analytics' },
             { label: 'Access Control', href: route('hrm.access.index'), icon: ShieldCheck, permKey: 'access' },

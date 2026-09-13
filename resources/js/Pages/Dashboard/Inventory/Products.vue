@@ -9,6 +9,10 @@ import {
     ChevronDown, Info, Zap, Plus, Trash2,
     Pencil, Upload, ImageIcon, Check, ImageMinus, Sparkles
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProducts = computed(() => canEdit('INV', 'products'));
 
 const ChevronRightIcon = ChevronRight;
 
@@ -386,14 +390,14 @@ const closeModal = () => { selectedProduct.value = null; };
                     <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                         <Sparkles class="h-3.5 w-3.5" /> Inventory · Catalog
                     </p>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Product Catalog</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Product Catalog <span v-if="!canEditProducts" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                     <p class="text-sm text-blue-100/90">Bill of materials, specifications, and raw material breakdown for every product.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
                         {{ products.length }} Products
                     </span>
-                    <button @click="showAddProduct = true"
+                    <button v-if="canEditProducts" @click="showAddProduct = true"
                         class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 inline-flex items-center gap-2">
                         <Plus class="w-4 h-4" /> Add Product
                     </button>
@@ -470,13 +474,13 @@ const closeModal = () => { selectedProduct.value = null; };
 
                     <div
                         class="absolute top-2 left-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                        <button @click="openEditModal(product, $event)"
+                        <button v-if="canEditProducts" @click="openEditModal(product, $event)"
                             class="w-7 h-7 rounded-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-blue-600 hover:text-white transition-all"
                             title="Edit product">
                             <Pencil class="w-3.5 h-3.5" />
                         </button>
                         
-                        <button @click="triggerDelete(product.id, $event)"
+                        <button v-if="canEditProducts" @click="triggerDelete(product.id, $event)"
                             class="w-7 h-7 rounded-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-red-600 hover:text-white transition-all"
                             title="Delete product">
                             <Trash2 class="w-3.5 h-3.5" />
@@ -593,13 +597,13 @@ const closeModal = () => { selectedProduct.value = null; };
                             <p class="font-mono text-xs text-slate-400 mt-0.5">{{ selectedProduct.sku }}</p>
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
-                            <button @click="openEditModal(selectedProduct); closeModal()"
+                            <button v-if="canEditProducts" @click="openEditModal(selectedProduct); closeModal()"
                                 class="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
                                 title="Edit product">
                                 <Pencil class="w-4 h-4" />
                             </button>
                             
-                            <button @click="triggerDelete(selectedProduct.id, $event)"
+                            <button v-if="canEditProducts" @click="triggerDelete(selectedProduct.id, $event)"
                                 class="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition">
                                 <Trash2 class="w-4 h-4" />
                             </button>
@@ -742,7 +746,7 @@ const closeModal = () => { selectedProduct.value = null; };
                             class="flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-white transition">
                             Cancel
                         </button>
-                        <button @click="submitProduct"
+                        <button v-if="canEditProducts" @click="submitProduct"
                             :disabled="processing || !newProduct.name || newProduct.colors.length === 0"
                             class="flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-lg shadow-blue-500/20 disabled:opacity-30">
                             Create
@@ -844,7 +848,7 @@ const closeModal = () => { selectedProduct.value = null; };
                                 <div class="flex flex-wrap gap-2">
                                     <div v-for="img in editExistingImages" :key="img.id" class="relative">
                                         <img :src="img.url" class="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm" />
-                                        <button @click="triggerDeleteImage(img.id)"
+                                        <button v-if="canEditProducts" @click="triggerDeleteImage(img.id)"
                                             class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition z-10"
                                             title="Remove image">
                                             <X class="w-3 h-3" />
@@ -880,7 +884,7 @@ const closeModal = () => { selectedProduct.value = null; };
                             Cancel
                         </button>
                         
-                        <button @click="triggerEditConfirm" :disabled="processing || !editForm.name || !editForm.colors || editForm.colors.length === 0"
+                        <button v-if="canEditProducts" @click="triggerEditConfirm" :disabled="processing || !editForm.name || !editForm.colors || editForm.colors.length === 0"
                             class="flex-1 py-2.5 text-sm font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm shadow-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed">
                             Save Changes
                         </button>
@@ -906,7 +910,7 @@ const closeModal = () => { selectedProduct.value = null; };
                         <button @click="showEditConfirm = false" class="flex-1 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl transition">
                             Back
                         </button>
-                        <button @click="submitEdit" :disabled="processing" class="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-sm disabled:opacity-50 flex justify-center items-center">
+                        <button v-if="canEditProducts" @click="submitEdit" :disabled="processing" class="flex-1 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-sm disabled:opacity-50 flex justify-center items-center">
                             <span v-if="processing" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                             <span v-else>Confirm Save</span>
                         </button>
@@ -933,7 +937,7 @@ const closeModal = () => { selectedProduct.value = null; };
                         <button @click="productToDelete = null" :disabled="processing" class="flex-1 py-3 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl transition">
                             Cancel
                         </button>
-                        <button @click="confirmDeleteProduct" :disabled="processing" class="flex-1 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-sm shadow-red-500/20 disabled:opacity-50 flex justify-center items-center">
+                        <button v-if="canEditProducts" @click="confirmDeleteProduct" :disabled="processing" class="flex-1 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-sm shadow-red-500/20 disabled:opacity-50 flex justify-center items-center">
                             <span v-if="processing" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                             <span v-else>Yes, Delete It</span>
                         </button>
@@ -986,7 +990,7 @@ const closeModal = () => { selectedProduct.value = null; };
                         <button @click="imageToDelete = null" :disabled="processing" class="flex-1 py-3 text-sm font-bold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl transition">
                             Cancel
                         </button>
-                        <button @click="confirmDeleteImage" :disabled="processing" class="flex-1 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-sm shadow-red-500/20 disabled:opacity-50 flex justify-center items-center">
+                        <button v-if="canEditProducts" @click="confirmDeleteImage" :disabled="processing" class="flex-1 py-3 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-sm shadow-red-500/20 disabled:opacity-50 flex justify-center items-center">
                             <span v-if="processing" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                             <span v-else>Delete Image</span>
                         </button>

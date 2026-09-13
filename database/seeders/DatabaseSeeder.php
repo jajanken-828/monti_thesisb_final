@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Core\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -176,5 +176,10 @@ class DatabaseSeeder extends Seeder
             ];
         }
         DB::table('products')->insert($products);
+
+        // ==========================================
+        // 7. SEED IT MODULE (service desk, assets, monitoring, KB, changes)
+        // ==========================================
+        $this->call(ItSeeder::class);
     }
 }

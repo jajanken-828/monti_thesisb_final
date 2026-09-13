@@ -30,7 +30,7 @@
                         <div class="rounded-2xl bg-white/15 px-3 py-2 ring-1 ring-white/25"><p class="text-[10px] uppercase tracking-widest text-blue-100 font-bold">Created</p><p class="font-black">{{ order.created_at }}</p></div>
                     </div>
                     <!-- transition actions -->
-                    <div v-if="transitions.length" class="relative mt-4 flex flex-wrap gap-2">
+                    <div v-if="canEditOrders && transitions.length" class="relative mt-4 flex flex-wrap gap-2">
                         <button
                             v-for="t in transitions"
                             :key="t"
@@ -77,7 +77,7 @@
                         </div>
 
                         <!-- Generate SO (PO only) -->
-                        <div v-if="orderType === 'PO'" class="bg-white/80 dark:bg-zinc-900/80 rounded-3xl border border-gray-100 dark:border-zinc-800 p-5">
+                        <div v-if="orderType === 'PO' && canEditOrders" class="bg-white/80 dark:bg-zinc-900/80 rounded-3xl border border-gray-100 dark:border-zinc-800 p-5">
                             <h2 class="font-black mb-1">Generate job orders</h2>
                             <p class="text-xs text-gray-500 mb-3">Explode PO lines into mill job orders (yarn / color / qty per line).</p>
                             <form @submit.prevent="submitGenerate" class="space-y-2">
@@ -100,7 +100,7 @@
                         <!-- Payment -->
                         <div class="bg-white/80 dark:bg-zinc-900/80 rounded-3xl border border-gray-100 dark:border-zinc-800 p-5">
                             <h2 class="font-black mb-3">Billing & payment</h2>
-                            <form @submit.prevent="submitPayment" class="flex flex-wrap items-end gap-2">
+                            <form v-if="canEditOrders" @submit.prevent="submitPayment" class="flex flex-wrap items-end gap-2">
                                 <label class="text-xs font-bold">Status
                                     <select v-model="payForm.payment_status" class="ml-1 rounded-xl border px-2 py-1.5 text-sm">
                                         <option value="unpaid">Unpaid</option><option value="partially_paid">Partially paid</option><option value="paid">Paid</option>
@@ -110,8 +110,8 @@
                                     <input type="file" @input="payForm.receipt = $event.target.files[0]" accept=".jpg,.jpeg,.png,.pdf" class="ml-1 text-xs" />
                                 </label>
                                 <button type="submit" :disabled="payForm.processing" class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-50">Post payment</button>
-                                <a v-if="order.receipt_file" :href="route('ord.orders.download-receipt', { type: orderType.toLowerCase(), id: order.id })" class="text-xs font-black text-indigo-600 hover:underline">Download receipt</a>
                             </form>
+                            <a v-if="order.receipt_file" :href="route('ord.orders.download-receipt', { type: orderType.toLowerCase(), id: order.id })" class="mt-2 inline-block text-xs font-black text-indigo-600 hover:underline">Download receipt</a>
                         </div>
                     </div>
 
@@ -163,6 +163,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ChevronLeft } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -173,6 +174,9 @@ const props = defineProps({
     history: Array,
     returns: Array,
 });
+
+const { canEdit } = usePageAccess();
+const canEditOrders = computed(() => canEdit('ORD', 'orders'));
 
 const formatStatus = (s) => String(s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const transitionLabel = (t) => ({

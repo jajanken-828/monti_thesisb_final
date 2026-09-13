@@ -22,6 +22,10 @@ import {
     Sparkles,
     Search,
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditChecker = computed(() => canEdit('INV', 'checker'));
 
 const props = defineProps({
     auth: Object,
@@ -107,7 +111,7 @@ const formatCurrency = (value) => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Inventory · Overview
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Inventory Dashboard</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Inventory Dashboard <span v-if="!canEditChecker" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">Real‑time stock overview and material tracking.</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -209,7 +213,7 @@ const formatCurrency = (value) => {
                                     </td>
                                     <td class="px-5 py-3 text-center">
                                         <button
-                                            v-if="mat.status !== 'In Stock'"
+                                            v-if="canEditChecker && mat.status !== 'In Stock'"
                                             @click="requestProcurement(mat.id)"
                                             class="px-3 py-1.5 text-[10px] font-black uppercase tracking-wide rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20"
                                         >

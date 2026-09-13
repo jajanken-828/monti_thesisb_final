@@ -2,6 +2,10 @@
 import { ref, computed, watch } from 'vue';
 import { useForm, router, Link, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 import {
     Scissors, Plus, Trash2, ClipboardList, AlertTriangle,
     CheckCircle2, X, Package, Layers, Palette, Blend,
@@ -254,6 +258,7 @@ const submitFabric = () => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Knitting Yarn
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Knitting Yarn Workspace</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ doneCount }} of {{ jobOrders.length }} orders done · {{ progress }}% complete</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -387,12 +392,12 @@ const submitFabric = () => {
                                     class="flex-1 flex items-center justify-center gap-1.5 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-xs font-bold px-3 py-2.5 rounded-2xl transition active:scale-95">
                                     <Layers class="w-3.5 h-3.5" /> Full Recipe
                                 </button>
-                                <button v-if="!order.is_knitting_done"
+                                <button v-if="!order.is_knitting_done && canEditProduction"
                                     @click="openFabricLink(order)" type="button"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-bold px-3 py-2.5 rounded-2xl transition active:scale-95">
                                     <CheckCheck class="w-3.5 h-3.5" /> Mark Done
                                 </button>
-                                <button v-else @click="openUndo(order)" type="button"
+                                <button v-else-if="canEditProduction" @click="openUndo(order)" type="button"
                                     class="flex-1 flex items-center justify-center gap-1.5 border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-gray-300 hover:text-gray-700 text-xs font-bold px-3 py-2.5 rounded-2xl transition active:scale-95">
                                     <RotateCcw class="w-3.5 h-3.5" /> Undo
                                 </button>
@@ -581,7 +586,7 @@ const submitFabric = () => {
                                 </div>
 
                                 <div class="pt-1 space-y-2">
-                                    <button type="submit" :disabled="!canSubmit"
+                                    <button v-if="canEditProduction" type="submit" :disabled="!canSubmit || !canEditProduction"
                                         class="w-full py-3 rounded-2xl text-sm font-bold transition active:scale-95"
                                         :class="canSubmit ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400 cursor-not-allowed'">
                                         {{ form.processing ? 'Recording…' : 'Record Fabric' }}
@@ -730,7 +735,7 @@ const submitFabric = () => {
                                 class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-800 text-sm font-bold rounded-2xl transition active:scale-95">
                                 Cancel
                             </button>
-                            <button @click="confirmFabricLink" type="button"
+                            <button v-if="canEditProduction" @click="confirmFabricLink" type="button"
                                 :disabled="selectedFabricIds.length === 0 || fabricLinkProcessing"
                                 class="flex-1 py-2.5 text-sm font-bold rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                                 :class="selectedFabricIds.length > 0 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/20' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'">
@@ -767,7 +772,7 @@ const submitFabric = () => {
                             class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800 text-sm font-bold rounded-2xl transition active:scale-95">
                             Cancel
                         </button>
-                        <button @click="confirmUndo" type="button" :disabled="undoProcessing"
+                        <button v-if="canEditProduction" @click="confirmUndo" type="button" :disabled="undoProcessing"
                             class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-2xl transition disabled:opacity-60 active:scale-95">
                             {{ undoProcessing ? 'Processing…' : 'Yes, Re-open' }}
                         </button>
@@ -856,12 +861,12 @@ const submitFabric = () => {
                             class="flex-1 py-2.5 border border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-zinc-800 text-sm font-bold rounded-2xl transition active:scale-95">
                             Close
                         </button>
-                        <button v-if="!selectedRecipeOrder.is_knitting_done"
+                        <button v-if="!selectedRecipeOrder.is_knitting_done && canEditProduction"
                             @click="() => { openFabricLink(selectedRecipeOrder); closeRecipe(); }" type="button"
                             class="flex-1 py-2.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold rounded-2xl transition flex items-center justify-center gap-1.5 active:scale-95">
                             <CheckCheck class="w-4 h-4" /> Mark Done
                         </button>
-                        <button v-else
+                        <button v-else-if="canEditProduction"
                             @click="() => { openUndo(selectedRecipeOrder); closeRecipe(); }" type="button"
                             class="flex-1 py-2.5 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-sm font-bold rounded-2xl transition flex items-center justify-center gap-1.5 active:scale-95">
                             <RotateCcw class="w-4 h-4" /> Undo Done

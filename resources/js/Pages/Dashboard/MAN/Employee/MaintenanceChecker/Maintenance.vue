@@ -3,6 +3,10 @@ import { ref, computed } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Plus, Wrench, Calendar, X, CheckCircle, AlertTriangle, Eye, Sparkles, Cog, ClipboardList } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 
 const props = defineProps({
     machines: Array,
@@ -116,13 +120,14 @@ const groupedMachines = computed(() => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Maintenance
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Machine Management</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ machines?.length ?? 0 }} machine{{ (machines?.length ?? 0) !== 1 ? 's' : '' }} · {{ Object.keys(groupedMachines).length }} types</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
                                 {{ machines?.length ?? 0 }} total
                             </span>
-                            <button @click="openAddModal"
+                            <button v-if="canEditProduction" @click="openAddModal"
                                 class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5">
                                 <Plus class="w-4 h-4" /> Add Machine
                             </button>
@@ -179,7 +184,7 @@ const groupedMachines = computed(() => {
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ machine.remarks || '—' }}</td>
                                         <td class="px-6 py-4">
-                                            <button @click="openStatusModal(machine)"
+                                            <button v-if="canEditProduction" @click="openStatusModal(machine)"
                                                 class="rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-black px-3 py-1.5 flex items-center gap-1 transition-all hover:-translate-y-0.5 active:scale-95">
                                                 <Eye class="w-4 h-4" /> Update Status
                                             </button>
@@ -237,7 +242,7 @@ const groupedMachines = computed(() => {
                                 placeholder="Optional notes..."></textarea>
                         </div>
                         <div class="flex gap-3 pt-2">
-                            <button type="submit" :disabled="addForm.processing"
+                            <button v-if="canEditProduction" type="submit" :disabled="addForm.processing || !canEditProduction"
                                 class="flex-1 rounded-2xl bg-indigo-600 text-white py-2.5 text-xs font-black uppercase tracking-wide shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition active:scale-95 disabled:opacity-50">
                                 {{ addForm.processing ? 'Adding...' : 'Add Machine' }}
                             </button>
@@ -285,7 +290,7 @@ const groupedMachines = computed(() => {
                                 placeholder="Notes about status change..."></textarea>
                         </div>
                         <div class="flex gap-3 pt-2">
-                            <button type="submit" :disabled="statusForm.processing"
+                            <button v-if="canEditProduction" type="submit" :disabled="statusForm.processing || !canEditProduction"
                                 class="flex-1 rounded-2xl bg-indigo-600 text-white py-2.5 text-xs font-black uppercase tracking-wide shadow-lg shadow-indigo-500/25 hover:bg-indigo-700 transition active:scale-95 disabled:opacity-50">
                                 {{ statusForm.processing ? 'Updating...' : 'Update Status' }}
                             </button>

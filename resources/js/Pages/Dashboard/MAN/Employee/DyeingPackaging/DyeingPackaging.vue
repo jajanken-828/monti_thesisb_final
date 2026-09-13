@@ -1,8 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useForm, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Package, AlertCircle, X, Sparkles, LayoutDashboard, ChevronRight } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditProduction = computed(() => canEdit('MAN', 'production'));
 
 const props = defineProps({
     fabrics: Array,  // Fabrics with status 'packed'
@@ -62,6 +66,7 @@ const submitPackage = () => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Dyeing Packaging
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Packaging Workspace</h1>
+                            <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ fabrics?.length ?? 0 }} fabric{{ (fabrics?.length ?? 0) !== 1 ? 's' : '' }} ready for packaging</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -125,7 +130,7 @@ const submitPackage = () => {
                         </div>
 
                         <div class="mt-auto pt-3 border-t border-gray-100 dark:border-zinc-800">
-                            <button @click="openPackageModal(fabric)"
+                            <button v-if="canEditProduction" @click="openPackageModal(fabric)"
                                 class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-2.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95">
                                 <Package class="w-4 h-4" /> Create Package
                             </button>
@@ -185,7 +190,7 @@ const submitPackage = () => {
                             </div>
 
                             <div class="flex gap-3 pt-2">
-                                <button type="submit" :disabled="form.processing"
+                                <button v-if="canEditProduction" type="submit" :disabled="form.processing || !canEditProduction"
                                     class="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-2.5 rounded-2xl font-bold transition active:scale-95 disabled:opacity-50">
                                     {{ form.processing ? 'Processing...' : 'Create Package' }}
                                 </button>

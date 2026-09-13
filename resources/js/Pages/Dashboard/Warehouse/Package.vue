@@ -12,6 +12,10 @@ import {
     ChevronDown,
     Filter,
 } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditPackages = computed(() => canEdit('WAR', 'packages'));
 
 const props = defineProps({
     packages: {
@@ -98,7 +102,7 @@ const formatDate = (date) => {
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Truck class="h-3.5 w-3.5" /> Warehouse · Dispatch
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Packages</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Packages <span v-if="!canEditPackages" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">{{ filteredPackages.length }} of {{ packages.length }} package{{ packages.length !== 1 ? 's' : '' }} showing · finished goods ready for dispatch</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -180,7 +184,7 @@ const formatDate = (date) => {
                                     </td>
                                     <td class="px-5 py-4 text-center">
                                         <button
-                                            v-if="pkg.status === 'pending'"
+                                            v-if="canEditPackages && pkg.status === 'pending'"
                                             @click="pushToLogistics(pkg)"
                                             :disabled="processing && pushingId === pkg.id"
                                             class="inline-flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-black uppercase tracking-wide rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50"

@@ -357,9 +357,11 @@ onMounted(() => {
 <template>
     <Head title="Join Our Team | Monti Corp Careers" />
 
-    <div class="relative min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
-        style="background-image: url('/images/threads.jpg');">
-        <div class="absolute inset-0 bg-black/40"></div>
+    <div class="auth-scope relative flex min-h-screen w-full flex-col overflow-y-auto font-sans"
+        data-accent="blue"
+        style="background-image: url('/images/landingTheme.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-color: #2a2a3e;">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10 pointer-events-none"></div>
 
         <Transition enter-active-class="transition duration-300 ease-out" enter-from-class="opacity-0 scale-95"
             enter-to-class="opacity-100 scale-100" leave-active-class="transition duration-200 ease-in"
@@ -367,7 +369,7 @@ onMounted(() => {
             <div v-if="showSuccessModal"
                 class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
                 <div
-                    class="bg-slate-900/90 backdrop-blur-xl border border-white/20 rounded-[2rem] p-10 max-w-sm w-full shadow-2xl shadow-black text-center">
+                    class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl shadow-black text-center">
                     <div
                         class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/20 mb-6 ring-4 ring-emerald-500/10">
                         <CheckCircle2 class="w-10 h-10 text-emerald-400" />
@@ -376,34 +378,55 @@ onMounted(() => {
                     <p class="text-slate-300 mb-8 leading-relaxed font-medium">Your professional profile has been
                         securely sent to our HR node. Redirecting you shortly...</p>
                     <Link href="/"
-                        class="inline-flex items-center justify-center w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-500/20 tracking-widest uppercase text-sm">
+                        class="auth-btn inline-flex items-center justify-center w-full px-5 py-2.5 text-xs font-bold text-white">
                         Return Home Now</Link>
                 </div>
             </div>
         </Transition>
 
-        <nav class="relative z-30 px-6 py-5 flex items-center">
-            <Link href="/" class="flex items-center gap-3 group">
-                <div
-                    class="size-10 sm:size-11 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-                    <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-full w-full object-contain" />
-                </div>
-                <span class="font-black text-2xl tracking-tight text-white drop-shadow-md">Monti<span
-                        class="text-blue-300">Textile</span></span>
-            </Link>
-        </nav>
+        <header class="relative z-30 w-full shrink-0 border-b border-white/10 bg-black/20 backdrop-blur-md">
+            <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 py-3">
+                <Link href="/" class="flex items-center gap-3 group">
+                    <div
+                        class="p-1.5 bg-white/10 backdrop-blur-md rounded-lg border border-white/20 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        <img src="/images/applogo.png" alt="Monti Textile Logo" class="h-7 w-7 sm:h-8 sm:w-8 object-contain" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-base sm:text-lg font-black tracking-tight leading-none text-white uppercase drop-shadow-md">
+                            Monti<span class="text-blue-400">Textile</span>
+                        </span>
+                        <span class="text-[7px] sm:text-[8px] font-bold uppercase tracking-[0.2em] text-slate-300 mt-0.5">
+                            Manufacturing ERP
+                        </span>
+                    </div>
+                </Link>
+                <nav class="flex flex-wrap items-center gap-1.5 sm:gap-3">
+                    <Link href="/"
+                        class="text-[9px] sm:text-xs font-semibold px-2 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-all">
+                        Home
+                    </Link>
+                </nav>
+            </div>
+        </header>
 
         <div class="relative z-10 flex-grow flex items-center justify-center px-5 pb-12 pt-4">
             <div class="w-full max-w-5xl"
                 :class="{ 'opacity-0 translate-y-8': !isLoaded, 'opacity-100 translate-y-0': isLoaded }"
                 style="transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;">
                 <div
-                    class="backdrop-blur-lg bg-white/10 border border-white/20 rounded-3xl shadow-2xl shadow-black/40 overflow-hidden">
-                    <div class="p-8 md:p-10 space-y-10">
+                    class="auth-card overflow-hidden">
+                    <div class="p-6 sm:p-8 space-y-10">
                         <div class="text-center mb-10">
-                            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight drop-shadow-lg">
-                                Careers Application</h1>
-                            <p class="mt-3 text-slate-200 text-base max-w-2xl mx-auto">Fill out the details below to
+                            <p class="auth-badge mb-4">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" style="background: var(--auth-pill-dot)"></span>
+                                    <span class="relative inline-flex h-1.5 w-1.5 rounded-full" style="background: var(--auth-pill-dot)"></span>
+                                </span>
+                                Careers
+                            </p>
+                            <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-2xl">
+                                Careers <span class="auth-gradient-word">Application</span></h1>
+                            <p class="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto">Fill out the details below to
                                 apply for a position. All applications are securely processed by our human resources
                                 department.</p>
                         </div>
@@ -412,7 +435,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div class="md:col-span-3">
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Personal Identity</h3>
                                 </div>
 
@@ -420,7 +443,7 @@ onMounted(() => {
                                     <InputLabel for="image" value="Profile Photo (Optional)"
                                         class="text-white/90 font-semibold" />
                                     <div
-                                        class="relative h-32 rounded-xl border-2 border-dashed border-white/30 bg-white/5 hover:border-blue-400/50 transition-all group overflow-hidden">
+                                        class="relative h-32 rounded-lg border-2 border-dashed border-white/20 bg-white/5 hover:border-blue-400/50 transition-all group overflow-hidden">
                                         <template v-if="!form.image">
                                             <Upload
                                                 class="h-5 w-5 text-white/50 group-hover:text-blue-300 transition-colors mb-2 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
@@ -448,7 +471,7 @@ onMounted(() => {
                                     <InputLabel for="first_name" value="First Name"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="first_name" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white placeholder:text-slate-300 rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.first_name" required autofocus placeholder="Juan"
                                         @keypress="blockNumbersAndSpecial($event, 'first_name')" />
                                     <p v-if="inputWarnings.first_name"
@@ -460,7 +483,7 @@ onMounted(() => {
                                     <InputLabel for="middle_name" value="Middle Name (Optional)"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="middle_name" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white placeholder:text-slate-300 rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.middle_name" placeholder="Santos"
                                         @keypress="blockNumbersAndSpecial($event, 'middle_name')" />
                                     <p v-if="inputWarnings.middle_name"
@@ -471,7 +494,7 @@ onMounted(() => {
                                 <div>
                                     <InputLabel for="last_name" value="Last Name" class="text-white/90 font-semibold" />
                                     <TextInput id="last_name" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white placeholder:text-slate-300 rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.last_name" required placeholder="Dela Cruz"
                                         @keypress="blockNumbersAndSpecial($event, 'last_name')" />
                                     <p v-if="inputWarnings.last_name"
@@ -480,8 +503,8 @@ onMounted(() => {
                                     <InputError class="mt-1 text-red-300" :message="form.errors.last_name" />
                                 </div>
 
-                                <div class="md:col-span-3 mt-4 border-t border-white/20 pt-4">
-                                    <h3 class="text-sm font-black uppercase tracking-widest text-blue-300 pb-2 mb-2">
+                                <div class="md:col-span-3 mt-4 border-t border-white/10 pt-4">
+                                    <h3 class="text-[10px] font-bold uppercase tracking-widest text-blue-400 pb-2 mb-2">
                                         Professional & Contact Details
                                     </h3>
                                 </div>
@@ -489,7 +512,7 @@ onMounted(() => {
                                 <div>
                                     <InputLabel for="email" value="Email Address" class="text-white/90 font-semibold" />
                                     <TextInput id="email" type="email"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.email" required placeholder="juan@example.com"
                                         @keypress="blockSpecialForEmail($event)" />
                                     <p v-if="inputWarnings.email"
@@ -503,13 +526,13 @@ onMounted(() => {
                                         class="text-white/90 font-semibold" />
                                     <div class="flex gap-2 mt-1">
                                         <select v-model="form.phone_country"
-                                            class="w-[35%] py-3 px-1 bg-white/15 border border-white/30 text-white rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all cursor-pointer custom-select">
+                                            class="auth-input w-[35%] cursor-pointer text-center">
                                             <option value="+63">+63 (PH)</option>
                                             <option value="+1">+1 (US/CA)</option>
                                         </select>
                                         
                                         <TextInput id="phone_raw" type="tel" maxlength="12"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.phone_raw" 
                                             @input="enforceNumbersOnly"
                                             @keypress="blockNonNumbers"
@@ -517,7 +540,7 @@ onMounted(() => {
                                         
                                     </div>
                                     <p v-if="inputWarnings.phone_raw"
-                                        class="text-xs text-red-500 font-bold mt-1 ml-1 animate-pulse">
+                                        class="text-xs text-red-300 font-bold mt-1 ml-1 animate-pulse">
                                         {{ inputWarnings.phone_raw }}
                                     </p>
                                 </div>
@@ -528,7 +551,7 @@ onMounted(() => {
                                         id="position_applied" 
                                         v-model="form.position_applied" 
                                         required
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl custom-select"
+                                        class="auth-input mt-1 block w-full"
                                     >
                                         <option value="" disabled>Select Position</option>
                                         
@@ -546,7 +569,7 @@ onMounted(() => {
                                     <InputLabel for="notice_period" value="Notice Period"
                                         class="text-white/90 font-semibold" />
                                     <select id="notice_period" v-model="form.notice_period" required
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl custom-select">
+                                        class="auth-input mt-1 block w-full">
                                         <option value="Immediate">Immediate</option>
                                         <option value="15_Days">15 Days</option>
                                         <option value="30_Days">30 Days</option>
@@ -558,7 +581,7 @@ onMounted(() => {
                                     <InputLabel for="street_address" value="Street Address"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="street_address" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.street_address" required placeholder="123 Main St, Brgy. San Jose"
                                         @keypress="blockSpecialForAddress($event)" />
                                     <p v-if="inputWarnings.street_address"
@@ -569,29 +592,29 @@ onMounted(() => {
                                     <InputLabel for="city" value="City/Municipality"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="city" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.city" required placeholder="General Trias" />
                                 </div>
                                 <div>
                                     <InputLabel for="state_province" value="State/Province"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="state_province" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.state_province" required placeholder="Cavite" />
                                 </div>
                                 <div>
                                     <InputLabel for="postal_zip_code" value="Postal/Zip Code"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="postal_zip_code" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.postal_zip_code" required placeholder="4107" />
                                     <p v-if="inputWarnings.postal_zip_code"
                                         class="text-xs text-red-300 font-bold mt-1 ml-1 animate-pulse">{{
                                         inputWarnings.postal_zip_code }}</p>
                                 </div>
 
-                                <div class="md:col-span-3 mt-4 border-t border-white/20 pt-4">
-                                    <h3 class="text-sm font-black uppercase tracking-widest text-blue-300 pb-2 mb-2">
+                                <div class="md:col-span-3 mt-4 border-t border-white/10 pt-4">
+                                    <h3 class="text-[10px] font-bold uppercase tracking-widest text-blue-400 pb-2 mb-2">
                                         Other Details
                                     </h3>
                                 </div>
@@ -600,28 +623,28 @@ onMounted(() => {
                                     <InputLabel for="date_of_birth" value="Date of Birth"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="date_of_birth" type="date"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.date_of_birth" />
                                 </div>
                                 <div>
                                     <InputLabel for="place_of_birth" value="Place of Birth"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="place_of_birth" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.place_of_birth" placeholder="City, Province" />
                                 </div>
                                 <div>
                                     <InputLabel for="citizenship" value="Citizenship"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="citizenship" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.citizenship" placeholder="Filipino" />
                                 </div>
 
                                 <div>
                                     <InputLabel for="weight" value="Weight (kg)" class="text-white/90 font-semibold" />
                                     <TextInput id="weight" type="number" step="0.1" min="0"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.weight" placeholder="65.5" 
                                         @keypress="blockNegative" />
                                 </div>
@@ -629,7 +652,7 @@ onMounted(() => {
                                 <div>
                                     <InputLabel for="height" value="Height (cm)" class="text-white/90 font-semibold" />
                                     <TextInput id="height" type="number" step="0.1" min="0"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.height" placeholder="170" 
                                         @keypress="blockNegative" />
                                 </div>
@@ -638,7 +661,7 @@ onMounted(() => {
                                     <InputLabel for="civil_status" value="Civil Status"
                                         class="text-white/90 font-semibold" /><select id="civil_status"
                                         v-model="form.civil_status"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl custom-select">
+                                        class="auth-input mt-1 block w-full">
                                         <option value="">Select</option>
                                         <option value="Single">Single</option>
                                         <option value="Married">Married</option>
@@ -650,7 +673,7 @@ onMounted(() => {
                                 <div>
                                     <InputLabel for="sex" value="Sex" class="text-white/90 font-semibold" /><select
                                         id="sex" v-model="form.sex"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl custom-select">
+                                        class="auth-input mt-1 block w-full">
                                         <option value="">Select</option>
                                         <option value="Male">Male</option>
                                         <option value="Female">Female</option>
@@ -659,7 +682,7 @@ onMounted(() => {
                                 <div>
                                     <InputLabel for="religion" value="Religion" class="text-white/90 font-semibold" />
                                     <TextInput id="religion" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.religion" placeholder="Roman Catholic" />
                                 </div>
                             </div>
@@ -667,7 +690,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Government IDs</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -675,21 +698,21 @@ onMounted(() => {
                                         <InputLabel for="sss_number" value="SSS Number"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="sss_number" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.sss_number" placeholder="XX-XXXXXXX-X" />
                                     </div>
                                     <div>
                                         <InputLabel for="philhealth_number" value="PhilHealth Number"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="philhealth_number" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.philhealth_number" placeholder="XX-XXXXXXXXX-X" />
                                     </div>
                                     <div>
                                         <InputLabel for="pagibig_number" value="Pag-IBIG Number"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="pagibig_number" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.pagibig_number" placeholder="XXXX-XXXX-XXXX" />
                                     </div>
                                 </div>
@@ -698,8 +721,8 @@ onMounted(() => {
                                         <p class="text-[10px] font-black text-white/70 uppercase tracking-[0.2em] ml-1">
                                             {{ type.toUpperCase() }} ID
                                             Image</p>
-                                        <div :class="form[type + '_file'] ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-white/30 bg-white/5 hover:border-blue-400/50'"
-                                            class="relative h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-4 transition-all group overflow-hidden">
+                                        <div :class="form[type + '_file'] ? 'border-emerald-400/50 bg-emerald-500/10' : 'border-white/20 bg-white/5 hover:border-blue-400/50'"
+                                            class="relative h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-4 transition-all group overflow-hidden">
                                             <template v-if="!form[type + '_file']">
                                                 <Upload
                                                     class="h-5 w-5 text-white/50 group-hover:text-blue-300 transition-colors mb-2" />
@@ -731,7 +754,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Spouse
                                         Information (if married)</h3>
                                 </div>
@@ -740,21 +763,21 @@ onMounted(() => {
                                         <InputLabel for="spouse_name" value="Spouse's Full Name"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="spouse_name" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.spouse_name" placeholder="Juan Dela Cruz" />
                                     </div>
                                     <div>
                                         <InputLabel for="spouse_occupation" value="Spouse's Occupation"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="spouse_occupation" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.spouse_occupation" placeholder="Engineer" />
                                     </div>
                                     <div class="md:col-span-2">
                                         <InputLabel for="spouse_address" value="Spouse's Address"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="spouse_address" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.spouse_address" placeholder="Complete address" />
                                     </div>
                                 </div>
@@ -763,16 +786,16 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Children</h3>
                                 </div>
                                 <div>
                                     <button type="button" @click="addChild"
-                                        class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600/50 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-600 transition-all">+
+                                        class="inline-flex items-center gap-1 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/30">+
                                         Add Child</button>
                                 </div>
                                 <div v-for="(child, idx) in children" :key="idx"
-                                    class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl relative">
+                                    class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg relative">
                                     <button type="button" @click="removeChild(idx)"
                                         class="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600">
                                         <X class="h-4 w-4" />
@@ -781,14 +804,14 @@ onMounted(() => {
                                         <InputLabel :for="`child_name_${idx}`" value="Name"
                                             class="text-white/80 text-xs" />
                                         <TextInput :id="`child_name_${idx}`" type="text"
-                                            class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="child.name" placeholder="Full name" />
                                     </div>
                                     <div>
                                         <InputLabel :for="`child_dob_${idx}`" value="Date of Birth"
                                             class="text-white/80 text-xs" />
                                         <TextInput :id="`child_dob_${idx}`" type="date"
-                                            class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="child.dob" />
                                     </div>
                                 </div>
@@ -797,7 +820,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Parents Information</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -805,28 +828,28 @@ onMounted(() => {
                                         <InputLabel for="mother_name" value="Mother's Name"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="mother_name" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.mother_name" placeholder="Full name" />
                                     </div>
                                     <div>
                                         <InputLabel for="mother_address" value="Mother's Address"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="mother_address" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.mother_address" placeholder="Address" />
                                     </div>
                                     <div>
                                         <InputLabel for="father_name" value="Father's Name"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="father_name" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.father_name" placeholder="Full name" />
                                     </div>
                                     <div>
                                         <InputLabel for="father_address" value="Father's Address"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="father_address" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.father_address" placeholder="Address" />
                                     </div>
                                 </div>
@@ -836,14 +859,14 @@ onMounted(() => {
                                 <InputLabel for="languages" value="Language(s) You Can Speak or Write"
                                     class="text-white/90 font-semibold" />
                                 <TextInput id="languages" type="text"
-                                    class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                    class="auth-input mt-1 block w-full"
                                     v-model="form.languages" placeholder="Tagalog, English, etc." />
                             </div>
 
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Emergency Contact</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -851,28 +874,28 @@ onMounted(() => {
                                         <InputLabel for="emergency_name" value="Name"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="emergency_name" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.emergency_name" placeholder="Full name" />
                                     </div>
                                     <div>
                                         <InputLabel for="emergency_relationship" value="Relationship"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="emergency_relationship" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.emergency_relationship" placeholder="Spouse, Parent, etc." />
                                     </div>
                                     <div>
                                         <InputLabel for="emergency_phone" value="Telephone Number"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="emergency_phone" type="tel"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.emergency_phone" placeholder="09123456789" />
                                     </div>
                                     <div class="md:col-span-2">
                                         <InputLabel for="emergency_address" value="Address"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="emergency_address" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.emergency_address" placeholder="Complete address" />
                                     </div>
                                 </div>
@@ -881,7 +904,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Educational Background</h3>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -889,55 +912,55 @@ onMounted(() => {
                                         <InputLabel for="elementary_school" value="Elementary School"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="elementary_school" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.elementary_school" placeholder="School name" />
                                     </div>
                                     <div>
                                         <InputLabel for="elementary_year" value="Year Graduated"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="elementary_year" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.elementary_year" placeholder="YYYY" />
                                     </div>
                                     <div>
                                         <InputLabel for="high_school" value="High School"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="high_school" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.high_school" placeholder="School name" />
                                     </div>
                                     <div>
                                         <InputLabel for="high_year" value="Year Graduated"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="high_year" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.high_year" placeholder="YYYY" />
                                     </div>
                                     <div>
                                         <InputLabel for="college" value="College" class="text-white/90 font-semibold" />
                                         <TextInput id="college" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.college" placeholder="Course & School" />
                                     </div>
                                     <div>
                                         <InputLabel for="college_year" value="Year Graduated"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="college_year" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.college_year" placeholder="YYYY" />
                                     </div>
                                     <div>
                                         <InputLabel for="vocational" value="Vocational"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="vocational" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.vocational" placeholder="Course & School" />
                                     </div>
                                     <div>
                                         <InputLabel for="vocational_year" value="Year Graduated"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="vocational_year" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.vocational_year" placeholder="YYYY" />
                                     </div>
                                 </div>
@@ -945,7 +968,7 @@ onMounted(() => {
                                     <InputLabel for="special_skills" value="Special Skills"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="special_skills" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.special_skills" placeholder="e.g., Microsoft Office, Sewing" />
                                 </div>
                             </div>
@@ -963,11 +986,11 @@ onMounted(() => {
                                         <h4 class="text-xs font-black text-blue-300 uppercase">Employment Records (from
                                             present to previous)</h4>
                                         <button type="button" @click="addEmployment"
-                                            class="inline-flex items-center gap-1 px-3 py-1 bg-blue-600/50 text-white rounded-lg text-xs font-bold uppercase hover:bg-blue-600 transition-all">+
+                                            class="inline-flex items-center gap-1 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 shadow-lg shadow-blue-600/30">+
                                             Add Record</button>
                                     </div>
                                     <div v-for="(rec, idx) in employmentRecords" :key="idx"
-                                        class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl relative mb-4">
+                                        class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/5 border border-white/10 rounded-lg relative mb-4">
                                         <button type="button" @click="removeEmployment(idx)"
                                             class="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600">
                                             <X class="h-4 w-4" />
@@ -976,35 +999,35 @@ onMounted(() => {
                                             <InputLabel :for="`emp_company_${idx}`" value="Company"
                                                 class="text-white/80 text-xs" />
                                             <TextInput :id="`emp_company_${idx}`" type="text"
-                                                class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                                class="auth-input mt-1 block w-full"
                                                 v-model="rec.company" placeholder="Company name" />
                                         </div>
                                         <div>
                                             <InputLabel :for="`emp_years_${idx}`" value="Years of Service"
                                                 class="text-white/80 text-xs" />
                                             <TextInput :id="`emp_years_${idx}`" type="text"
-                                                class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                                class="auth-input mt-1 block w-full"
                                                 v-model="rec.years" placeholder="e.g., 2 years" />
                                         </div>
                                         <div>
                                             <InputLabel :for="`emp_salary_${idx}`" value="Salary"
                                                 class="text-white/80 text-xs" />
                                             <TextInput :id="`emp_salary_${idx}`" type="text"
-                                                class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                                class="auth-input mt-1 block w-full"
                                                 v-model="rec.salary" placeholder="Monthly" />
                                         </div>
                                         <div>
                                             <InputLabel :for="`emp_position_${idx}`" value="Position"
                                                 class="text-white/80 text-xs" />
                                             <TextInput :id="`emp_position_${idx}`" type="text"
-                                                class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                                class="auth-input mt-1 block w-full"
                                                 v-model="rec.position" placeholder="Job title" />
                                         </div>
                                         <div class="md:col-span-2">
                                             <InputLabel :for="`emp_reason_${idx}`" value="Reason for Leaving"
                                                 class="text-white/80 text-xs" />
                                             <TextInput :id="`emp_reason_${idx}`" type="text"
-                                                class="mt-1 block w-full py-2 px-3 bg-white/15 border border-white/30 text-white rounded-xl"
+                                                class="auth-input mt-1 block w-full"
                                                 v-model="rec.reason" placeholder="Reason" />
                                         </div>
                                     </div>
@@ -1016,21 +1039,21 @@ onMounted(() => {
                                     <InputLabel for="machine_operation" value="Any machine you can operate?"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="machine_operation" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.machine_operation" placeholder="e.g., Sewing machine, Forklift" />
                                 </div>
                                 <div>
                                     <InputLabel for="referred_by" value="Who referred you to this company?"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="referred_by" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.referred_by" placeholder="Name" />
                                 </div>
                                 <div>
                                     <InputLabel for="referred_by_address" value="His/Her address"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="referred_by_address" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.referred_by_address" placeholder="Address" />
                                 </div>
                             </div>
@@ -1038,7 +1061,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Previous Employment with Monti Textile?</h3>
                                 </div>
                                 <div>
@@ -1046,7 +1069,7 @@ onMounted(() => {
                                         value="Have you ever been employed in this company?"
                                         class="text-white/90 font-semibold" /><select id="previous_employment_company"
                                         v-model="form.previous_employment_company"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl custom-select">
+                                        class="auth-input mt-1 block w-full">
                                         <option value="">Select</option>
                                         <option value="yes">Yes</option>
                                         <option value="no">No</option>
@@ -1058,21 +1081,21 @@ onMounted(() => {
                                         <InputLabel for="previous_employment_when" value="When?"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="previous_employment_when" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.previous_employment_when" placeholder="e.g., 2020-2021" />
                                     </div>
                                     <div>
                                         <InputLabel for="previous_employment_position" value="Position"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="previous_employment_position" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.previous_employment_position" placeholder="Position held" />
                                     </div>
                                     <div>
                                         <InputLabel for="previous_employment_department" value="Department"
                                             class="text-white/90 font-semibold" />
                                         <TextInput id="previous_employment_department" type="text"
-                                            class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                            class="auth-input mt-1 block w-full"
                                             v-model="form.previous_employment_department" placeholder="Department" />
                                     </div>
                                 </div>
@@ -1081,7 +1104,7 @@ onMounted(() => {
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
                                     <h3
-                                        class="text-sm font-black uppercase tracking-widest text-blue-300 border-b border-white/20 pb-2 mb-2">
+                                        class="text-[10px] font-bold uppercase tracking-widest text-blue-400 border-b border-white/10 pb-2 mb-2">
                                         Related Employees</h3>
                                 </div>
                                 <div>
@@ -1093,7 +1116,7 @@ onMounted(() => {
                                     <InputLabel for="related_employees" value="Name — Relationship"
                                         class="text-white/90 font-semibold" />
                                     <TextInput id="related_employees" type="text"
-                                        class="mt-1 block w-full py-3 px-4 bg-white/15 border border-white/30 text-white rounded-xl"
+                                        class="auth-input mt-1 block w-full"
                                         v-model="form.related_employees" placeholder="e.g., Juan Dela Cruz - Cousin" />
                                 </div>
                             </div>
@@ -1105,7 +1128,7 @@ onMounted(() => {
                                     <ShieldCheck class="h-5 w-5 text-blue-300 mr-2" /> Data Encryption Active
                                 </div>
                                 <PrimaryButton
-                                    class="w-full sm:w-auto px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-lg shadow-blue-700/30 transition-all duration-200"
+                                    class="auth-btn w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-white"
                                     :class="{ 'opacity-60 cursor-wait': form.processing }" :disabled="form.processing">
                                     <span v-if="form.processing">Processing...</span>
                                     <span v-else class="flex items-center gap-2">
@@ -1126,30 +1149,3 @@ onMounted(() => {
         </div>
     </div>
 </template>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
-
-.font-mono {
-    font-family: 'JetBrains Mono', monospace;
-}
-
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.08) inset !important;
-    -webkit-text-fill-color: white !important;
-}
-
-input,
-select,
-textarea {
-    @apply transition-all duration-300 ease-in-out;
-}
-
-.custom-select option {
-    background-color: #0f172a;
-    color: white;
-}
-</style>

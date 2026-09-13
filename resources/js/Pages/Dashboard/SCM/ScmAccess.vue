@@ -1,7 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { usePageAccess } from '@/composables/usePageAccess';
 import { ShieldCheck, Sparkles, Users, Clock } from 'lucide-vue-next';
+
+const { canEdit } = usePageAccess();
+const canEditAccess = computed(() => canEdit('SCM', 'access'));
 
 const props = defineProps({ users: Array });
 
@@ -33,6 +38,7 @@ const toggleAccess = (userId, currentAccess) => {
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Module Access Control</h1>
                             <p class="text-sm text-blue-100/90">{{ users.filter(u => u.can_access_scm).length }} of {{ users.length }} users with SCM access</p>
+                            <span v-if="!canEditAccess" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">
@@ -89,9 +95,10 @@ const toggleAccess = (userId, currentAccess) => {
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <button @click="toggleAccess(user.id, user.can_access_scm)" :class="user.can_access_scm ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-gray-300 dark:bg-zinc-700'" class="relative inline-flex h-6 w-11 items-center rounded-full transition shadow-lg">
+                                        <button v-if="canEditAccess" @click="toggleAccess(user.id, user.can_access_scm)" :class="user.can_access_scm ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-gray-300 dark:bg-zinc-700'" class="relative inline-flex h-6 w-11 items-center rounded-full transition shadow-lg">
                                             <span :class="user.can_access_scm ? 'translate-x-6' : 'translate-x-1'" class="inline-block h-4 w-4 transform rounded-full bg-white transition" />
                                         </button>
+                                        <span v-else class="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">View only</span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -113,9 +120,10 @@ const toggleAccess = (userId, currentAccess) => {
                                     <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {{ user.can_access_scm ? 'Granted' : 'Denied' }}
                                 </span>
                             </div>
-                            <button @click="toggleAccess(user.id, user.can_access_scm)" :class="user.can_access_scm ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-gray-300 dark:bg-zinc-700'" class="relative inline-flex h-6 w-11 items-center rounded-full transition shadow-lg shrink-0">
+                            <button v-if="canEditAccess" @click="toggleAccess(user.id, user.can_access_scm)" :class="user.can_access_scm ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-gray-300 dark:bg-zinc-700'" class="relative inline-flex h-6 w-11 items-center rounded-full transition shadow-lg shrink-0">
                                 <span :class="user.can_access_scm ? 'translate-x-6' : 'translate-x-1'" class="inline-block h-4 w-4 transform rounded-full bg-white transition" />
                             </button>
+                            <span v-else class="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full shrink-0">View only</span>
                         </div>
                     </TransitionGroup>
                 </div>

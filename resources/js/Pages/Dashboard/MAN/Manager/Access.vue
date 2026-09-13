@@ -1,8 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ShieldCheck, UserCog, UserCog2, Sparkles, Users } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditAccess = computed(() => canEdit('MAN', 'access'));
 
 const props = defineProps({
     staff: Array,
@@ -10,9 +14,20 @@ const props = defineProps({
 
 const isProcessing = ref(false);
 
+// One supervisor per department: the seat holder (if any) for a department.
+const supervisorOfDept = (dept) =>
+    props.staff?.find(s => s.is_manufacturing_supervisor && s.supervisor_department === dept) || null;
+
 const promoteSupervisor = (user) => {
     if (!user.manufacturing_role) {
         alert('This staff member does not have a manufacturing role assigned yet.');
+        return;
+    }
+
+    // One supervisor per department.
+    const occupant = user.possible_department ? supervisorOfDept(user.possible_department) : null;
+    if (occupant) {
+        alert(`${getDepartmentLabel(user.possible_department)} already has a supervisor (${occupant.name}). Demote them first.`);
         return;
     }
 
@@ -54,7 +69,9 @@ const getDepartmentLabel = (dept) => {
     const labels = {
         knitting: 'Knitting Department',
         dyeing: 'Dyeing Department',
+        finishing: 'Finishing Department',
         maintenance: 'Maintenance Department',
+        boiler: 'Boiler Department',
     };
     return labels[dept] || dept;
 };
@@ -79,6 +96,7 @@ const getDepartmentLabel = (dept) => {
                                 <Sparkles class="h-3.5 w-3.5" /> MAN · Access Control
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Manufacturing Access Control</h1>
+                            <span v-if="!canEditAccess" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
                             <p class="text-sm text-blue-100/90">{{ staff?.length ?? 0 }} staff member{{ (staff?.length ?? 0) !== 1 ? 's' : '' }} · {{ staff?.filter(s => s.is_manufacturing_supervisor).length ?? 0 }} supervisors</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -134,6 +152,10 @@ const getDepartmentLabel = (dept) => {
                                         <span v-if="user.supervisor_department" class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ring-1 bg-purple-100 text-purple-700 ring-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:ring-purple-500/30">
                                             {{ getDepartmentLabel(user.supervisor_department) }}
                                         </span>
+                                        <span v-else-if="user.possible_department" :title="`Promoting this staff will make them ${getDepartmentLabel(user.possible_department)} Supervisor`"
+                                            class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ring-1 ring-dashed bg-gray-50 text-gray-500 ring-gray-300 dark:bg-zinc-800 dark:text-gray-400 dark:ring-zinc-700">
+                                            → {{ getDepartmentLabel(user.possible_department) }}
+                                        </span>
                                         <span v-else class="text-gray-400 text-sm">—</span>
                                     </td>
                                     <td class="px-6 py-4">
@@ -146,14 +168,15 @@ const getDepartmentLabel = (dept) => {
                                         <span v-else class="text-gray-400 text-sm">—</span>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <button v-if="!user.is_manufacturing_supervisor && user.manufacturing_role"
+                                        <button v-if="!user.is_manufacturing_supervisor && user.manufacturing_role && canEditAccess"
                                             @click="promoteSupervisor(user)"
-                                            :disabled="isProcessing"
+                                            :disabled="isProcessing || !!supervisorOfDept(user.possible_department)"
+                                            :title="supervisorOfDept(user.possible_department) ? `Seat occupied by ${supervisorOfDept(user.possible_department).name} — demote them first` : `Promote to ${getDepartmentLabel(user.possible_department)} Supervisor`"
                                             class="px-3 py-1.5 rounded-xl text-xs font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 items-center gap-1 inline-flex">
                                             <UserCog2 class="w-4 h-4" />
                                             Promote
                                         </button>
-                                        <button v-else-if="user.is_manufacturing_supervisor"
+                                        <button v-else-if="user.is_manufacturing_supervisor && canEditAccess"
                                             @click="demoteSupervisor(user)"
                                             :disabled="isProcessing"
                                             class="px-3 py-1.5 rounded-xl text-xs font-black bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800 hover:bg-rose-100 transition active:scale-95 items-center gap-1 inline-flex">

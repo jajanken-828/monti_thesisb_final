@@ -36,7 +36,7 @@ const user = computed(() => props.auth?.user);
 const canManage = computed(() => {
     const role = user.value?.role;
     const position = user.value?.position;
-    return role === 'CEO' || position === 'secretary' || position === 'general_manager';
+    return role === 'CEO' || position === 'secretary' || position === 'special_officer';
 });
 
 // UI state

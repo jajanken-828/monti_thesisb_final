@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\ord\OrdAccess;
+use App\Models\Ord\OrdAccess;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -13,7 +13,7 @@ class CanAccessOrd
         $user = $request->user();
         
         // CEO, secretary, general manager always have access
-        if ($user->role === 'CEO' || in_array($user->position, ['secretary', 'general_manager'])) {
+        if (in_array($user->position, ['secretary', 'special_officer'])) {
             return $next($request);
         }
         

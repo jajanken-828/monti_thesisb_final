@@ -17,7 +17,7 @@
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Logistics · Fleet Control
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Dispatch Center</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Dispatch Center <span v-if="!canEditDispatch" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">Assign trucks, drivers, and routes to pending deliveries.</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -133,7 +133,7 @@
                                         {{ formatDate(delivery.created_at) }}
                                     </td>
                                     <td class="px-6 py-3 text-right">
-                                        <button @click="openDispatchModal(delivery)"
+                                        <button v-if="canEditDispatch" @click="openDispatchModal(delivery)"
                                             class="px-5 py-2.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all">
                                             Assign &amp; Dispatch
                                         </button>
@@ -252,7 +252,7 @@
                                     class="flex-1 px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-zinc-800 active:scale-95 transition-all">
                                     Cancel
                                 </button>
-                                <button type="submit" :disabled="form.processing"
+                                <button v-if="canEditDispatch" type="submit" :disabled="form.processing"
                                     class="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                                     <Loader2 v-if="form.processing" class="h-4 w-4 animate-spin" />
                                     <Send v-else class="h-4 w-4" />
@@ -280,6 +280,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { Send, RefreshCw, Search, Truck, X, Loader2, Sparkles } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditDispatch = computed(() => canEdit('LOG', 'dispatch'));
 
 const props = defineProps({
     deliveries: {

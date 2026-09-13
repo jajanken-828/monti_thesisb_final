@@ -17,7 +17,7 @@
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
                                 <Sparkles class="h-3.5 w-3.5" /> Logistics · Operations
                             </p>
-                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Load Packages</h1>
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Load Packages <span v-if="!canEditLoad" class="ml-2 inline-block rounded-full bg-amber-400/90 px-3 py-1 align-middle text-xs font-black uppercase tracking-widest text-amber-950">View only</span></h1>
                             <p class="text-sm text-blue-100/90">{{ selectedIds.length }} of {{ packages.length }} packages selected</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -39,7 +39,7 @@
                                 class="w-full rounded-2xl border-0 bg-white/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition" />
                         </div>
                         <div class="flex gap-2">
-                            <button @click="selectAllPackages"
+                            <button v-if="canEditLoad" @click="selectAllPackages"
                                 class="rounded-2xl bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all">
                                 Select All
                             </button>
@@ -108,7 +108,7 @@
                             <thead class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-zinc-800">
                                 <tr>
                                     <th class="px-6 py-4 w-12">
-                                        <input type="checkbox" @change="toggleSelectAll" v-model="selectAllFlag" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                        <input v-if="canEditLoad" type="checkbox" @change="toggleSelectAll" v-model="selectAllFlag" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                     </th>
                                     <th class="px-6 py-4">Package #</th>
                                     <th class="px-6 py-4">Product</th>
@@ -120,7 +120,7 @@
                             <TransitionGroup name="card" tag="tbody" class="divide-y divide-gray-50 dark:divide-zinc-800">
                                 <tr v-for="(pkg, i) in filteredPackages" :key="pkg.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }" class="group text-sm hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
                                     <td class="px-6 py-3">
-                                        <input type="checkbox" v-model="selectedIds" :value="pkg.id" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                        <input v-if="canEditLoad" type="checkbox" v-model="selectedIds" :value="pkg.id" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                                     </td>
                                     <td class="px-6 py-3">
                                         <div class="flex items-center gap-3">
@@ -156,7 +156,7 @@
                         <div class="text-xs text-gray-500 dark:text-gray-400">
                             <span class="font-black text-gray-900 dark:text-white">{{ selectedIds.length }}</span> of <span class="font-black text-gray-900 dark:text-white">{{ filteredPackages.length }}</span> packages selected
                         </div>
-                        <button @click="passToDispatch"
+                        <button v-if="canEditLoad" @click="passToDispatch"
                             :disabled="selectedIds.length === 0 || processing"
                             class="px-8 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center gap-2">
                             <Loader2 v-if="processing" class="h-4 w-4 animate-spin" />
@@ -183,6 +183,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 import { Package, RefreshCw, Search, Send, Loader2, Sparkles, CheckSquare } from 'lucide-vue-next';
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+const canEditLoad = computed(() => canEdit('LOG', 'load'));
 
 const props = defineProps({
     packages: {

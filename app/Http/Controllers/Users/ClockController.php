@@ -19,8 +19,12 @@ class ClockController extends Controller
         $now = Carbon::now('Asia/Manila');
         $today = $now->toDateString();
 
-        // Fetch geofence settings to pass to the frontend
+        // Fetch geofence settings to pass to the frontend (all active company sites)
         $geofence = CeoLocation::where('user_id', $user->id)->latest()->first();
+        $geofenceZones = CeoLocation::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->latest()
+            ->get();
 
         return Inertia::render('Dashboard/USERS/clock', [
             'today_log' => AttendanceLog::where('user_id', $user->id)
@@ -36,8 +40,9 @@ class ClockController extends Controller
                 ->take(5)
                 ->get(),
             
-            // Pass DB geofence settings to Vue
-            'geofence_settings' => $geofence 
+            // Pass DB geofence settings to Vue (single for compat + full zone list)
+            'geofence_settings' => $geofence,
+            'geofence_zones' => $geofenceZones,
         ]);
     }
 
@@ -52,9 +57,18 @@ class ClockController extends Controller
             $currentLat = $request->header('X-User-Lat');
             $currentLng = $request->header('X-User-Lng');
 
-            $safeZone = CeoLocation::where('user_id', $user->id)->latest()->first();
+            $safeZones = CeoLocation::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->latest()
+                ->get();
 
-            if (!$safeZone) {
+            // Fallback to the latest pin when the is_active column
+            // doesn't exist yet (migration not run).
+            if ($safeZones->isEmpty()) {
+                $safeZones = CeoLocation::where('user_id', $user->id)->latest()->take(1)->get();
+            }
+
+            if ($safeZones->isEmpty()) {
                 return redirect()->back()->with('error', 'Security Error: No authorized work location found in database.');
             }
 
@@ -62,16 +76,32 @@ class ClockController extends Controller
                 return redirect()->back()->with('error', 'GPS Required: Please enable location services.');
             }
 
-            $distance = $this->calculateDistance(
-                (float) $safeZone->latitude, 
-                (float) $safeZone->longitude,
-                (float) $currentLat, 
-                (float) $currentLng
-            );
+            $nearest = null;
+            $nearestLabel = null;
+            foreach ($safeZones as $zone) {
+                $distance = $this->calculateDistance(
+                    (float) $zone->latitude,
+                    (float) $zone->longitude,
+                    (float) $currentLat,
+                    (float) $currentLng
+                );
+                if ($nearest === null || $distance < $nearest) {
+                    $nearest = $distance;
+                    $nearestLabel = $zone->label ?: ($zone->place_name ?: 'work site');
+                }
+                // Clock-in/out succeeds from ANY active site
+                if ($distance <= $zone->range_radius) {
+                    $nearest = $distance;
+                    $nearestLabel = $zone->label ?: ($zone->place_name ?: 'work site');
+                    $nearest = -1; // marker for "inside a zone"
+                    break;
+                }
+            }
 
-            // Compare against DB 'range_radius'
-            if ($distance > $safeZone->range_radius) {
-                return redirect()->back()->with('error', "Out of Range: You are " . round($distance) . "m away. Max allowed is " . $safeZone->range_radius . "m.");
+            // Compare against DB 'range_radius' of every active site
+            if ($nearest !== -1) {
+                $allowed = $safeZones->max('range_radius');
+                return redirect()->back()->with('error', "Out of Range: You are " . round($nearest) . "m from the nearest site ({$nearestLabel}). Max allowed is " . $allowed . "m.");
             }
         }
 

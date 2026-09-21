@@ -109,10 +109,10 @@ onUnmounted(() => clearInterval(timer));
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 <div class="lg:col-span-8 space-y-8">
                     
-                    <div class="flex flex-col md:flex-row justify-between items-center bg-white p-3 rounded-[2.5rem] shadow-sm border border-slate-100">
-                        <div class="px-8 py-4 text-center md:text-left md:border-r border-slate-100 mb-4 md:mb-0">
-                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Local System Time</p>
-                            <p class="text-2xl font-mono font-black italic text-slate-800">{{ currentTime }}</p>
+                    <div class="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-zinc-900 p-3 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-zinc-800">
+                        <div class="px-8 py-4 text-center md:text-left md:border-r border-slate-100 dark:border-zinc-800 mb-4 md:mb-0">
+                            <p class="text-[9px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-widest">Local System Time</p>
+                            <p class="text-2xl font-mono font-black italic text-slate-800 dark:text-zinc-200">{{ currentTime }}</p>
                         </div>
 
                         <button @click="handleClockToggle"
@@ -120,20 +120,20 @@ onUnmounted(() => clearInterval(timer));
                             :class="[
                                 'w-full md:w-auto px-12 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] transition-all duration-300',
                                 isClockedIn ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : 
-                                ((isOutOfRange || !page.props.auth.location) && !isClockedIn ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-lg shadow-emerald-100 hover:scale-[1.02]')
+                                ((isOutOfRange || !page.props.auth.location) && !isClockedIn ? 'bg-slate-100 dark:bg-zinc-800 text-slate-300 dark:text-zinc-500 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-lg shadow-emerald-100 hover:scale-[1.02]')
                             ]">
                             <Power class="size-4 inline mr-2 mb-1" />
                             {{ clockButtonText }}
                         </button>
                     </div>
 
-                    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                        <div class="p-8 border-b border-slate-50">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-slate-800 italic">Duty Cycle History</h3>
+                    <div class="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-slate-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+                        <div class="p-8 border-b border-slate-50 dark:border-zinc-800">
+                            <h3 class="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-zinc-200 italic">Duty Cycle History</h3>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left">
-                                <thead class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                <thead class="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 dark:text-zinc-500 tracking-widest">
                                     <tr>
                                         <th class="p-6">Date</th>
                                         <th class="p-6 text-center">In / Out</th>
@@ -142,12 +142,12 @@ onUnmounted(() => clearInterval(timer));
                                 </thead>
                                 <tbody class="divide-y divide-slate-50">
                                     <tr v-for="log in history.slice(0, 5)" :key="log.id" class="hover:bg-slate-50/30 transition-colors">
-                                        <td class="p-6 text-xs font-black text-slate-700 italic uppercase">{{ log.date }}</td>
-                                        <td class="p-6 text-xs font-mono text-center text-slate-500">
+                                        <td class="p-6 text-xs font-black text-slate-700 dark:text-zinc-300 italic uppercase">{{ log.date }}</td>
+                                        <td class="p-6 text-xs font-mono text-center text-slate-500 dark:text-zinc-400">
                                             {{ log.clock_in }} <span class="mx-2 opacity-30">|</span> {{ log.clock_out || 'Active' }}
                                         </td>
                                         <td class="p-6 text-right">
-                                            <span :class="log.status === 'On-Time' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'" 
+                                            <span :class="log.status === 'On-Time' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-100'" 
                                                   class="px-4 py-2 rounded-xl text-[9px] font-black uppercase border tracking-tighter">
                                                 {{ log.status }}
                                             </span>
@@ -160,20 +160,20 @@ onUnmounted(() => clearInterval(timer));
                 </div>
 
                 <div class="lg:col-span-4 space-y-8">
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <div class="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-zinc-800 shadow-sm">
                         <div class="flex items-center justify-between mb-8 px-2">
                             <h3 class="font-black uppercase italic text-sm tracking-tighter">
-                                {{ monthNames[currentMonth] }} <span class="text-blue-600 font-light">{{ currentYear }}</span>
+                                {{ monthNames[currentMonth] }} <span class="text-blue-600 dark:text-blue-400 font-light">{{ currentYear }}</span>
                             </h3>
                             <div class="flex gap-1">
-                                <ChevronLeft class="size-4 text-slate-300 cursor-not-allowed" />
-                                <ChevronRight class="size-4 text-slate-300 cursor-not-allowed" />
+                                <ChevronLeft class="size-4 text-slate-300 dark:text-zinc-500 cursor-not-allowed" />
+                                <ChevronRight class="size-4 text-slate-300 dark:text-zinc-500 cursor-not-allowed" />
                             </div>
                         </div>
 
                         <div class="grid grid-cols-7 gap-y-2 text-center">
                             <div v-for="d in ['S','M','T','W','T','F','S']" :key="d" 
-                                 class="text-[9px] font-black text-slate-300 uppercase pb-2">{{ d }}</div>
+                                 class="text-[9px] font-black text-slate-300 dark:text-zinc-500 uppercase pb-2">{{ d }}</div>
                             
                             <div v-for="e in firstDayOfMonth" :key="'e'+e"></div>
                             
@@ -181,7 +181,7 @@ onUnmounted(() => clearInterval(timer));
                                 <div :class="[
                                     'size-8 mx-auto flex items-center justify-center rounded-xl text-[10px] font-black transition-all',
                                     day === now.getDate() && currentMonth === now.getMonth() ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 
-                                    (hasLog(day) ? 'bg-emerald-50 text-emerald-600' : 'text-slate-600')
+                                    (hasLog(day) ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'text-slate-600')
                                 ]">
                                     {{ day }}
                                 </div>
@@ -196,7 +196,7 @@ onUnmounted(() => clearInterval(timer));
                             <h3 class="text-2xl font-black italic uppercase tracking-tighter">
                                 {{ assigned_shift?.shift_type || 'No Assigned Shift' }}
                             </h3>
-                            <p class="text-xs font-medium text-slate-400 mt-2">
+                            <p class="text-xs font-medium text-slate-400 dark:text-zinc-500 mt-2">
                                 {{ assigned_shift?.schedule_range || 'Contact Admin for Schedule' }}
                             </p>
                         </div>

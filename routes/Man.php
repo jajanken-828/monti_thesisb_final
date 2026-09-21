@@ -1,7 +1,5 @@
 <?php
 
-use App\Http\Controllers\Hrm\AccessController;
-use App\Http\Controllers\Man\ManAccessController;
 use App\Http\Controllers\Man\Manager\ManufacturingManagerController;
 use App\Http\Controllers\Man\ManDashboardController;
 use App\Http\Controllers\Man\ManufacturingInventoryController;
@@ -36,24 +34,11 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
     // Route::get('/interview', [InterviewController::class, 'index'])->name('interview.index');
     // Route::get('/trainee', [TraineeController::class, 'index'])->name('trainee.index');
 
-    // Access control overview — restricted to department supervisors
-    // (previously had no inner authorization check beyond module access).
-    Route::get('/access', [AccessController::class, 'index'])
-        ->middleware(['can.access.man.manager', 'page.permission:access,view'])
-        ->name('access.index');
-
-    // ──────────────────────────────────────────────────────────────────────────
     // Department-supervisor level (no manufacturing manager: the module is
-    // handled by the knitting / dyeing / finishing / maintenance supervisors)
-    // ──────────────────────────────────────────────────────────────────────────
+    // handled by the knitting / dyeing / finishing / maintenance supervisors).
+    // NOTE: supervisor assignment + staff-role updates are fulfilled via the
+    // CEO module (view/request) and IT Access Control — no MAN access page.
     Route::middleware(['can.access.man.manager'])->group(function () {
-
-
-        // Manager access control (supervisor management)
-        Route::get('/access/manage', [ManAccessController::class, 'index'])
-            ->middleware('page.permission:access,view')->name('access.manage');
-        Route::post('/access/assign-supervisor', [ManAccessController::class, 'assignSupervisor'])
-            ->middleware('page.permission:access,edit')->name('access.assign-supervisor');
 
         // Manufacturing Inventory (Production Inventory)
         Route::get('/inventory', [ManufacturingInventoryController::class, 'index'])

@@ -36,22 +36,22 @@ const priorityColors = {
             </div>
         </div>
         <template v-else>
-            <div v-for="task in tasks" :key="task.id" class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
+            <div v-for="task in tasks" :key="task.id" class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded dark:hover:bg-zinc-800">
                 <Checkbox :checked="task.completed" @change="completeTask(task.id)" />
                 <div class="flex-1">
-                    <p :class="cn('text-sm', task.completed && 'line-through text-gray-500')">
+                    <p :class="cn('text-sm text-gray-900 dark:text-gray-100', task.completed && 'line-through text-gray-500 dark:text-gray-500')">
                         {{ task.title }}
                     </p>
                     <div class="flex items-center space-x-2 mt-1">
-                        <span class="text-xs text-gray-500">{{ task.due_date }}</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ task.due_date }}</span>
                         <Badge :class="priorityColors[task.priority]" class="text-xs">
                             {{ task.priority }}
                         </Badge>
-                        <span v-if="task.category" class="text-xs text-gray-500">{{ task.category }}</span>
+                        <span v-if="task.category" class="text-xs text-gray-500 dark:text-gray-400">{{ task.category }}</span>
                     </div>
                 </div>
             </div>
-            <div v-if="tasks.length === 0" class="text-center py-4 text-gray-500">
+            <div v-if="tasks.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
                 No tasks assigned
             </div>
         </template>

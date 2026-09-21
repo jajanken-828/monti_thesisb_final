@@ -3,11 +3,12 @@
 use App\Http\Controllers\Ceo\CeoAccessController;
 use App\Http\Controllers\Ceo\CeoApprovalController;
 use App\Http\Controllers\Ceo\CeoAuditController;
+use App\Http\Controllers\Ceo\CeoDeliveriesController;
 use App\Http\Controllers\Ceo\CeoGoalController;
 use App\Http\Controllers\Ceo\CeoNotificationController;
 use App\Http\Controllers\Ceo\CeoDashboardController;
 use App\Http\Controllers\Ceo\CeoReportsController;
-use App\Http\Controllers\Ceo\GeolocationController;
+use App\Http\Controllers\Ceo\CeoTraceabilityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,9 +19,15 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('dashboard/ceo')->name('ceo.')->middleware(['auth', 'verified', 'role:CEO'])->group(function () {
     Route::get('/', [CeoDashboardController::class, 'index'])->name('dashboard');
 
-    // Access Control
+    // Access Control — VIEW + REQUEST ONLY (executive office).
+    // Direct writes (promote/demote/modules/pages/roles/photo/clients)
+    // are disabled in CeoAccessController and now belong to IT.
     Route::get('/access', [CeoAccessController::class, 'index'])->name('access');
     Route::get('/access/employee/{id}/personal-info', [CeoAccessController::class, 'getEmployeePersonalInfo'])->name('access.employeePersonalInfo');
+
+    // Executive command → IT Access Control notifications.
+    Route::post('/access/request-position', [CeoAccessController::class, 'requestPosition'])->name('access.requestPosition');
+    Route::post('/access/requests/{id}/cancel', [CeoAccessController::class, 'cancelRequest'])->name('access.cancelRequest');
 
     Route::post('/access/update-position', [CeoAccessController::class, 'updatePosition'])->name('access.updatePosition');
     Route::post('/access/update-modules', [CeoAccessController::class, 'updateModules'])->name('access.updateModules');
@@ -33,9 +40,14 @@ Route::prefix('dashboard/ceo')->name('ceo.')->middleware(['auth', 'verified', 'r
     // Executive reports (cross-module KPIs + trends, read-only)
     Route::get('/reports', [CeoReportsController::class, 'index'])->name('reports');
 
+    // Deliveries tracking (outbound: client, truck, driver, POD, payment)
+    Route::get('/deliveries', [CeoDeliveriesController::class, 'index'])->name('deliveries');
+
+    // Traceability (raw-lot → finished-product genealogy, read-only)
+    Route::get('/traceability', [CeoTraceabilityController::class, 'index'])->name('traceability');
+
     // Approvals Center (the President's action arm: approve/reject here
-    // instead of editing inside modules)
-    Route::get('/approvals', [CeoApprovalController::class, 'index'])->name('approvals');
+    // instead of editing inside modules). POST actions stay President-only.
     Route::post('/approvals/payroll/{payroll}/approve', [CeoApprovalController::class, 'approvePayroll'])->name('approvals.payroll.approve');
     Route::post('/approvals/payroll/{payroll}/reject', [CeoApprovalController::class, 'rejectPayroll'])->name('approvals.payroll.reject');
     Route::post('/approvals/vendor/{registration}/approve', [CeoApprovalController::class, 'approveVendor'])->name('approvals.vendor.approve');
@@ -58,10 +70,10 @@ Route::prefix('dashboard/ceo')->name('ceo.')->middleware(['auth', 'verified', 'r
     Route::get('/goals', [CeoGoalController::class, 'index'])->name('goals');
     Route::post('/goals', [CeoGoalController::class, 'store'])->name('goals.store');
     Route::delete('/goals/{goal}', [CeoGoalController::class, 'destroy'])->name('goals.destroy');
-
-    // Geolocation Page View (GET)
-    Route::get('/location', [GeolocationController::class, 'index'])->name('location.index');
-
-    // Geolocation Data Sync (POST)
-    Route::post('/user/location/sync', [GeolocationController::class, 'store'])->name('location.store');
 });
+
+// Joint Approvals (read-only view shared by President + COO/VP).
+// Kept outside the CEO-only group so role:COO passes; the approve/reject
+// POSTs above stay President-only.
+Route::get('/dashboard/ceo/approvals', [CeoApprovalController::class, 'index'])
+    ->middleware(['auth', 'verified', 'role:CEO,COO'])->name('ceo.approvals');

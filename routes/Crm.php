@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Crm\AccessController as CrmAccessController;
 use App\Http\Controllers\Crm\ApprovalController;
 use App\Http\Controllers\Crm\CrmDashboardController;
 use App\Http\Controllers\Crm\CustomerProfileController;
@@ -109,11 +108,4 @@ Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified', 'm
         ->middleware('page.permission:leads,edit')
         ->name('logo-partner.destroy');
 
-    // Access Control (for CRM staff – managed by CEO)
-    Route::get('/access', [CrmAccessController::class, 'index'])
-        ->middleware('page.permission:access,view')
-        ->name('access.index');
-    Route::post('/access/update', [CrmAccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')
-        ->name('access.update');
 });

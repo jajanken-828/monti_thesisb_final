@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Ord\OrdAccessController;
 use App\Http\Controllers\Ord\OrdDashboardController;
 use App\Http\Controllers\Ord\OrdDeliveryController;
 use App\Http\Controllers\Ord\OrdOrdersController;
@@ -17,8 +16,9 @@ use Illuminate\Support\Facades\Route;
 | Pack/Warehouse -> Dispatch (Logistics) -> Deliver/POD -> Bill & Close,
 | with returns (RMA) and a full status audit trail.
 |
-| Route names ord.orders / ord.productions / ord.delivery /
-| ord.ceo-access.index are kept stable for the sidebar.
+| Route names ord.orders / ord.productions / ord.delivery
+| are kept stable for the sidebar. Access control lives in the CEO
+| module + IT Access Control.
 |
 */
 Route::prefix('dashboard/ord')->name('ord.')->middleware(['auth', 'verified', 'module.access:ORD'])->group(function () {
@@ -85,11 +85,4 @@ Route::prefix('dashboard/ord')->name('ord.')->middleware(['auth', 'verified', 'm
         ->middleware('page.permission:returns,edit')
         ->name('returns.resolve');
 
-    // CEO access grants (kept name for sidebar)
-    Route::get('/access-control', [OrdAccessController::class, 'index'])
-        ->middleware('page.permission:access,view')
-        ->name('ceo-access.index');
-    Route::post('/access-control/update', [OrdAccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')
-        ->name('ceo-access.update');
 });

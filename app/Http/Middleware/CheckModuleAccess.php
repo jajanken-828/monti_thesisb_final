@@ -60,6 +60,16 @@ class CheckModuleAccess
             abort(403, "You don't have access to the {$module} module.");
         }
 
+        // ── Explicit per-page grants ──────────────────────────────────────────
+        // Anyone holding usable (view/edit) page rows for this module may
+        // enter it — e.g. a manager granted pages of another module. The
+        // sidebar shows exactly those pages and page.permission still gates
+        // each page, so this grants no more than the explicit set.
+        // 'disabled'-only sets grant nothing.
+        if ($this->hasUsablePageGrants($user, $module)) {
+            return $next($request);
+        }
+
         // ── Regular manager: role must match module name ──────────────────────
         if ($user->role === $module && $user->position === 'manager') {
             return $next($request);
@@ -72,5 +82,25 @@ class CheckModuleAccess
         }
 
         abort(403, "You don't have access to the {$module} module.");
+    }
+
+    /**
+     * Whether the user holds any usable (view/edit) page grant for a module.
+     * Legacy NULL levels are grandfathered as 'edit', mirroring
+     * CheckPagePermission. Module matching is case-tolerant.
+     */
+    protected function hasUsablePageGrants($user, string $module): bool
+    {
+        if (! method_exists($user, 'pagePermissions')) {
+            return false;
+        }
+
+        return $user->pagePermissions()
+            ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
+            ->where(function ($q) {
+                $q->whereIn('permission_level', ['view', 'edit'])
+                    ->orWhereNull('permission_level');
+            })
+            ->exists();
     }
 }

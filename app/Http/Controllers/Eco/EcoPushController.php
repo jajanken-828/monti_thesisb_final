@@ -7,6 +7,7 @@ use App\Models\Ord\OrderQueue;
 use App\Models\Ord\PurchaseOrder;
 use App\Models\Crm\Client;
 use App\Models\Ord\SalesOrder;
+use App\Services\Eco\StockSustainabilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -104,12 +105,52 @@ class EcoPushController extends Controller
     }
 
     /**
+     * DSS preview — quick sustainability check for one pending order.
+     * Returns JSON: per-material required / committed / on-hand / ATP /
+     * shortage plus the overall verdict. Used by the Push Center modal
+     * BEFORE ECO accepts the order.
+     */
+    public function dssCheck($order, StockSustainabilityService $dss)
+    {
+        $salesOrder = SalesOrder::findOrFail($order);
+
+        return response()->json($dss->evaluate($salesOrder));
+    }
+
+    /**
+     * Enforce the DSS gate. Returns an error string when the order must
+     * be blocked (and files procurement suggestions), or null to proceed.
+     */
+    protected function enforceSustainability(SalesOrder $salesOrder, StockSustainabilityService $dss): ?string
+    {
+        $result = $dss->evaluate($salesOrder);
+
+        if ($result['verdict'] === 'insufficient') {
+            $suggested = $dss->suggestProcurement($salesOrder, $result, auth()->user()?->name);
+
+            $lines = collect($result['materials'])
+                ->filter(fn ($m) => ($m['shortage'] ?? 0) > 0)
+                ->map(fn ($m) => "{$m['material_name']}: needs {$m['required']}{$m['unit']}, ATP {$m['atp']}{$m['unit']} (short {$m['shortage']}{$m['unit']})")
+                ->implode('; ');
+
+            $reqs = collect($suggested)->map(fn ($s) => $s['req_number'])->implode(', ');
+
+            return "Order {$result['jo_number']} BLOCKED: stock cannot sustain this job after {$result['committed_orders']} accepted order(s). {$lines}. Procurement suggested: {$reqs} (see SCM → Procurement Orders).";
+        }
+
+        return null;
+    }
+
+    /**
      * Push to Supply Chain Management (SCM).
      *
      * The route passes {order} which is the sales_order primary-key (id).
      * We update its status so SCM can see it via ScmSalesOrderController::index().
+     *
+     * DSS gate: blocked when live stock minus already-committed orders
+     * cannot cover this job; shortfalls are auto-suggested to procurement.
      */
-    public function pushToScm($order)
+    public function pushToScm($order, StockSustainabilityService $dss)
     {
         try {
             $salesOrder = SalesOrder::findOrFail($order);
@@ -119,6 +160,10 @@ class EcoPushController extends Controller
                 return redirect()->back()->withErrors([
                     'error' => 'This order has already been pushed and cannot be pushed again.',
                 ]);
+            }
+
+            if ($blocker = $this->enforceSustainability($salesOrder, $dss)) {
+                return redirect()->back()->withErrors(['error' => $blocker]);
             }
 
             $salesOrder->update([
@@ -135,8 +180,11 @@ class EcoPushController extends Controller
 
     /**
      * Push to Order Management.
+     *
+     * Same DSS gate as SCM pushes — sustainability is checked before ANY
+     * acceptance path.
      */
-    public function pushToOrderMgmt($order)
+    public function pushToOrderMgmt($order, StockSustainabilityService $dss)
     {
         try {
             $salesOrder = SalesOrder::findOrFail($order);
@@ -145,6 +193,10 @@ class EcoPushController extends Controller
                 return redirect()->back()->withErrors([
                     'error' => 'This order has already been pushed and cannot be pushed again.',
                 ]);
+            }
+
+            if ($blocker = $this->enforceSustainability($salesOrder, $dss)) {
+                return redirect()->back()->withErrors(['error' => $blocker]);
             }
 
             $salesOrder->update([

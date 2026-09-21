@@ -17,26 +17,36 @@ class GeofenceAccessMiddleware
             return $next($request);
         }
 
-        // Fetch the authorized safe zone for this user
-        $safeZone = CeoLocation::where('user_id', auth()->id())->latest()->first();
+        // Fetch ALL active authorized zones for this user (multi-site support)
+        $safeZones = CeoLocation::where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->latest()
+            ->get();
+
+        // Fallback for DBs where the migration hasn't run yet
+        if ($safeZones->isEmpty()) {
+            $safeZones = CeoLocation::where('user_id', auth()->id())->latest()->take(1)->get();
+        }
 
         // If no safe zone is set, we block access for security
-        if (!$safeZone) {
+        if ($safeZones->isEmpty()) {
             return $this->deny($request, 'Security Error: No authorized zone defined.');
         }
 
-        // 2. CHECK GPS: THE PRIMARY VALIDATION
+        // 2. CHECK GPS: THE PRIMARY VALIDATION (valid inside ANY active site)
         $currentLat = $request->header('X-User-Lat');
         $currentLng = $request->header('X-User-Lng');
 
         if ($currentLat && $currentLng) {
-            $distance = $this->calculateDistance(
-                $safeZone->latitude, $safeZone->longitude,
-                $currentLat, $currentLng
-            );
+            foreach ($safeZones as $safeZone) {
+                $distance = $this->calculateDistance(
+                    $safeZone->latitude, $safeZone->longitude,
+                    $currentLat, $currentLng
+                );
 
-            if ($distance <= $safeZone->range_radius) {
-                return $next($request); // GPS Validated
+                if ($distance <= $safeZone->range_radius) {
+                    return $next($request); // GPS Validated
+                }
             }
         }
 

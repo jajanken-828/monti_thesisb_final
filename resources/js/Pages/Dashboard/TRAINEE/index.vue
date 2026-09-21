@@ -82,21 +82,21 @@ const payslipDetails = ref({
         <template #header>
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 class="font-bold text-2xl text-gray-900 leading-tight">
+                    <h2 class="font-bold text-2xl text-gray-900 dark:text-zinc-100 leading-tight">
                         Trainee Workspace
                     </h2>
-                    <p class="text-sm text-gray-500">Welcome back, {{ user.name }} • {{ formattedDate }}</p>
+                    <p class="text-sm text-gray-500 dark:text-zinc-400">Welcome back, {{ user.name }} • {{ formattedDate }}</p>
                 </div>
 
                 <div class="flex items-center space-x-3">
                     <button @click="showAnnouncements = true"
-                        class="relative p-2 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition shadow-sm">
+                        class="relative p-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full hover:bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-800 transition shadow-sm">
                         <span class="absolute top-1 right-1 flex h-3 w-3">
                             <span
                                 class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-600"></span>
                         </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600 dark:text-zinc-400" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -111,7 +111,7 @@ const payslipDetails = ref({
             </div>
         </template>
 
-        <div class="py-10 bg-gray-50 min-h-screen">
+        <div class="py-10 bg-gray-50 dark:bg-zinc-800 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
@@ -140,12 +140,12 @@ const payslipDetails = ref({
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center">
-                        <h4 class="text-sm font-bold text-gray-400 uppercase tracking-tight mb-4 flex items-center">
+                    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 p-6 flex flex-col justify-center">
+                        <h4 class="text-sm font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-tight mb-4 flex items-center">
                             <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span> System Status
                         </h4>
                         <button @click="handleAttendance"
-                            :class="isTimedIn ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200'"
+                            :class="isTimedIn ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200' : 'bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 text-emerald-600 dark:text-emerald-400 border-emerald-200'"
                             class="group relative w-full py-6 rounded-xl border-2 transition-all duration-300 overflow-hidden">
                             <span class="relative z-10 font-black text-lg tracking-tighter">
                                 {{ isTimedIn ? 'CLOCK OUT' : 'CLOCK IN' }}
@@ -154,46 +154,46 @@ const payslipDetails = ref({
                                 class="absolute inset-0 opacity-0 group-hover:opacity-10 bg-current transition-opacity">
                             </div>
                         </button>
-                        <p class="text-[10px] text-gray-400 mt-3 text-center uppercase font-bold">Location: Registered
+                        <p class="text-[10px] text-gray-400 dark:text-zinc-500 mt-3 text-center uppercase font-bold">Location: Registered
                             Office IP
                         </p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-400 uppercase">Progress</span>
-                            <div class="p-1.5 bg-blue-50 rounded-lg text-blue-600">
+                            <span class="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase">Progress</span>
+                            <div class="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-3xl font-black text-gray-800">{{ stats.progress }}%</div>
-                        <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3">
+                        <div class="text-3xl font-black text-gray-800 dark:text-zinc-200">{{ stats.progress }}%</div>
+                        <div class="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-1.5 mt-3">
                             <div class="bg-blue-600 h-1.5 rounded-full" :style="`width: ${stats.progress}%`"></div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-400 uppercase">Active Modules</span>
-                            <div class="p-1.5 bg-green-50 rounded-lg text-green-600">
+                            <span class="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase">Active Modules</span>
+                            <div class="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-3xl font-black text-gray-800">{{ stats.assigned_modules }}</div>
-                        <p class="text-xs text-gray-500 mt-2">2 modules pending review</p>
+                        <div class="text-3xl font-black text-gray-800 dark:text-zinc-200">{{ stats.assigned_modules }}</div>
+                        <p class="text-xs text-gray-500 dark:text-zinc-400 mt-2">2 modules pending review</p>
                     </div>
 
-                    <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="bg-white dark:bg-zinc-900 p-5 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-400 uppercase">Days Left</span>
+                            <span class="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase">Days Left</span>
                             <div class="p-1.5 bg-orange-50 rounded-lg text-orange-600">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -201,12 +201,12 @@ const payslipDetails = ref({
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-3xl font-black text-gray-800">{{ stats.days_remaining }}</div>
-                        <p class="text-xs text-gray-500 mt-2">End date: April 15, 2026</p>
+                        <div class="text-3xl font-black text-gray-800 dark:text-zinc-200">{{ stats.days_remaining }}</div>
+                        <p class="text-xs text-gray-500 dark:text-zinc-400 mt-2">End date: April 15, 2026</p>
                     </div>
 
                     <div @click="showPayslip = true"
-                        class="bg-indigo-50 p-5 rounded-xl border border-indigo-100 shadow-sm cursor-pointer group hover:bg-indigo-100 transition text-left">
+                        class="bg-indigo-50 dark:bg-indigo-900/30 p-5 rounded-xl border border-indigo-100 shadow-sm cursor-pointer group hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition text-left">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-bold text-indigo-400 uppercase">Payroll</span>
                             <div class="p-1.5 bg-indigo-600 rounded-lg text-white">
@@ -219,7 +219,7 @@ const payslipDetails = ref({
                         <div class="text-lg font-bold text-indigo-900 group-hover:translate-x-1 transition-transform">
                             Latest
                             Payslip</div>
-                        <p class="text-xs text-indigo-600 font-bold mt-2 flex items-center">
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-2 flex items-center">
                             View Details
                             <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -230,32 +230,32 @@ const payslipDetails = ref({
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-1 space-y-8">
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
-                                <h4 class="font-bold text-gray-800">My Profile</h4>
+                        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                            <div class="bg-gray-50 dark:bg-zinc-800 px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
+                                <h4 class="font-bold text-gray-800 dark:text-zinc-200">My Profile</h4>
                             </div>
                             <div class="p-6">
                                 <div class="flex items-center space-x-4 mb-6">
                                     <div
-                                        class="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl border-2 border-white shadow-md">
+                                        class="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xl border-2 border-white shadow-md">
                                         {{ user.name.charAt(0) }}
                                     </div>
                                     <div>
-                                        <h5 class="font-bold text-gray-900">{{ user.name }}</h5>
-                                        <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">Trainee ID:
+                                        <h5 class="font-bold text-gray-900 dark:text-zinc-100">{{ user.name }}</h5>
+                                        <p class="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-widest font-bold">Trainee ID:
                                             #10294
                                         </p>
                                     </div>
                                 </div>
                                 <div class="space-y-4 text-sm">
                                     <div class="flex justify-between">
-                                        <span class="text-gray-400">Email</span>
-                                        <span class="font-medium text-gray-700">{{ user.email }}</span>
+                                        <span class="text-gray-400 dark:text-zinc-500">Email</span>
+                                        <span class="font-medium text-gray-700 dark:text-zinc-300">{{ user.email }}</span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-gray-400">Access Level</span>
+                                        <span class="text-gray-400 dark:text-zinc-500">Access Level</span>
                                         <span
-                                            class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-black uppercase">Internal</span>
+                                            class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-[10px] font-black uppercase">Internal</span>
                                     </div>
                                 </div>
                             </div>
@@ -263,25 +263,25 @@ const payslipDetails = ref({
                     </div>
 
                     <div class="lg:col-span-2">
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full">
+                        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden h-full">
                             <div
-                                class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                                <h4 class="font-bold text-gray-800">Trainee Notifications</h4>
-                                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                                class="bg-gray-50 dark:bg-zinc-800 px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center">
+                                <h4 class="font-bold text-gray-800 dark:text-zinc-200">Trainee Notifications</h4>
+                                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded">
                                     {{ notifications.length }} New Alerts
                                 </span>
                             </div>
                             <div class="p-6">
                                 <div class="space-y-4">
                                     <div v-for="notif in notifications" :key="notif.id"
-                                        class="p-4 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group">
+                                        class="p-4 rounded-xl border border-gray-100 dark:border-zinc-800 hover:border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50/30 transition-all cursor-pointer group">
                                         <div class="flex justify-between items-start mb-1">
                                             <div class="flex items-center">
                                                 <div :class="{
-                                                    'bg-blue-100 text-blue-600': notif.type === 'upcoming',
-                                                    'bg-red-100 text-red-600': notif.type === 'late',
+                                                    'bg-blue-100 dark:bg-blue-900/40 text-blue-600': notif.type === 'upcoming',
+                                                    'bg-red-100 dark:bg-red-900/30 text-red-600': notif.type === 'late',
                                                     'bg-amber-100 text-amber-600': notif.type === 'action',
-                                                    'bg-green-100 text-green-600': notif.type === 'info'
+                                                    'bg-green-100 dark:bg-green-900/30 text-green-600': notif.type === 'info'
                                                 }" class="p-2 rounded-lg mr-3">
                                                     <svg v-if="notif.type === 'upcoming'" class="w-4 h-4" fill="none"
                                                         stroke="currentColor" viewBox="0 0 24 24">
@@ -298,20 +298,20 @@ const payslipDetails = ref({
                                                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                     </svg>
                                                 </div>
-                                                <p class="text-sm font-bold text-gray-800">{{ notif.title }}</p>
+                                                <p class="text-sm font-bold text-gray-800 dark:text-zinc-200">{{ notif.title }}</p>
                                             </div>
                                             <span :class="{
-                                                'bg-blue-50 text-blue-700': notif.type === 'upcoming',
-                                                'bg-red-50 text-red-700': notif.type === 'late',
-                                                'bg-amber-50 text-amber-700': notif.type === 'action',
-                                                'bg-green-50 text-green-700': notif.type === 'info'
+                                                'bg-blue-50 dark:bg-blue-900/30 text-blue-700': notif.type === 'upcoming',
+                                                'bg-red-50 dark:bg-red-900/20 text-red-700': notif.type === 'late',
+                                                'bg-amber-50 dark:bg-amber-900/20 text-amber-700': notif.type === 'action',
+                                                'bg-green-50 dark:bg-green-900/20 text-green-700': notif.type === 'info'
                                             }" class="text-[10px] font-black uppercase px-2 py-0.5 rounded">
                                                 {{ notif.status }}
                                             </span>
                                         </div>
                                         <div class="ml-11">
-                                            <p class="text-xs text-gray-600 leading-relaxed">{{ notif.message }}</p>
-                                            <p class="text-[10px] text-gray-400 mt-2 font-medium">{{ notif.date }}</p>
+                                            <p class="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">{{ notif.message }}</p>
+                                            <p class="text-[10px] text-gray-400 dark:text-zinc-500 mt-2 font-medium">{{ notif.date }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -325,12 +325,12 @@ const payslipDetails = ref({
         <div v-if="showPayslip" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showPayslip = false"></div>
             <div
-                class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative z-10 border border-indigo-100">
+                class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative z-10 border border-indigo-100">
                 <div class="p-8">
-                    <div class="flex justify-between items-center mb-6 pb-6 border-b border-gray-100">
+                    <div class="flex justify-between items-center mb-6 pb-6 border-b border-gray-100 dark:border-zinc-800">
                         <div>
-                            <h3 class="text-2xl font-black text-gray-900 tracking-tighter">Earnings Statement</h3>
-                            <p class="text-sm text-gray-500 font-medium">Payroll Period: {{ payslipDetails.period }}</p>
+                            <h3 class="text-2xl font-black text-gray-900 dark:text-zinc-100 tracking-tighter">Earnings Statement</h3>
+                            <p class="text-sm text-gray-500 dark:text-zinc-400 font-medium">Payroll Period: {{ payslipDetails.period }}</p>
                         </div>
                         <div class="bg-indigo-600 text-white p-3 rounded-2xl shadow-lg shadow-indigo-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -341,31 +341,31 @@ const payslipDetails = ref({
                     </div>
 
                     <div class="space-y-6">
-                        <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                        <div class="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-zinc-800 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
                             <div>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase">Trainee Name</p>
+                                <p class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Trainee Name</p>
                                 <p class="text-sm font-bold">{{ user.name }}</p>
                             </div>
                             <div>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase">Account Status</p>
-                                <p class="text-sm font-bold text-green-600">Active / Verified</p>
+                                <p class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase">Account Status</p>
+                                <p class="text-sm font-bold text-green-600 dark:text-green-400">Active / Verified</p>
                             </div>
                         </div>
 
                         <div class="space-y-3">
-                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Allowance Breakdown
+                            <h4 class="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Allowance Breakdown
                             </h4>
                             <div class="flex justify-between py-2 border-b border-gray-50"><span
-                                    class="text-gray-600 text-sm">Monthly Basic Stipend</span><span
+                                    class="text-gray-600 dark:text-zinc-400 text-sm">Monthly Basic Stipend</span><span
                                     class="font-bold">₱{{
                                     payslipDetails.basicAllowance.toFixed(2) }}</span></div>
                             <div class="flex justify-between py-2 border-b border-gray-50"><span
-                                    class="text-gray-600 text-sm">Transportation Allowance</span><span
+                                    class="text-gray-600 dark:text-zinc-400 text-sm">Transportation Allowance</span><span
                                     class="font-bold">₱{{
                                         payslipDetails.transportAllowance.toFixed(2) }}</span></div>
                             <div class="flex justify-between py-2"><span
                                     class="text-red-500 text-sm italic font-medium">Deductions (Late
-                                    Penalties)</span><span class="font-bold text-red-600">-₱{{
+                                    Penalties)</span><span class="font-bold text-red-600 dark:text-red-400">-₱{{
                                     payslipDetails.lateDeductions.toFixed(2) }}</span></div>
                         </div>
 
@@ -377,14 +377,14 @@ const payslipDetails = ref({
                     </div>
 
                     <div class="flex items-center justify-between mt-8">
-                        <button class="text-indigo-600 text-sm font-bold hover:underline flex items-center">
+                        <button class="text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
                             Download PDF
                         </button>
                         <button @click="showPayslip = false"
-                            class="bg-gray-100 text-gray-700 px-6 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 transition">Close</button>
+                            class="bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 px-6 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 dark:bg-zinc-700 transition">Close</button>
                     </div>
                 </div>
             </div>
@@ -396,7 +396,7 @@ const payslipDetails = ref({
                 @click="showAnnouncements = false">
             </div>
             <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
-                <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col">
+                <div class="w-screen max-w-md bg-white dark:bg-zinc-900 shadow-2xl flex flex-col">
                     <div class="px-6 py-8 bg-indigo-900 text-white">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-2xl font-black">Announcements</h3>
@@ -415,18 +415,18 @@ const payslipDetails = ref({
                             <div
                                 class="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-indigo-600 ring-4 ring-white">
                             </div>
-                            <span class="text-[10px] font-black text-indigo-600 uppercase">Today</span>
-                            <h5 class="font-bold text-gray-900 mt-1">System Wide Update</h5>
-                            <p class="text-sm text-gray-500 mt-2 leading-relaxed">The ERP will undergo maintenance at
+                            <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Today</span>
+                            <h5 class="font-bold text-gray-900 dark:text-zinc-100 mt-1">System Wide Update</h5>
+                            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-2 leading-relaxed">The ERP will undergo maintenance at
                                 11:00 PM
                                 tonight. Please save your progress.</p>
                         </div>
-                        <div class="relative pl-8 pb-6 border-l-2 border-gray-100">
+                        <div class="relative pl-8 pb-6 border-l-2 border-gray-100 dark:border-zinc-800">
                             <div class="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-gray-300 ring-4 ring-white">
                             </div>
-                            <span class="text-[10px] font-black text-gray-400 uppercase">Feb 14, 2026</span>
-                            <h5 class="font-bold text-gray-700 mt-1">Valentine's Day Social</h5>
-                            <p class="text-sm text-gray-500 mt-2 leading-relaxed">Join us for coffee in the main lobby
+                            <span class="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase">Feb 14, 2026</span>
+                            <h5 class="font-bold text-gray-700 dark:text-zinc-300 mt-1">Valentine's Day Social</h5>
+                            <p class="text-sm text-gray-500 dark:text-zinc-400 mt-2 leading-relaxed">Join us for coffee in the main lobby
                                 at 3:00
                                 PM today!</p>
                         </div>
@@ -437,11 +437,11 @@ const payslipDetails = ref({
 
         <div v-if="showLeaveForm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="showLeaveForm = false"></div>
-            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative z-10">
+            <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden relative z-10">
                 <div class="p-8">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl font-black text-gray-900">Request Leave</h3>
-                        <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-zinc-100">Request Leave</h3>
+                        <div class="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -451,26 +451,26 @@ const payslipDetails = ref({
                     <form @submit.prevent="showLeaveForm = false" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase mb-2">Start Date</label>
+                                <label class="block text-xs font-black text-gray-400 dark:text-zinc-500 uppercase mb-2">Start Date</label>
                                 <input type="date"
-                                    class="w-full border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                    class="w-full border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase mb-2">End Date</label>
+                                <label class="block text-xs font-black text-gray-400 dark:text-zinc-500 uppercase mb-2">End Date</label>
                                 <input type="date"
-                                    class="w-full border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                    class="w-full border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase mb-2">Reason for
+                            <label class="block text-xs font-black text-gray-400 dark:text-zinc-500 uppercase mb-2">Reason for
                                 Absence</label>
                             <textarea rows="4"
-                                class="w-full border-gray-200 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                class="w-full border-gray-200 dark:border-zinc-700 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                                 placeholder="Please provide details..."></textarea>
                         </div>
                         <div class="flex items-center justify-end space-x-4 pt-4">
                             <button type="button" @click="showLeaveForm = false"
-                                class="text-sm font-bold text-gray-400 hover:text-gray-600">Discard</button>
+                                class="text-sm font-bold text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:text-zinc-400">Discard</button>
                             <button type="submit"
                                 class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">Submit
                                 Application</button>

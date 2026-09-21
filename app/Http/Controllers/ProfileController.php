@@ -6,7 +6,6 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -65,23 +64,15 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's account.
+     * Delete the user's account — DISABLED by policy.
+     * No user may delete their own account; only IT can suspend or
+     * disable accounts (IT Access Control). The route is kept so old
+     * clients fail closed with a clear message instead of a 404.
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
+        return Redirect::back()->withErrors([
+            'error' => 'Account deletion is disabled. Only IT can suspend or disable an account — please contact your IT administrator.',
         ]);
-
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
     }
 }

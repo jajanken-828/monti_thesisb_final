@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     Users, Briefcase, TrendingUp, Clock, Calendar, MessageSquare,
-    CheckCircle, XCircle, AlertCircle, Building2, UserCheck,
+    CheckCircle, XCircle, AlertCircle, Building2,
     PieChart, BarChart3, ArrowRight, Eye, Share2, Sparkles, LayoutDashboard
 } from 'lucide-vue-next';
 
@@ -66,9 +66,6 @@ const quickLinks = computed(() => {
     }
     if (canViewPage('socials')) {
         links.push({ label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' });
-    }
-    if (canViewPage('access') && (isCeo.value || isManager.value)) {
-        links.push({ label: 'Access Control', href: route('crm.access.index'), icon: UserCheck, permKey: 'access' });
     }
     return links;
 });

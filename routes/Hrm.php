@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Hrm\AccessController;
 use App\Http\Controllers\Hrm\AnalyticsController;
 use App\Http\Controllers\Hrm\ApplicantController as HrmApplicantController;
 use App\Http\Controllers\Hrm\EmployeeController;
@@ -100,14 +99,6 @@ Route::prefix('dashboard/hrm')->name('hrm.')->middleware(['auth', 'verified'])->
     Route::post('/onboarding/{id}/convert', [OnboardingController::class, 'convert'])
         ->middleware('page.permission:onboarding,edit')
         ->name('onboarding.convert');
-
-    // Access Control (page: access)
-    Route::get('/access', [AccessController::class, 'index'])
-        ->middleware('page.permission:access,view')
-        ->name('access.index');
-    Route::post('/access/update', [AccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')
-        ->name('access.update');
 
     // Payroll (page: payroll)
     Route::get('/payroll', [PayrollController::class, 'index'])

@@ -22,7 +22,10 @@ class CheckRole
             abort(403, 'Unauthorized.');
         }
 
-        // CEO has unrestricted access to all modules
+        // CEO (President) has unrestricted access to all modules, including
+        // role:COO gates — this preserves presidential oversight of the VP
+        // workspace after the role split. COO itself is granted explicitly
+        // per route (role:COO) and bypasses nothing else.
         if ($user->role === 'CEO') {
             return $next($request);
         }

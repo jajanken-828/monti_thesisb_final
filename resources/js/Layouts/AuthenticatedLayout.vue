@@ -1,6 +1,7 @@
 <script setup>
 import Sidebar from './Sidebar.vue'
 import MobileSidebar from './MobileSidebar.vue'
+import TopBar from './Navbar/TopBar.vue'
 import { usePage } from '@inertiajs/vue3'
 import { computed, onMounted, ref, watch, onErrorCaptured } from 'vue'
 import axios from 'axios'
@@ -101,6 +102,7 @@ const reloadPage = () => {
         <!-- Normal Layout -->
         <Sidebar v-if="!hasError" />
         <div class="md:pl-64 flex flex-col flex-1 min-h-screen">
+            <TopBar v-if="!hasError" />
             <main class="py-8 flex-1 bg-gray-50 dark:bg-zinc-900">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <!-- Location status – always visible -->

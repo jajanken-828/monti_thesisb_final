@@ -10,7 +10,6 @@ return [
         'onboarding'   => 'Onboarding',
         'payroll'      => 'Payroll',
         'analytics'    => 'Analytics',
-        'access'       => 'Access Control',
     ],
 
     'crm' => [
@@ -20,14 +19,17 @@ return [
         'customer_profiles'  => 'Customer Profiles',
         'investigation'      => 'Investigation',
         'socials'            => 'Socials',
-        'access'             => 'Access Control',
     ],
 
     'scm' => [
+        'dashboard'    => 'Dashboard',
         'sales'        => 'Sales Orders',
         'procurement'  => 'Procurement Orders',
+        'planning'     => 'Demand & Materials Planning',
+        'purchase'     => 'Purchase Orders',
+        'deliveries'   => 'Inbound Deliveries',
         'vendor'       => 'Vendors',
-        'access'       => 'Access Control',
+        'analytics'    => 'Analytics',
     ],
 
     'man' => [
@@ -35,7 +37,6 @@ return [
         'production' => 'Production',
         'reject'     => 'Rejected',
         'inventory'  => 'Inventory',
-        'access'     => 'Access Control',
     ],
 
     'inv' => [
@@ -44,7 +45,6 @@ return [
         'products'  => 'Products',
         'bom'       => 'BOM',
         'checker'   => 'Checker',
-        'access'    => 'Access Control',
     ],
 
     'ord' => [
@@ -53,7 +53,6 @@ return [
         'productions' => 'Productions',
         'delivery'    => 'Delivery',
         'returns'     => 'Returns',
-        'access'      => 'Access Control',
     ],
 
     'war' => [
@@ -62,7 +61,6 @@ return [
         'monitor'   => 'Monitor',
         'packages'  => 'Packages',
         'reject'    => 'Rejects',
-        'access'    => 'Access Control',
     ],
 
     'eco' => [
@@ -72,7 +70,6 @@ return [
         'supplier'  => 'Suppliers',
         'credit'    => 'Credit',
         'push'      => 'Push',
-        'access'    => 'Access Control',
     ],
 
     'log' => [
@@ -85,7 +82,6 @@ return [
         'tracking'  => 'Tracking',
         'proof'     => 'Proof of Delivery',
         'reports'   => 'Reports',
-        'access'    => 'Access Control',
     ],
 
     'pro' => [
@@ -93,7 +89,6 @@ return [
         'requests' => 'Material Requests',
         'quotations' => 'Quotations',
         'receipt' => 'Receipt',
-        'access' => 'Access Control',
     ],
 
     'proj' => [
@@ -106,6 +101,7 @@ return [
         'assets' => 'Assets',
         'monitoring' => 'Monitoring',
         'knowledge' => 'Knowledge Base',
+        'location' => 'Geolocation',
         'changes' => 'Changes',
         'access' => 'Access Control',
         'access_control' => 'Org Access Control',

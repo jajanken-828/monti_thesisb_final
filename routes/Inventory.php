@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Inv\BomController;
 use App\Http\Controllers\Inv\CheckerController;
-use App\Http\Controllers\Inv\InvAccessController;
 use App\Http\Controllers\Inv\InvDashboardController;
 use App\Http\Controllers\Inv\MaterialController;
 use App\Http\Controllers\Inv\ProductController;
@@ -54,11 +53,6 @@ Route::prefix('dashboard/inventory')->name('inv.')->middleware(['auth', 'verifie
         ->middleware('page.permission:checker,edit')->name('checker.procurement');
     Route::post('/checker/order/{order}', [CheckerController::class, 'checkOrder'])
         ->middleware('page.permission:checker,edit')->name('checker.order');
-
-    Route::get('/access', [InvAccessController::class, 'index'])
-        ->middleware('page.permission:access,view')->name('access');
-    Route::post('/access/update', [InvAccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')->name('access.update');
 
     Route::get('/product', [ProductController::class, 'product'])
         ->middleware('page.permission:products,view')->name('manager.product');

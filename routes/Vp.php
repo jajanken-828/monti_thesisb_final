@@ -8,14 +8,13 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Vice Presidency (VP)
+| Vice Presidency (VP) — Chief Operating Officer workspace
 |--------------------------------------------------------------------------
-| The VP's own UI: daily execution (operations, directives, workforce).
-| Gated by role:CEO, which both the President and the Vice President
-| hold — menus separate them (VP sees this module, President sees the
-| CEO module), while oversight URLs stay reachable to both.
+| The VP holds role COO (position vice_president) and sees this module;
+| the President (role CEO) keeps oversight access through the CEO bypass
+| in CheckRole, while all other roles are denied.
 */
-Route::prefix('dashboard/vp')->name('vp.')->middleware(['auth', 'verified', 'role:CEO'])->group(function () {
+Route::prefix('dashboard/vp')->name('vp.')->middleware(['auth', 'verified', 'role:COO'])->group(function () {
 
     // Operations Command (daily plant pulse, read-only)
     Route::get('/operations', [VpOperationsController::class, 'index'])->name('operations');

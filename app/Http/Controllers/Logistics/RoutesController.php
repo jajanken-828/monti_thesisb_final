@@ -29,6 +29,7 @@ class RoutesController extends Controller
             'routes'        => $routes,
             'clients'       => $clients,
             'montiLocation' => $montiLocation,
+            'montiLocations' => CeoLocation::where('is_active', true)->latest()->get(),
         ]);
     }
 

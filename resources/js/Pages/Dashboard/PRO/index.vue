@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import {
-    ShoppingCart, ClipboardList, FileText, Receipt, ShieldCheck,
+    ShoppingCart, ClipboardList, FileText, Receipt,
     Sparkles, ArrowUpRight, ChevronRight
 } from 'lucide-vue-next';
 
@@ -32,14 +32,6 @@ const cards = [
         gradient: 'from-amber-500 via-orange-600 to-rose-600',
         chip: 'POs + Pay',
     },
-    {
-        title: 'Access Control',
-        desc: 'CEO-only procurement permission management.',
-        href: route('pro.manager.access.index'),
-        icon: ShieldCheck,
-        gradient: 'from-slate-600 via-gray-700 to-zinc-800',
-        chip: 'Restricted',
-    },
 ];
 </script>
 
@@ -63,7 +55,7 @@ const cards = [
                                 <Sparkles class="h-3.5 w-3.5" /> PRO · Procurement
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Procurement Manager Dashboard</h1>
-                            <p class="text-sm text-blue-100/90">Requests, quotations, receipts & access — in one place</p>
+                            <p class="text-sm text-blue-100/90">Requests, quotations & receipts — in one place</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur flex items-center gap-1.5">

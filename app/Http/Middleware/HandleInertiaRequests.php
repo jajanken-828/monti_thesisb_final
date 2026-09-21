@@ -30,13 +30,26 @@ class HandleInertiaRequests extends Middleware
         $assignedClientIds = [];
 
         if ($user) {
-            // 1. Fetch explicit permissions from DB
+            // 1. Fetch explicit permissions from DB (raw — includes 'disabled'
+            //    rows so the auto-grant check below sees the exact access set).
             $explicitPermissions = PagePermission::where('user_id', $user->id)
                 ->get(['module', 'page', 'permission_level'])
                 ->toArray();
 
             // 2. Auto‑grant full access for module managers/staff on their own module
+            //    (skipped when ANY explicit rows exist for that module — even
+            //    all-'disabled' ones, which mean "no access yet").
             $augmentedPermissions = $this->augmentPermissionsForModuleUser($user, $explicitPermissions);
+
+            // 3. Drop 'disabled' rows — they grant nothing. The frontend treats
+            //    presence in this list as a grant (sidebar filtering, usePageAccess),
+            //    so a disabled row must never be shared. A user whose every row
+            //    is disabled therefore shares an empty list → empty sidebar →
+            //    AwaitingAccess landing page.
+            $usablePermissions = array_values(array_filter(
+                $augmentedPermissions,
+                fn ($perm) => strtolower($perm['permission_level'] ?? 'edit') !== 'disabled'
+            ));
 
             // ---- View/edit levels are significant ----
             // Every entry keeps its real permission_level ('view' or 'edit';
@@ -50,12 +63,23 @@ class HandleInertiaRequests extends Middleware
                     $perm['permission_level'] = 'edit';
                 }
                 return $perm;
-            }, $augmentedPermissions);
+            }, $usablePermissions);
 
             // 3. Group by module (for backward compatibility with frontend consumers)
             $permissionsGrouped = collect($pagePermissionsList)
                 ->groupBy('module')
                 ->map(fn ($perms) => $perms->pluck('page'));
+
+            // 4. Modules with ANY explicit row (including 'disabled'). The
+            //    sidebar uses this to decide whether explicit grants override
+            //    the native manager/staff full-access shortcut — mirroring
+            //    CheckPagePermission: explicit rows are the exact access set.
+            $explicitModules = collect($explicitPermissions)
+                ->map(fn ($perm) => strtoupper((string) ($perm['module'] ?? '')))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
 
             // Fetch workforce permissions
             $workforcePermissions = WorkforcePermission::where('user_id', $user->id)->get();
@@ -82,7 +106,9 @@ class HandleInertiaRequests extends Middleware
                 'workforce_permissions'  => $workforcePermissions,
                 'crmPagePermissions'     => $crmPagePermissions,
                 'granted_modules'        => $grantedModules,
-                'page_permissions'       => $pagePermissionsList, // all pages here are full access
+                'page_permissions'       => $pagePermissionsList, // usable (view/edit) grants only
+                'explicit_modules'       => $explicitModules, // modules with ANY row, incl. disabled
+                'root_module'            => $this->getRootModuleForUser($user), // secretary/GM home module
             ]);
         }
 
@@ -167,24 +193,47 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
+     * Home (root) module for a secretary / special officer — mirrors
+     * CheckPagePermission::getRootModuleForUser(). Only this module carries
+     * automatic full access; extra granted modules are filtered per page.
+     */
+    protected function getRootModuleForUser($user): ?string
+    {
+        $coreModules = ['HRM', 'CRM', 'MAN', 'LOG'];
+
+        if (! empty($user->is_manufacturing_supervisor)) {
+            return 'MAN';
+        }
+
+        $roleUpper = strtoupper($user->role ?? '');
+        foreach ($coreModules as $core) {
+            if (str_contains($roleUpper, $core)) {
+                return $core;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get all page names for a given module.
      */
     protected function getModulePages(string $module): array
     {
         $map = [
-            'HRM' => ['dashboard', 'employee', 'application', 'interview', 'trainee', 'onboarding', 'access', 'payroll', 'analytics'],
-            'CRM' => ['dashboard', 'leads', 'approvals', 'customer_profiles', 'investigation', 'socials', 'access'],
-            'SCM' => ['sales', 'procurement', 'vendor', 'access'],
+            'HRM' => ['dashboard', 'employee', 'application', 'interview', 'trainee', 'onboarding', 'payroll', 'analytics'],
+            'CRM' => ['dashboard', 'leads', 'approvals', 'customer_profiles', 'investigation', 'socials'],
+            'SCM' => ['dashboard', 'sales', 'procurement', 'planning', 'purchase', 'deliveries', 'vendor', 'analytics'],
             'FIN' => ['dashboard', 'receivables', 'payables', 'expenses', 'payroll', 'reports'],
-            'MAN' => ['dashboard', 'production', 'reject', 'inventory', 'access'],
-            'INV' => ['dashboard', 'materials', 'products', 'bom', 'checker', 'access'],
-            'ORD' => ['dashboard', 'orders', 'productions', 'delivery', 'returns', 'access'],
-            'WAR' => ['warehouse', 'receiving', 'monitor', 'packages', 'reject', 'access'],
-            'ECO' => ['dashboard', 'store', 'inquiry', 'supplier', 'credit', 'push', 'access'],
-            'PRO' => ['dashboard', 'requests', 'quotations', 'receipt', 'access'],
+            'MAN' => ['dashboard', 'production', 'reject', 'inventory'],
+            'INV' => ['dashboard', 'materials', 'products', 'bom', 'checker'],
+            'ORD' => ['dashboard', 'orders', 'productions', 'delivery', 'returns'],
+            'WAR' => ['warehouse', 'receiving', 'monitor', 'packages', 'reject'],
+            'ECO' => ['dashboard', 'store', 'inquiry', 'supplier', 'credit', 'push'],
+            'PRO' => ['dashboard', 'requests', 'quotations', 'receipt'],
             'PROJ' => ['dashboard'],
             'IT' => ['dashboard', 'tickets', 'assets', 'monitoring', 'knowledge', 'changes', 'access', 'access_control', 'access_logs'],
-            'LOG' => ['dashboard', 'load', 'dispatch', 'fleet', 'drivers', 'routes', 'tracking', 'proof', 'reports', 'access'],
+            'LOG' => ['dashboard', 'load', 'dispatch', 'fleet', 'drivers', 'routes', 'tracking', 'proof', 'reports'],
             'WRF' => ['dashboard', 'scheduler', 'leave', 'absent'],
         ];
 

@@ -5,8 +5,8 @@ import { computed, ref } from 'vue'
 import {
     LayoutDashboard, ShoppingCart, ShoppingBag, MessageSquare,
     Receipt, HelpCircle, User, Truck, Navigation, Clock, CalendarDays,
-    History, HandCoins, LogOut, Building2, UserCog2, ShieldCheck, MapPin,
-    FileText, Megaphone, Stamp, Bell, Printer, Target, Wrench, Repeat, ClipboardList, Zap,
+    History, HandCoins, LogOut, Building2, UserCog2, ShieldCheck,
+    FileText, Megaphone, Stamp, Bell, Printer, Target, Wrench, Repeat, ClipboardList, Zap, ScanSearch,
 } from 'lucide-vue-next'
 
 import { useDropdown, useDynamicDropdowns, useSidebarScroll } from './composables/useSidebarPersistence'
@@ -46,8 +46,8 @@ const roleDropdowns = useDynamicDropdowns('role_')
 
 // ─── PERMISSIONS ──────────────────────────────────────────────────────────────
 const {
-    grantedModules, canAccessModule, canAccessWorkforce, hasWorkforcePermission,
-    hasHrmPermission, hasCrmPermission, hasModulePermission,
+    grantedModules, rootModule, canAccessModule, canAccessWorkforce, hasWorkforcePermission,
+    hasHrmPermission, hasCrmPermission, hasModulePermission, hasExplicitModuleGrants, hasAnyModuleGrant,
     hasWarehouseAccess, hasInventoryAccess, hasOrdAccess, hasLogisticsAccess,
 } = usePermissions(user, page)
 
@@ -100,10 +100,11 @@ const navItems = computed(() => {
     const items = []
     const userPosition = user.value?.position?.toLowerCase()
     const isCEO = user.value?.role === 'CEO'
+    const isCOO = user.value?.role === 'COO'
     const isSecretaryOrGM = user.value?.position === 'secretary' || user.value?.position === 'special_officer'
 
-    if (isCEO) {
-        const isVP = user.value?.position === 'vice_president'
+    if (isCEO || isCOO) {
+        const isVP = isCOO || user.value?.position === 'vice_president'
         if (isVP) {
             // Vice Presidency: execution arm (operations, directives, workforce).
             items.push({ label: 'VP Dashboard', href: route('vp.operations'), icon: LayoutDashboard })
@@ -122,10 +123,11 @@ const navItems = computed(() => {
         items.push({ label: 'Approvals Center', href: route('ceo.approvals'), icon: Stamp })
         items.push({ label: 'Executive Reports', href: route('ceo.reports'), icon: FileText })
         items.push({ label: 'Board Pack', href: route('ceo.board-pack'), icon: Printer })
+        items.push({ label: 'Deliveries', href: route('ceo.deliveries'), icon: Truck })
+        items.push({ label: 'Traceability', href: route('ceo.traceability'), icon: ScanSearch })
         items.push({ label: 'Goals & Targets', href: route('ceo.goals'), icon: Target })
         items.push({ label: 'Audit Trail', href: route('ceo.audit'), icon: History })
         items.push({ label: 'Organization Chart', href: route('ceo.access'), icon: ShieldCheck })
-        items.push({ label: 'Geolocation', href: route('ceo.location.index'), icon: MapPin })
     }
 
     // ─── SECRETARY WORKSPACE (secretary-exclusive pages + granted modules below) ──
@@ -164,6 +166,9 @@ const navItems = computed(() => {
         grantedModules: grantedModules.value,
         canAccessModule,
         canAccessWorkforce,
+        rootModule: rootModule.value,
+        hasExplicitModuleGrants,
+        hasAnyModuleGrant,
         hasModulePermission,
         hasHrmPermission,
         hasCrmPermission,
@@ -321,6 +326,18 @@ const logoutRoute = computed(() => isClient.value ? route('client.logout') : (is
                         <span v-if="isActive(item.href)" class="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-white"></span>
                     </Link>
                 </template>
+
+                <!-- Empty state: every page is still 'disabled' (IT default) -->
+                <div v-if="navItems.length === 0" class="px-3 py-8 text-center">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-3">
+                        <ShieldCheck class="w-6 h-6 text-indigo-500" />
+                    </div>
+                    <p class="text-xs font-bold text-gray-900 dark:text-white mb-1">No pages assigned yet</p>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                        All of your page permissions are still disabled.<br />
+                        Please wait for the admins to grant you access.
+                    </p>
+                </div>
             </div>
 
             <!-- FOOTER PROFILE -->

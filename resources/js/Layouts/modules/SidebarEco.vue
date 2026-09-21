@@ -1,7 +1,7 @@
 <script>
 import {
     LayoutDashboard, ShoppingBag, MessageSquare, Users as UsersIcon,
-    CreditCard, Send, ShieldCheck,
+    CreditCard, Send,
 } from 'lucide-vue-next'
 
 export const ecoModule = {
@@ -10,7 +10,8 @@ export const ecoModule = {
     icon: ShoppingBag,
     group: 'feature',
 
-    condition: (ctx) => ctx.canAccessModule('ECO'),
+    // Extra-module grants also display the section (filtered per page below).
+    condition: (ctx) => ctx.canAccessModule('ECO') || ctx.hasAnyModuleGrant('ECO'),
 
     getChildren(ctx) {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, canAccessModule, hasModulePermission, grantedModules } = ctx
@@ -21,12 +22,16 @@ export const ecoModule = {
             { label: 'Suppliers', href: route('eco.suppliers'), icon: UsersIcon, permKey: 'supplier' },
             { label: 'Credit', href: route('eco.credit'), icon: CreditCard, permKey: 'credit' },
             { label: 'Push Center', href: route('eco.push'), icon: Send, permKey: 'push' },
-            { label: 'Access Control', href: route('eco.access'), icon: ShieldCheck, permKey: 'access' },
         ]
         if (isCEO) return all
-        if (userPosition === 'manager' && user?.role === 'ECO') return all
-        if (isSecretaryOrGM && canAccessModule('ECO')) return all
-        if (user?.is_manufacturing_supervisor && grantedModules.includes('ECO')) return all
+        // Explicit rows (even all-'disabled') are the exact access set and
+        // override this shortcut — mirrors backend CheckPagePermission.
+        if (userPosition === 'manager' && user?.role === 'ECO' && !ctx.hasExplicitModuleGrants('ECO')) return all
+        // Auto-full on the root module only (mirrors backend CheckPagePermission);
+        // extra granted modules fall through to the per-page filter below.
+        if (isSecretaryOrGM && ctx.rootModule === 'ECO') return all
+        // No supervisor shortcut: the backend grants supervisors the module shell
+        // but every page still needs an explicit row — fall through to filter.
         return all.filter(child => hasModulePermission('ECO', child.permKey))
     },
 }

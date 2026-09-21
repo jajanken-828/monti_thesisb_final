@@ -1,9 +1,7 @@
 <?php
 
-use App\Http\Controllers\Hrm\AccessController;
 use App\Http\Controllers\Hrm\InterviewController;
 use App\Http\Controllers\Hrm\TraineeController;
-use App\Http\Controllers\Pro\ProAccessController;
 use App\Http\Controllers\Pro\ProcurementController;
 use App\Http\Controllers\Pro\ProDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -14,14 +12,14 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Manager-group routes carry page.permission so explicit per-page view/edit
 | grants are enforced. Managers without explicit rows keep full access via
-| the middleware's native shortcut. (Top interview/trainee/access links
-| render HRM pages and are intentionally untouched.)
+| the middleware's native shortcut. (Top interview/trainee links
+| render HRM pages and are intentionally untouched. Access control lives
+| in the CEO module + IT Access Control.)
 |--------------------------------------------------------------------------
 */
 Route::prefix('dashboard/pro')->name('pro.')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/interview', [InterviewController::class, 'index'])->name('interview.index');
     Route::get('/trainee', [TraineeController::class, 'index'])->name('trainee.index');
-    Route::get('/access', [AccessController::class, 'index'])->name('access.index');
 
     Route::middleware(['module.access:PRO', 'position:manager'])->prefix('manager')->name('manager.')->group(function () {
         Route::get('/', [ProDashboardController::class, 'managerDashboard'])
@@ -42,9 +40,5 @@ Route::prefix('dashboard/pro')->name('pro.')->middleware(['auth', 'verified'])->
             ->middleware('page.permission:receipt,edit')->name('purchase-orders.send');
         Route::post('/invoices/{invoiceId}/pay', [ProcurementController::class, 'payInvoice'])
             ->middleware('page.permission:receipt,edit')->name('invoices.pay');
-        Route::get('/access', [ProAccessController::class, 'index'])->name('access.index')
-            ->middleware(['role:CEO', 'page.permission:access,view']);
-        Route::post('/access/update', [ProAccessController::class, 'update'])->name('access.update')
-            ->middleware(['role:CEO', 'page.permission:access,edit']);
     });
 });

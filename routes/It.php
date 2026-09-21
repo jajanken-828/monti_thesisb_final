@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\It\AssetController;
 use App\Http\Controllers\It\ChangeController;
+use App\Http\Controllers\It\GeolocationController;
 use App\Http\Controllers\It\ItAccessController;
 use App\Http\Controllers\It\ItAccessControlController;
 use App\Http\Controllers\It\ItDashboardController;
@@ -104,6 +105,20 @@ Route::prefix('dashboard/it')->name('it.')->middleware(['auth', 'verified', 'mod
         ->middleware(['position:manager', 'page.permission:access_control,edit'])->name('access-control.modules');
     Route::post('/access-control/pages', [ItAccessControlController::class, 'updatePages'])
         ->middleware(['position:manager', 'page.permission:access_control,edit'])->name('access-control.pages');
+    Route::post('/access-control/requests/{id}/reject', [ItAccessControlController::class, 'rejectRequest'])
+        ->middleware(['position:manager', 'page.permission:access_control,edit'])->name('access-control.requests.reject');
+
+    // Strategic geolocation hub — multiple company sites (HQ, warehouses, branches)
+    Route::get('/location', [GeolocationController::class, 'index'])
+        ->middleware('page.permission:location,view')->name('location.index');
+    Route::post('/location/sync', [GeolocationController::class, 'store'])
+        ->middleware('page.permission:location,edit')->name('location.store');
+    Route::put('/location/{location}', [GeolocationController::class, 'update'])
+        ->middleware('page.permission:location,edit')->name('location.update');
+    Route::post('/location/{location}/toggle', [GeolocationController::class, 'toggle'])
+        ->middleware('page.permission:location,edit')->name('location.toggle');
+    Route::delete('/location/{location}', [GeolocationController::class, 'destroy'])
+        ->middleware('page.permission:location,edit')->name('location.destroy');
 
     // Audit trail of access-control changes
     Route::get('/access-logs', [ItAccessControlController::class, 'logs'])

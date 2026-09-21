@@ -137,6 +137,11 @@
                                     class="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex justify-center items-center gap-2 active:scale-95">
                                     <Eye class="h-4 w-4" /> Summary
                                 </button>
+                                <button @click="openDss(jo)" :disabled="dssChecking[jo.id]"
+                                    class="flex-1 py-3 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-teal-100 transition-colors flex justify-center items-center gap-2 active:scale-95 disabled:opacity-50">
+                                    <Loader2 v-if="dssChecking[jo.id]" class="h-4 w-4 animate-spin" />
+                                    <Activity v-else class="h-4 w-4" /> Check stock
+                                </button>
                                 <button v-if="canEditPush" @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
                                     class="flex-1 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
                                     <Loader2 v-if="pushing[jo.id]" class="h-4 w-4 animate-spin" />
@@ -264,9 +269,14 @@
                                     <!-- Actions -->
                                     <td class="px-6 py-5 text-right">
                                         <div class="flex items-center justify-end gap-2">
-                                            <button @click="openSummary(jo)"
+                                            <button @click="openSummary(jo)" title="Summary"
                                                 class="p-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-95">
                                                 <Eye class="h-4 w-4" />
+                                            </button>
+                                            <button @click="openDss(jo)" :disabled="dssChecking[jo.id]" title="Sustainability check"
+                                                class="p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-all active:scale-95 disabled:opacity-50">
+                                                <Loader2 v-if="dssChecking[jo.id]" class="h-4 w-4 animate-spin" />
+                                                <Activity v-else class="h-4 w-4" />
                                             </button>
                                             <button v-if="canEditPush" @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
                                                 class="px-5 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
@@ -399,6 +409,97 @@
 
             </div>
         </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             DSS SUSTAINABILITY-CHECK MODAL (quick inventory check)
+             ══════════════════════════════════════════════════════════════════ -->
+        <Teleport to="body">
+            <Transition name="modal">
+                <div v-if="dssModal.show"
+                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
+                    @click.self="dssModal.show = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-teal-700 via-cyan-700 to-blue-800 text-white flex justify-between items-start">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="relative">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-teal-100">Decision support · stock check</p>
+                                <h3 class="font-black text-xl tracking-tight">Can we sustain {{ dssModal.order?.jo_number }}?</h3>
+                            </div>
+                            <button @click="dssModal.show = false" class="relative p-2 bg-white/15 hover:bg-white/25 rounded-xl transition-colors">
+                                <X class="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div class="p-6 space-y-4 overflow-y-auto">
+                            <div v-if="dssModal.loading" class="flex flex-col items-center py-10 gap-3">
+                                <Loader2 class="h-8 w-8 animate-spin text-teal-600" />
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Checking stock vs accepted orders…</p>
+                            </div>
+
+                            <template v-else-if="dssModal.result">
+                                <div v-if="dssModal.result.verdict === 'sufficient'"
+                                    class="rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4 flex items-start gap-3">
+                                    <CheckCircle2 class="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <p class="text-sm font-bold text-emerald-800 dark:text-emerald-200">Sustainable — stock covers this job after {{ dssModal.result.committed_orders }} accepted order(s). Safe to push.</p>
+                                </div>
+                                <div v-else-if="dssModal.result.verdict === 'insufficient'"
+                                    class="rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 p-4 flex items-start gap-3">
+                                    <TriangleAlert class="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                                    <p class="text-sm font-bold text-rose-800 dark:text-rose-200">Not sustainable — pushing is blocked. Procurement suggestions are filed automatically when you attempt the push.</p>
+                                </div>
+                                <div v-else
+                                    class="rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 flex items-start gap-3">
+                                    <TriangleAlert class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                    <p class="text-sm font-bold text-amber-800 dark:text-amber-200">{{ dssModal.result.warning }}</p>
+                                </div>
+
+                                <p v-if="dssModal.result.materials?.length" class="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    Counted against {{ dssModal.result.committed_orders }} accepted order(s) · ATP = on-hand − committed
+                                </p>
+                                <div v-if="dssModal.result.materials?.length" class="rounded-2xl border border-gray-100 dark:border-zinc-700 overflow-hidden">
+                                    <table class="w-full text-xs">
+                                        <thead class="bg-gray-50 dark:bg-zinc-800 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                                            <tr>
+                                                <th class="px-4 py-2.5 text-left">Material</th>
+                                                <th class="px-4 py-2.5 text-right">Need</th>
+                                                <th class="px-4 py-2.5 text-right">Committed</th>
+                                                <th class="px-4 py-2.5 text-right">On-hand</th>
+                                                <th class="px-4 py-2.5 text-right">ATP</th>
+                                                <th class="px-4 py-2.5 text-center">OK?</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
+                                            <tr v-for="m in dssModal.result.materials" :key="m.material_id">
+                                                <td class="px-4 py-2.5 font-black">{{ m.material_name }}</td>
+                                                <td class="px-4 py-2.5 text-right font-bold">{{ m.required }}{{ m.unit }}</td>
+                                                <td class="px-4 py-2.5 text-right">{{ m.committed }}{{ m.unit }}</td>
+                                                <td class="px-4 py-2.5 text-right">{{ m.available }}{{ m.unit }}</td>
+                                                <td class="px-4 py-2.5 text-right font-black" :class="m.sufficient ? 'text-emerald-600' : 'text-rose-600'">{{ m.atp }}{{ m.unit }}</td>
+                                                <td class="px-4 py-2.5 text-center">
+                                                    <CheckCircle2 v-if="m.sufficient" class="h-4 w-4 text-emerald-500 inline" />
+                                                    <TriangleAlert v-else class="h-4 w-4 text-rose-500 inline" />
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="p-6 border-t border-gray-100 dark:border-zinc-800 flex gap-3">
+                            <button @click="dssModal.show = false"
+                                class="flex-1 py-3.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors active:scale-95">
+                                Close
+                            </button>
+                            <button v-if="canEditPush && dssModal.result && dssModal.result.verdict !== 'insufficient'" @click="pushFromDss"
+                                class="flex-1 py-3.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white text-xs font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95">
+                                <Send class="h-4 w-4" /> Push to SCM
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
 
         <!-- ══════════════════════════════════════════════════════════════════
              SUCCESS TOAST NOTIFICATION
@@ -658,7 +759,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
-import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles } from 'lucide-vue-next';
+import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2 } from 'lucide-vue-next';
+import axios from 'axios';
 
 const { canEdit } = usePageAccess();
 const canEditPush = computed(() => canEdit('ECO', 'push'));
@@ -677,6 +779,31 @@ const summaryModal = ref({ show: false, data: {} });
 
 // Confirmation modal state
 const confirmModal = ref({ show: false, order: null, module: null });
+
+// DSS sustainability-check state (quick inventory check before acceptance)
+const dssModal = ref({ show: false, loading: false, order: null, result: null });
+const dssChecking = ref({});
+
+const openDss = async (order) => {
+    dssModal.value = { show: true, loading: true, order, result: null };
+    dssChecking.value[order.id] = true;
+    try {
+        const { data } = await axios.get(route('eco.push.dss', order.id));
+        dssModal.value.result = data;
+    } catch {
+        dssModal.value.result = null;
+        showToast('Could not run sustainability check. Pushing will still verify stock.', 'error');
+    } finally {
+        dssModal.value.loading = false;
+        delete dssChecking.value[order.id];
+    }
+};
+
+const pushFromDss = () => {
+    const order = dssModal.value.order;
+    dssModal.value.show = false;
+    confirmModal.value = { show: true, order, module: 'scm' };
+};
 
 // Toast notification state
 const toast = ref({ show: false, message: '', type: 'success' });

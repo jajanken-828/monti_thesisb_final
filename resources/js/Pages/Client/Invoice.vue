@@ -119,11 +119,17 @@
                                         {{ formatDate(order.due_date || order.created_at) }}
                                     </td>
                                     <td class="px-8 py-6 text-right">
-                                        <button @click="payNow(order)"
-                                            :disabled="order.payment_status === 'paid'"
-                                            class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                            {{ order.payment_status === 'paid' ? 'Paid' : 'Pay Now' }}
-                                        </button>
+                                        <div class="flex items-center justify-end gap-2">
+                                            <Link :href="route('client.invoices.show', order.id)"
+                                                class="px-5 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 hover:text-indigo-700 active:scale-95 transition-all">
+                                                View
+                                            </Link>
+                                            <button @click="payNow(order)"
+                                                :disabled="order.payment_status === 'paid'"
+                                                class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                                                {{ order.payment_status === 'paid' ? 'Paid' : 'Pay Now' }}
+                                            </button>
+                                        </div>
                                     </td>
                                  </tr>
                                 <tr v-if="filteredOrders.length === 0">
@@ -190,7 +196,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { CreditCard, RefreshCw, Search, FileText, X, Sparkles } from 'lucide-vue-next';
 

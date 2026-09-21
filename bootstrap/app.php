@@ -61,5 +61,27 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // A 403 for an account that holds NO usable grant at all (every page
+        // still 'disabled' by IT) becomes the friendly waiting page instead
+        // of a raw error — this covers stale sidebar links/bookmarks held by
+        // an already-logged-in staffer, whose menu only refreshes on reload.
+        // Accounts WITH access keep their exact 403s (e.g. view-only hitting
+        // an edit route).
+        $exceptions->render(function (Symfony\Component\HttpKernel\Exception\HttpException $e, Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() !== 403) {
+                return null;
+            }
+            if ($request->routeIs('awaiting.access') || $request->routeIs('dashboard')) {
+                return null;
+            }
+            $user = $request->user();
+            if (! $user) {
+                return null;
+            }
+            if (\App\Support\AccessGate::hasAnyAccess($user)) {
+                return null;
+            }
+
+            return redirect()->route('awaiting.access');
+        });
     })->create();

@@ -58,6 +58,10 @@ Route::middleware('auth:client')->prefix('partner')->name('client.')->group(func
     Route::get('/orders', [OrdersController::class, 'orders'])->name('orders');
     Route::post('/orders/{order}/accept', [OrdersController::class, 'acceptPurchaseOrder'])->name('orders.accept');
     Route::get('/invoices', [ClientInvoiceController::class, 'index'])->name('invoices');
+    // Detailed invoice: client reviews lines, then accepts and/or sends PO
+    Route::get('/invoices/{order}', [ClientInvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('/invoices/{order}/accept', [ClientInvoiceController::class, 'accept'])->name('invoices.accept');
+    Route::post('/invoices/{order}/send-po', [ClientInvoiceController::class, 'sendPO'])->name('invoices.send-po');
     // Receiving (delivery confirmation)
     Route::get('/receiving', [ClientReceivingController::class, 'index'])->name('receiving');
     Route::post('/receiving/{order}/mark', [ClientReceivingController::class, 'markReceived'])->name('receiving.mark');

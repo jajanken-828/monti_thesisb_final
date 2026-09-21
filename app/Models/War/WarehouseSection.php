@@ -11,6 +11,7 @@ class WarehouseSection extends Model
 
     protected $fillable = [
         'warehouse_id',
+        'floor_id',
         'name',
         'grid_row',
         'grid_col',
@@ -20,6 +21,11 @@ class WarehouseSection extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function floor()
+    {
+        return $this->belongsTo(WarehouseFloor::class, 'floor_id');
     }
 
     public function shelves()

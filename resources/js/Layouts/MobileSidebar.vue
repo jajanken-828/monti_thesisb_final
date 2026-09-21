@@ -13,7 +13,7 @@ import {
     UserCog, MessageSquare, Navigation, MapPin, Briefcase, Plus, ArrowLeft,
     Paperclip, Loader2, Info, Phone, Mail, Calendar, Tag, Weight, Ruler, Layers,
     ArrowRight, Zap, Activity, DollarSign, Users as UsersIcon, UserCog2, Camera,
-    Sparkles, Palette, Wrench, CheckCircle2, UserPen, Share2, Megaphone, Cog, Flag, FlaskConical, ArrowRightLeft, Leaf, HardHat, Flame, Stamp, Bell, Printer, Target, Repeat
+    Sparkles, Palette, Wrench, CheckCircle2, UserPen, Share2, Megaphone, Cog, Flag, FlaskConical, ArrowRightLeft, Leaf, HardHat, Flame, Stamp, Bell, Printer, Target, Repeat, CalendarClock, PackageCheck, ScanSearch
 } from 'lucide-vue-next'
 
 const page = usePage()
@@ -147,6 +147,29 @@ const hasPagePermission = (moduleKey, pageKey) => {
 
 const hasHrmPermission = (pageKey) => hasPagePermission('HRM', pageKey)
 const hasCrmPermission = (pageKey) => hasPagePermission('CRM', pageKey)
+
+// Home module of a secretary / special officer (shared by the backend,
+// mirroring CheckPagePermission::getRootModuleForUser). Auto-full access
+// applies to this module only — extra granted modules filter per page.
+const rootModule = computed(() => {
+    const r = user.value?.root_module
+    return r ? String(r).toUpperCase() : null
+})
+
+// Any usable grant in a module (shared list already excludes 'disabled').
+// Lets extra-module grants display their section, filtered per page below.
+const hasAnyModuleGrant = (moduleKey) => {
+    const perms = user.value?.page_permissions || page.props.auth?.page_permissions || []
+    return perms.some(p => String(p.module || '').toUpperCase() === String(moduleKey).toUpperCase())
+}
+
+// Modules with ANY explicit PagePermission row (including all-'disabled'
+// ones). Explicit rows are the exact access set and override the native
+// manager shortcut — mirrors backend CheckPagePermission.
+const hasExplicitModuleGrants = (moduleKey) => {
+    const mods = user.value?.explicit_modules || []
+    return mods.some(m => String(m).toUpperCase() === String(moduleKey).toUpperCase())
+}
 const hasModulePermission = (moduleKey, permissionKey) => {
     if (user.value?.role === 'CEO') return true
     const modulePerms = user.value?.permissions?.[moduleKey]
@@ -199,9 +222,16 @@ const switchManufacturingRole = (role) => {
 }
 const formatRoleLabel = (role) => role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 
+// Canonical route slugs per manufacturing_role (see routes/Man.php).
+// pollution_control_operator uses the shorter `pollution-control` prefix.
+const ROLE_ROUTE_SLUGS = {
+    pollution_control_operator: 'pollution-control',
+}
+const roleToSlug = (roleWithUnderscores) => ROLE_ROUTE_SLUGS[roleWithUnderscores] ?? roleWithUnderscores.replace(/_/g, '-')
+
 // Helper to generate three links for a role (as an array of link objects)
 const getRoleLinks = (roleWithUnderscores, label, icon, hasReports = true, hasHistory = false, hasFlags = false, hasLab = false) => {
-    const roleWithHyphens = roleWithUnderscores.replace(/_/g, '-')
+    const roleWithHyphens = roleToSlug(roleWithUnderscores)
     const routePrefix = `man.staff.${roleWithHyphens}`
     const links = [
         { label: 'Dashboard', href: route(`${routePrefix}.dashboard`), icon: LayoutDashboard },
@@ -285,12 +315,12 @@ const getFilteredHrmChildren = () => {
         { label: 'Archive', href: route('hrm.applications.rejected'), icon: Archive, permKey: 'application' },
         { label: 'Payroll', href: route('hrm.payroll'), icon: HandCoins, permKey: 'payroll' },
         { label: 'Analytics', href: route('hrm.analytics'), icon: ChartNoAxesCombined, permKey: 'analytics' },
-        { label: 'Access Control', href: route('hrm.access.index'), icon: ShieldCheck, permKey: 'access' },
     ]
     if (user.value?.role === 'CEO') return all
-    if (user.value?.position === 'manager' && user.value?.role === 'HRM') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('HRM')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('HRM')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'HRM' && !hasExplicitModuleGrants('HRM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'HRM') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasHrmPermission(child.permKey))
 }
 
@@ -302,85 +332,109 @@ const getFilteredCrmChildren = () => {
         { label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Users, permKey: 'customer_profiles' },
         { label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' },
         { label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' },
-        { label: 'Access Control', href: route('crm.access.index'), icon: ShieldCheck, permKey: 'access' },
     ]
     if (user.value?.role === 'CEO') return all
-    if (user.value?.position === 'manager' && user.value?.role === 'CRM') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('CRM')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('CRM')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'CRM' && !hasExplicitModuleGrants('CRM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'CRM') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasCrmPermission(child.permKey))
 }
 
 const getFilteredWorkforceChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('workforce.dashboard'), icon: LayoutDashboard },
-        { label: 'Scheduler', href: route('workforce.scheduler'), icon: CalendarCheck },
-        { label: 'Leave Requests', href: route('workforce.leave'), icon: FileText },
-        { label: 'Absence Tracking', href: route('workforce.absent'), icon: UserX },
+        { label: 'Dashboard', href: route('workforce.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Scheduler', href: route('workforce.scheduler'), icon: CalendarCheck, permKey: 'scheduler' },
+        { label: 'Leave Requests', href: route('workforce.leave'), icon: FileText, permKey: 'leave' },
+        { label: 'Absence Tracking', href: route('workforce.absent'), icon: UserX, permKey: 'absent' },
     ]
     if (user.value?.role === 'CEO') return all
     if (user.value?.position === 'manager' && user.value?.role === 'WRF') return all
     if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('WRF')) return all
     if (isManufacturingSupervisor.value && grantedModules.value.includes('WRF')) return all
-    return all.filter(child => hasWorkforcePermission(child.label.toLowerCase()))
+    return all.filter(child => hasWorkforcePermission(child.permKey))
 }
 
 const getFilteredManChildren = () => {
+    // Mirrors SidebarMan.vue (desktop): every MAN page needs a usable
+    // (view/edit) grant. All-'disabled' (IT default) yields [] → the module
+    // is skipped → empty sidebar + AwaitingAccess landing page.
+    const isCEOUser = user.value?.role === 'CEO'
+    const isRootManSecretary = (user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'MAN'
+    const can = (permKey) => hasModulePermission('MAN', permKey)
+    const hasStaffEntry = can('production') || can('dashboard')
     // Quality Checker is its own Finishing department: the Finishing
     // supervisor reaches it via their Department Staff dropdown below,
-    // so the overview entry is shown only to CEO / secretary / GM.
-    const isElevatedMan = user.value?.role === 'CEO' || (user.value?.position === 'secretary' || user.value?.position === 'special_officer')
-    const showQualityChecker = isElevatedMan
+    // so the overview entry is shown only to CEO / root-MAN secretary / GM
+    // holding a usable production grant (its routes require production,view).
+    const showQualityChecker = isCEOUser || (isRootManSecretary && hasStaffEntry)
     const managerChildren = [
-        { label: 'Dashboard', href: route('man.manager.dashboard'), icon: Factory },
-        { label: 'Production Orders', href: route('man.manager.production'), icon: ClipboardList },
-        { label: 'Rejected Items', href: route('man.manager.rejected'), icon: XCircle },
+        { label: 'Dashboard', href: route('man.manager.dashboard'), icon: Factory, permKey: 'dashboard' },
+        { label: 'Production Orders', href: route('man.manager.production'), icon: ClipboardList, permKey: 'production' },
+        { label: 'Rejected Items', href: route('man.manager.rejected'), icon: XCircle, permKey: 'reject' },
     ]
     if (showQualityChecker) {
         managerChildren.push(
-            { label: 'Quality Checker Dashboard', href: route('man.staff.checker-quality.dashboard'), icon: CheckCircle2 },
-            { label: 'Quality Checker Production', href: route('man.staff.checker-quality.production'), icon: ClipboardList },
+            { label: 'Quality Checker Dashboard', href: route('man.staff.checker-quality.dashboard'), icon: CheckCircle2, permKey: 'production' },
+            { label: 'Quality Checker Production', href: route('man.staff.checker-quality.production'), icon: ClipboardList, permKey: 'production' },
         )
     }
-    const isManufacturingManager = user.value?.position === 'manager' && user.value?.role === 'MAN'
-    if (isElevatedMan || isManufacturingManager) {
-        managerChildren.push({ label: 'Access Control', href: route('man.access.manage'), icon: ShieldCheck })
+    // NOTE: no manufacturing manager exists — legacy MAN-manager accounts
+    // fall through to an empty menu (their routes return 403; reassign them
+    // as department supervisors). Mirrors desktop SidebarMan.vue.
+    if (isCEOUser || isRootManSecretary) {
+        return managerChildren
     }
-    let children = []
-    if (user.value?.role === 'CEO' || (user.value?.position === 'manager' && user.value?.role === 'MAN') || (user.value?.position === 'secretary' || user.value?.position === 'special_officer') || isManufacturingSupervisor.value) {
-        children = [...managerChildren]
-        if (isManufacturingSupervisor.value && supervisedDepartment.value) {
+    // Non-root secretary / GM holding a MAN grant: exact per-page set only.
+    if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
+        return managerChildren.filter(child => !child.permKey || can(child.permKey))
+    }
+    if (isManufacturingSupervisor.value) {
+        const children = managerChildren.filter(child => !child.permKey || can(child.permKey))
+        if (supervisedDepartment.value && hasStaffEntry) {
             const staffDropdowns = departmentStaffRoles.value
             if (staffDropdowns.length) {
                 children.push({ isDivider: true, label: '── Department Staff ──' })
                 children.push(...staffDropdowns)
             }
         }
-    } else {
+        return children
+    }
+    // Regular staff: role pages require production (or dashboard) — without
+    // a usable grant the menu stays empty so this module is hidden.
+    if (!hasStaffEntry) {
+        return []
+    }
+    {
         const manufacturingRole = user.value?.manufacturing_role
         const config = MAN_STAFF_CONFIG[manufacturingRole]
         if (config) {
-            children = [createRoleDropdown(manufacturingRole, config.label, config.icon, config.hasReports, config.hasHistory, config.hasFlags, config.hasLab)]
+            return [createRoleDropdown(manufacturingRole, config.label, config.icon, config.hasReports, config.hasHistory, config.hasFlags, config.hasLab)]
         }
     }
-    return children
+    return []
 }
 
 const getFilteredLogisticsChildren = () => {
     const all = [
-        { label: 'Dashboard', href: route('logistics.dashboard'), icon: LayoutDashboard },
-        { label: 'Load', href: route('logistics.load.index'), icon: Package },
-        { label: 'Dispatch', href: route('logistics.dispatch.index'), icon: Send },
-        { label: 'Fleet', href: route('logistics.fleet.index'), icon: Truck },
-        { label: 'Drivers', href: route('logistics.drivers.index'), icon: Users },
-        { label: 'Routes', href: route('logistics.routes'), icon: Navigation },
-        { label: 'Proof', href: route('logistics.proof.index'), icon: Camera },
-        { label: 'Reports', href: route('logistics.reports.index'), icon: FileText },
+        { label: 'Dashboard', href: route('logistics.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
+        { label: 'Load', href: route('logistics.load.index'), icon: Package, permKey: 'load' },
+        { label: 'Dispatch', href: route('logistics.dispatch.index'), icon: Send, permKey: 'dispatch' },
+        { label: 'Fleet', href: route('logistics.fleet.index'), icon: Truck, permKey: 'fleet' },
+        { label: 'Drivers', href: route('logistics.drivers.index'), icon: Users, permKey: 'drivers' },
+        { label: 'Routes', href: route('logistics.routes'), icon: Navigation, permKey: 'routes' },
+        { label: 'Proof', href: route('logistics.proof.index'), icon: Camera, permKey: 'proof' },
+        { label: 'Reports', href: route('logistics.reports.index'), icon: FileText, permKey: 'reports' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('logistics.access.index'), icon: ShieldCheck })
+        return all
     }
-    return all
+    if (user.value?.position === 'manager' && user.value?.role === 'LOG' && !hasExplicitModuleGrants('LOG')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'LOG') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
+    // No fallback: all-'disabled' (the IT default) yields an empty list.
+    return all.filter(child => hasModulePermission('LOG', child.permKey))
 }
 
 const getFilteredEcoChildren = () => {
@@ -391,12 +445,12 @@ const getFilteredEcoChildren = () => {
         { label: 'Suppliers', href: route('eco.suppliers'), icon: UsersIcon, permKey: 'supplier' },
         { label: 'Credit', href: route('eco.credit'), icon: CreditCard, permKey: 'credit' },
         { label: 'Push Center', href: route('eco.push'), icon: Send, permKey: 'push' },
-        { label: 'Access Control', href: route('eco.access'), icon: ShieldCheck, permKey: 'access' },
     ]
     if (user.value?.role === 'CEO') return all
-    if (user.value?.position === 'manager' && user.value?.role === 'ECO') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('ECO')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('ECO')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'ECO' && !hasExplicitModuleGrants('ECO')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'ECO') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('ECO', child.permKey))
 }
 
@@ -407,28 +461,33 @@ const getFilteredOrdChildren = () => {
         { label: 'Delivery', href: route('ord.delivery'), icon: Truck, permKey: 'delivery' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('ord.ceo-access.index'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
-    if (user.value?.position === 'manager' && user.value?.role === 'ORD') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('ORD')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('ORD')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'ORD' && !hasExplicitModuleGrants('ORD')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'ORD') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('ORD', child.permKey))
 }
 
 const getFilteredScmChildren = () => {
     const all = [
+        { label: 'Dashboard', href: route('scm.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
         { label: 'Sales Orders', href: route('scm.sales-orders'), icon: ShoppingCart, permKey: 'sales' },
         { label: 'Procurement Orders', href: route('scm.procurement-orders'), icon: ClipboardList, permKey: 'procurement' },
+        { label: 'Planning', href: route('scm.planning'), icon: CalendarClock, permKey: 'planning' },
+        { label: 'Purchase Orders', href: route('scm.purchase-orders'), icon: PackageCheck, permKey: 'purchase' },
+        { label: 'Deliveries', href: route('scm.deliveries'), icon: ClipboardCheck, permKey: 'deliveries' },
         { label: 'Vendors', href: route('scm.vendors'), icon: Building2, permKey: 'vendor' },
+        { label: 'Analytics', href: route('scm.analytics'), icon: BarChart3, permKey: 'analytics' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('scm.access.index'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
-    if (user.value?.position === 'manager' && user.value?.role === 'SCM') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('SCM')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('SCM')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'SCM' && !hasExplicitModuleGrants('SCM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'SCM') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('SCM', child.permKey))
 }
 
@@ -441,12 +500,12 @@ const getFilteredWarehouseChildren = () => {
         { label: 'Rejects', href: route('warehouse.rejects'), icon: XCircle, permKey: 'reject' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('warehouse.access'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
-    if (user.value?.position === 'manager' && user.value?.role === 'WAR') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('WAR')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('WAR')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'WAR' && !hasExplicitModuleGrants('WAR')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'WAR') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('WAR', child.permKey))
 }
 
@@ -459,12 +518,12 @@ const getFilteredInventoryChildren = () => {
         { label: 'Stock Checker', href: route('inv.checker'), icon: AlertCircle, permKey: 'checker' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('inv.access'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
-    if (user.value?.position === 'manager' && user.value?.role === 'INV') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('INV')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('INV')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'INV' && !hasExplicitModuleGrants('INV')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'INV') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('INV', child.permKey))
 }
 
@@ -476,12 +535,12 @@ const getFilteredProChildren = () => {
         { label: 'Receipts', href: route('pro.manager.receipt'), icon: Send, permKey: 'receipt' },
     ]
     if (user.value?.role === 'CEO') {
-        all.push({ label: 'Access Control', href: route('pro.access.index'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
-    if (user.value?.position === 'manager' && user.value?.role === 'PRO') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('PRO')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('PRO')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'PRO' && !hasExplicitModuleGrants('PRO')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'PRO') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('PRO', child.permKey))
 }
 
@@ -495,9 +554,10 @@ const getFilteredFinChildren = () => {
         { label: 'Reports', href: route('fin.manager.reports'), icon: TrendingUp, permKey: 'reports' },
     ]
     if (user.value?.role === 'CEO') return all
-    if (user.value?.position === 'manager' && user.value?.role === 'FIN') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('FIN')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('FIN')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'FIN' && !hasExplicitModuleGrants('FIN')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'FIN') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('FIN', child.permKey))
 }
 
@@ -508,6 +568,7 @@ const getFilteredItChildren = () => {
         { label: 'Assets', href: route('it.assets'), icon: Boxes, permKey: 'assets' },
         { label: 'Monitoring', href: route('it.monitoring'), icon: Activity, permKey: 'monitoring' },
         { label: 'Knowledge Base', href: route('it.knowledge'), icon: Book, permKey: 'knowledge' },
+        { label: 'Geolocation', href: route('it.location.index'), icon: MapPin, permKey: 'location' },
         { label: 'Changes', href: route('it.changes'), icon: RefreshCw, permKey: 'changes' },
         { label: 'Access Control', href: route('it.access-control'), icon: Users, permKey: 'access_control' },
         { label: 'Access Logs', href: route('it.access-logs'), icon: FileText, permKey: 'access_logs' },
@@ -516,9 +577,10 @@ const getFilteredItChildren = () => {
         all.push({ label: 'Access Control', href: route('it.access'), icon: ShieldCheck, permKey: 'access' })
         return all
     }
-    if (user.value?.position === 'manager' && user.value?.role === 'IT') return all
-    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && canAccessModule('IT')) return all
-    if (isManufacturingSupervisor.value && grantedModules.value.includes('IT')) return all
+    if (user.value?.position === 'manager' && user.value?.role === 'IT' && !hasExplicitModuleGrants('IT')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'IT') return all
+    // No supervisor shortcut — per-page filter below governs (backend
+    // grants the module shell but each page needs an explicit row).
     return all.filter(child => hasModulePermission('IT', child.permKey))
 }
 
@@ -553,9 +615,10 @@ const navItems = computed(() => {
     const userRole = user.value?.role?.toUpperCase()
     const userPosition = user.value?.position?.toLowerCase()
     const isCEO = user.value?.role === 'CEO'
+    const isCOO = user.value?.role === 'COO'
 
-    if (isCEO) {
-        const isVP = user.value?.position === 'vice_president'
+    if (isCEO || isCOO) {
+        const isVP = isCOO || user.value?.position === 'vice_president'
         if (isVP) {
             // Vice Presidency: execution arm (operations, directives, workforce).
             items.push({ label: 'VP Dashboard', href: route('vp.operations'), icon: LayoutDashboard })
@@ -574,6 +637,8 @@ const navItems = computed(() => {
         items.push({ label: 'Approvals Center', href: route('ceo.approvals'), icon: Stamp })
         items.push({ label: 'Executive Reports', href: route('ceo.reports'), icon: FileText })
         items.push({ label: 'Board Pack', href: route('ceo.board-pack'), icon: Printer })
+        items.push({ label: 'Deliveries', href: route('ceo.deliveries'), icon: Truck })
+        items.push({ label: 'Traceability', href: route('ceo.traceability'), icon: ScanSearch })
         items.push({ label: 'Goals & Targets', href: route('ceo.goals'), icon: Target })
         items.push({ label: 'Audit Trail', href: route('ceo.audit'), icon: History })
         items.push({ label: 'Organization Chart', href: route('ceo.access'), icon: ShieldCheck })
@@ -605,18 +670,18 @@ const navItems = computed(() => {
     }
 
     const modules = [
-        { key: 'HRM', label: 'Human Resource', icon: Users, childrenGetter: getFilteredHrmChildren, isOpen: isHrmOpen, toggle: toggleHrm, condition: canAccessModule('HRM') },
-        { key: 'CRM', label: 'Customer Relationship', icon: UserPen, childrenGetter: getFilteredCrmChildren, isOpen: isCrmOpen, toggle: toggleCrm, condition: canAccessModule('CRM') },
-        { key: 'MAN', label: 'Manufacturing', icon: Factory, childrenGetter: getFilteredManChildren, isOpen: isManOpen, toggle: toggleMan, condition: canAccessModule('MAN') },
-        { key: 'LOG', label: 'Logistics', icon: Truck, childrenGetter: getFilteredLogisticsChildren, isOpen: isLogisticsOpen, toggle: toggleLogistics, condition: hasLogisticsAccess.value },
-        { key: 'ECO', label: 'E-Commerce', icon: ShoppingBag, childrenGetter: getFilteredEcoChildren, isOpen: isEcoOpen, toggle: toggleEco, condition: canAccessModule('ECO') },
-        { key: 'ORD', label: 'Order Management', icon: ClipboardCheck, childrenGetter: getFilteredOrdChildren, isOpen: isOrdOpen, toggle: toggleOrd, condition: hasOrdAccess.value },
-        { key: 'SCM', label: 'Supply Chain', icon: Truck, childrenGetter: getFilteredScmChildren, isOpen: isScmOpen, toggle: toggleScm, condition: canAccessModule('SCM') },
-        { key: 'WAR', label: 'Warehouse', icon: Warehouse, childrenGetter: getFilteredWarehouseChildren, isOpen: isWarehouseOpen, toggle: toggleWarehouse, condition: hasWarehouseAccess.value },
-        { key: 'INV', label: 'Inventory', icon: Boxes, childrenGetter: getFilteredInventoryChildren, isOpen: isInventoryOpen, toggle: toggleInventory, condition: hasInventoryAccess.value },
-        { key: 'PRO', label: 'Procurement', icon: ShoppingCart, childrenGetter: getFilteredProChildren, isOpen: isProOpen, toggle: togglePro, condition: canAccessModule('PRO') },
-        { key: 'FIN', label: 'Finance', icon: Wallet, childrenGetter: getFilteredFinChildren, isOpen: isFinOpen, toggle: toggleFin, condition: canAccessModule('FIN') },
-        { key: 'IT', label: 'IT & Systems', icon: Cog, childrenGetter: getFilteredItChildren, isOpen: isItOpen, toggle: toggleIt, condition: canAccessModule('IT') },
+        { key: 'HRM', label: 'Human Resource', icon: Users, childrenGetter: getFilteredHrmChildren, isOpen: isHrmOpen, toggle: toggleHrm, condition: canAccessModule('HRM') || hasAnyModuleGrant('HRM') },
+        { key: 'CRM', label: 'Customer Relationship', icon: UserPen, childrenGetter: getFilteredCrmChildren, isOpen: isCrmOpen, toggle: toggleCrm, condition: canAccessModule('CRM') || hasAnyModuleGrant('CRM') },
+        { key: 'MAN', label: 'Manufacturing', icon: Factory, childrenGetter: getFilteredManChildren, isOpen: isManOpen, toggle: toggleMan, condition: canAccessModule('MAN') || hasAnyModuleGrant('MAN') },
+        { key: 'LOG', label: 'Logistics', icon: Truck, childrenGetter: getFilteredLogisticsChildren, isOpen: isLogisticsOpen, toggle: toggleLogistics, condition: hasLogisticsAccess.value || hasAnyModuleGrant('LOG') },
+        { key: 'ECO', label: 'E-Commerce', icon: ShoppingBag, childrenGetter: getFilteredEcoChildren, isOpen: isEcoOpen, toggle: toggleEco, condition: canAccessModule('ECO') || hasAnyModuleGrant('ECO') },
+        { key: 'ORD', label: 'Order Management', icon: ClipboardCheck, childrenGetter: getFilteredOrdChildren, isOpen: isOrdOpen, toggle: toggleOrd, condition: hasOrdAccess.value || hasAnyModuleGrant('ORD') },
+        { key: 'SCM', label: 'Supply Chain', icon: Truck, childrenGetter: getFilteredScmChildren, isOpen: isScmOpen, toggle: toggleScm, condition: canAccessModule('SCM') || hasAnyModuleGrant('SCM') },
+        { key: 'WAR', label: 'Warehouse', icon: Warehouse, childrenGetter: getFilteredWarehouseChildren, isOpen: isWarehouseOpen, toggle: toggleWarehouse, condition: hasWarehouseAccess.value || hasAnyModuleGrant('WAR') },
+        { key: 'INV', label: 'Inventory', icon: Boxes, childrenGetter: getFilteredInventoryChildren, isOpen: isInventoryOpen, toggle: toggleInventory, condition: hasInventoryAccess.value || hasAnyModuleGrant('INV') },
+        { key: 'PRO', label: 'Procurement', icon: ShoppingCart, childrenGetter: getFilteredProChildren, isOpen: isProOpen, toggle: togglePro, condition: canAccessModule('PRO') || hasAnyModuleGrant('PRO') },
+        { key: 'FIN', label: 'Finance', icon: Wallet, childrenGetter: getFilteredFinChildren, isOpen: isFinOpen, toggle: toggleFin, condition: canAccessModule('FIN') || hasAnyModuleGrant('FIN') },
+        { key: 'IT', label: 'IT & Systems', icon: Cog, childrenGetter: getFilteredItChildren, isOpen: isItOpen, toggle: toggleIt, condition: canAccessModule('IT') || hasAnyModuleGrant('IT') },
     ]
 
     const coreModules = []
@@ -831,6 +896,17 @@ const logoutRoute = computed(() => {
                             </div>
                         </Link>
                     </template>
+                    <!-- Empty state: every page is still 'disabled' (IT default) -->
+                    <div v-if="navItems.length === 0" class="px-3 py-8 text-center">
+                        <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mb-3">
+                            <ShieldCheck class="w-6 h-6 text-indigo-500" />
+                        </div>
+                        <p class="text-xs font-bold text-gray-900 dark:text-white mb-1">No pages assigned yet</p>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                            All of your page permissions are still disabled.<br />
+                            Please wait for the admins to grant you access.
+                        </p>
+                    </div>
                 </nav>
             </div>
 

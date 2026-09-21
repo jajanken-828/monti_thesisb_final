@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Search, X, ShieldCheck, ShieldOff, PauseCircle, RotateCcw, Save, Users } from 'lucide-vue-next';
+import { Search, X, ShieldCheck, ShieldOff, PauseCircle, RotateCcw, Save, Users, Bell, CheckCircle2, Ban, Lock } from 'lucide-vue-next';
 
 const props = defineProps({
     users: { type: Array, default: () => [] },
@@ -12,6 +12,7 @@ const props = defineProps({
     userModules: { type: Object, default: () => ({}) },
     assignableRoles: { type: Array, default: () => [] },
     assignablePositions: { type: Array, default: () => [] },
+    pendingRequests: { type: Array, default: () => [] },
 });
 
 const search = ref('');
@@ -20,26 +21,101 @@ const statusFilter = ref('');
 const managing = ref(null);
 const activeTab = ref('account');
 const suspendUntil = ref('');
+const showNotifications = ref(false);
+const selectedRequestId = ref(null);
+const confirmPosition = ref(null);
 
 const statusForm = useForm({ user_id: '', action: '', suspended_until: '' });
-const positionForm = useForm({ user_id: '', position: '', role: '' });
+const positionForm = useForm({ user_id: '', position: '', role: '', supervisor_department: '', request_id: null });
 const modulesForm = useForm({ user_id: '', modules: [] });
 const pagesForm = useForm({ user_id: '', grants: [] });
 
-// Local editable page grants: { [module]: { [page]: 'none'|'view'|'edit' } }
+// Local editable page grants: { [module]: { [page]: 'disabled'|'view'|'edit' } }
 const pageGrants = ref({});
+
+const ELEVATED = ['manager', 'secretary', 'special_officer', 'vice_president'];
+
+const isElevatedUser = (u) => {
+    if (!u) return false;
+    return !!u.is_manufacturing_supervisor || ELEVATED.includes(u.position) || !!u.is_elevated;
+};
+
+const rootOf = (u) => {
+    if (!u) return null;
+    if (u.root_module) return u.root_module;
+    return u.role || null;
+};
+
+// Higher-ups with automatic default-on root access (secretary,
+// special_officer, manager, manufacturing supervisor). Their root pages can
+// never be disabled — IT chooses view vs edit only. Mirrors backend
+// lockedRootModuleFor().
+const isHigherUp = (u) => {
+    if (!u) return false;
+    return !!u.is_manufacturing_supervisor || ['manager', 'secretary', 'special_officer'].includes(u.position);
+};
+
+// MAN supervisors are stored as position='staff' + flag — never display them as Staff.
+// Prefers backend display_position, falls back to the flag so stale props still render right.
+const displayPositionKey = (u) => {
+    if (!u) return '';
+    if (u.display_position) return u.display_position;
+    if (u.is_manufacturing_supervisor && u.position === 'staff') return 'manufacturing_supervisor';
+    return u.position || '';
+};
+
+const formatPositionLabel = (pos) => {
+    if (!pos) return '';
+    if (pos === 'manufacturing_supervisor') return 'supervisor';
+    return String(pos).replace('_', ' ');
+};
+
+const displayPositionLabel = (u) => formatPositionLabel(displayPositionKey(u));
+
+// Executive-command rows store raw current_position ('staff' for supervisors) —
+// resolve to the target's display label so commands never read as Staff.
+const requestCurrentLabel = (req) => {
+    const target = (props.users || []).find((u) => Number(u.id) === Number(req?.target_user_id));
+    if (target?.is_manufacturing_supervisor && req?.current_position === 'staff') return 'supervisor';
+    return formatPositionLabel(req?.current_position);
+};
+
+const lockedRootOf = (u) => {
+    if (!isHigherUp(u)) return null;
+    const root = rootOf(u);
+    return root ? String(root).toUpperCase() : null;
+};
+
+// Whether the currently shown module tab is a higher-up locked root.
+const isPageLocked = (moduleKey) => {
+    if (!managing.value || !moduleKey) return false;
+    const locked = lockedRootOf(managing.value);
+    return !!locked && String(moduleKey).toUpperCase() === locked;
+};
+
+const requestsForUser = (userId) => (props.pendingRequests || []).filter((r) => Number(r.target_user_id) === Number(userId));
 
 const openManage = (user) => {
     managing.value = user;
     activeTab.value = 'account';
     suspendUntil.value = '';
+    selectedRequestId.value = null;
+    confirmPosition.value = null;
 
     statusForm.user_id = user.id;
     positionForm.user_id = user.id;
     positionForm.position = user.position;
     positionForm.role = user.role;
+    positionForm.supervisor_department = user.supervisor_department || '';
+    positionForm.request_id = null;
     modulesForm.user_id = user.id;
     modulesForm.modules = [...(props.userModules[user.id] || [])];
+    // Staff with no explicit module rows still show their root as granted.
+    const root = rootOf(user);
+    if (root && !modulesForm.modules.includes(root)) {
+        // Keep the model truthful (backend re-adds root anyway) but do NOT
+        // push extra rows for staff — the UI below renders root as locked.
+    }
     pagesForm.user_id = user.id;
 
     const grants = {};
@@ -47,17 +123,50 @@ const openManage = (user) => {
     Object.entries(props.userPagePerms[user.id] || {}).forEach(([mod, pages]) => {
         existing[String(mod).toUpperCase()] = {};
         Object.entries(pages || {}).forEach(([pg, lvl]) => {
-            existing[String(mod).toUpperCase()][String(pg).toLowerCase()] = lvl;
+            const norm = String(lvl).toLowerCase();
+            existing[String(mod).toUpperCase()][String(pg).toLowerCase()] = ['view', 'edit', 'disabled'].includes(norm) ? norm : 'edit';
         });
     });
+    // A higher-up's locked root can never be disabled: legacy 'disabled'
+    // rows there open as 'view' so DISABLE is never the selected state.
+    const locked = lockedRootOf(user);
     Object.entries(props.modulePages).forEach(([module, pages]) => {
         grants[module] = {};
-        Object.entries(pages || {}).forEach(([key, val]) => {
+        const isLockedModule = !!locked && String(module).toUpperCase() === locked;
+        Object.entries(pages || {}).forEach(([key]) => {
             const pageKey = String(key).toLowerCase();
-            grants[module][pageKey] = existing[module]?.[pageKey] || 'none';
+            let lvl = existing[module]?.[pageKey] || 'disabled';
+            if (isLockedModule && lvl === 'disabled') lvl = 'view';
+            grants[module][pageKey] = lvl;
         });
     });
     pageGrants.value = grants;
+};
+
+// Notification → open the employee's manage modal on the Position tab with
+// the command pre-selected. No confirmation modal here — IT reviews first,
+// then clicks "Apply Command…" to officially promote/demote.
+const openRequest = (req) => {
+    const user = props.users.find((u) => Number(u.id) === Number(req.target_user_id));
+    if (!user) return;
+    openManage(user);
+    activeTab.value = 'position';
+    selectedRequestId.value = req.id;
+    positionForm.position = req.requested_position;
+    positionForm.role = req.requested_role || user.role;
+    positionForm.supervisor_department = req.supervisor_department || '';
+    positionForm.request_id = req.id;
+    confirmPosition.value = null;
+    showNotifications.value = false;
+};
+
+const selectRequest = (req) => {
+    selectedRequestId.value = req.id;
+    positionForm.position = req.requested_position;
+    positionForm.role = req.requested_role || managing.value?.role;
+    positionForm.supervisor_department = req.supervisor_department || '';
+    positionForm.request_id = req.id;
+    confirmPosition.value = req;
 };
 
 const accountStatus = (u) => {
@@ -96,7 +205,7 @@ const statusPill = (u) => ({
 
 const pageCount = (userId) => {
     const mods = props.userPagePerms[userId] || {};
-    return Object.values(mods).reduce((n, pages) => n + Object.keys(pages).length, 0);
+    return Object.values(mods).reduce((n, pages) => n + Object.keys(pages || {}).filter((k) => (pages[k] || '').toLowerCase() !== 'disabled').length, 0);
 };
 
 const setStatus = (action) => {
@@ -108,10 +217,24 @@ const setStatus = (action) => {
     });
 };
 
+const askPositionConfirm = () => {
+    if (!selectedRequestId.value) return;
+    const req = (props.pendingRequests || []).find((r) => Number(r.id) === Number(selectedRequestId.value));
+    if (req) confirmPosition.value = req;
+};
+
 const savePosition = () => {
     positionForm.post(route('it.access-control.position'), {
         preserveScroll: true,
-        onSuccess: () => { managing.value = null; },
+        onSuccess: () => { managing.value = null; confirmPosition.value = null; },
+    });
+};
+
+const rejectSelected = () => {
+    if (!selectedRequestId.value) return;
+    router.post(route('it.access-control.requests.reject', selectedRequestId.value), {}, {
+        preserveScroll: true,
+        onSuccess: () => { managing.value = null; confirmPosition.value = null; selectedRequestId.value = null; },
     });
 };
 
@@ -126,7 +249,7 @@ const savePages = () => {
     const grants = [];
     Object.entries(pageGrants.value).forEach(([module, pages]) => {
         Object.entries(pages).forEach(([page, level]) => {
-            if (level === 'view' || level === 'edit') {
+            if (['view', 'edit', 'disabled'].includes(level)) {
                 grants.push({ module, page, level });
             }
         });
@@ -145,9 +268,53 @@ const tabs = [
     { key: 'pages', label: 'Page Access' },
 ];
 
-const moduleTabKeys = computed(() => Object.keys(props.modulePages));
+// ── Modules tab rules ─────────────────────────────────────────────
+// Staff (non-elevated): ONLY the root module is shown, auto-checked + locked.
+// Elevated (manager/supervisor/secretary/special_officer/VP): root locked +
+// every module shown so IT can grant extras.
+const visibleModules = computed(() => {
+    if (!managing.value) return [];
+    const root = rootOf(managing.value);
+    if (!isElevatedUser(managing.value)) {
+        return (props.modules || []).filter((m) => m.key === root || m.key === managing.value.role);
+    }
+    return props.modules || [];
+});
+
+const isRootLocked = (modKey) => {
+    if (!managing.value) return false;
+    const root = rootOf(managing.value);
+    if (modKey === root) return true;
+    if (managing.value.is_manufacturing_supervisor && modKey === 'MAN') return true;
+    return false;
+};
+
+const toggleModule = (modKey) => {
+    if (isRootLocked(modKey)) return;
+    const i = modulesForm.modules.indexOf(modKey);
+    if (i === -1) modulesForm.modules.push(modKey);
+    else modulesForm.modules.splice(i, 1);
+};
+
+// ── Page Access tab rules ─────────────────────────────────────────
+// Staff: ONLY home-module pages are displayed.
+// Elevated: root module + every module checked in the Modules tab.
+const visiblePageModules = computed(() => {
+    if (!managing.value) return [];
+    if (!isElevatedUser(managing.value)) {
+        return [managing.value.role].filter(Boolean).map((m) => String(m).toUpperCase());
+    }
+    const root = rootOf(managing.value);
+    const checked = (modulesForm.modules || []).map((m) => String(m).toUpperCase());
+    return [...new Set([root, ...checked].filter(Boolean).map((m) => String(m).toUpperCase()))];
+});
+
+const moduleTabKeys = computed(() => Object.keys(props.modulePages).filter((k) => visiblePageModules.value.includes(String(k).toUpperCase())));
 const activeModule = ref('');
-const currentModule = computed(() => activeModule.value || moduleTabKeys.value[0] || '');
+const currentModule = computed(() => {
+    if (activeModule.value && moduleTabKeys.value.includes(activeModule.value)) return activeModule.value;
+    return moduleTabKeys.value[0] || '';
+});
 
 // Normalized [{key, label}] rows for the active module tab.
 const currentPages = computed(() => {
@@ -159,8 +326,10 @@ const currentPages = computed(() => {
 });
 
 const setLevel = (page, level) => {
-    pageGrants.value[currentModule.value][page] =
-        pageGrants.value[currentModule.value][page] === level ? 'none' : level;
+    // Locked root pages of higher-ups can never be disabled.
+    if (level === 'disabled' && isPageLocked(currentModule.value)) return;
+    if (!pageGrants.value[currentModule.value]) pageGrants.value[currentModule.value] = {};
+    pageGrants.value[currentModule.value][page] = level;
 };
 </script>
 
@@ -173,14 +342,55 @@ const setLevel = (page, level) => {
                     IT Access <span class="text-blue-600">Control</span>
                 </h1>
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                    Organization-wide accounts, promotion, modules and per-page view/edit grants.
+                    Organization-wide accounts, promotion (by executive command), modules and per-page view/edit/disabled grants.
                 </p>
             </div>
-            <div class="flex gap-2 text-xs font-black">
-                <span class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{{ counts.total }} total</span>
-                <span class="px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">{{ counts.active }} active</span>
-                <span class="px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">{{ counts.disabled }} disabled</span>
-                <span class="px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">{{ counts.suspended }} suspended</span>
+            <div class="flex items-center gap-2">
+                <div class="flex gap-2 text-xs font-black">
+                    <span class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{{ counts.total }} total</span>
+                    <span class="px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">{{ counts.active }} active</span>
+                    <span class="px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">{{ counts.disabled }} disabled</span>
+                    <span class="px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">{{ counts.suspended }} suspended</span>
+                </div>
+                <!-- Executive commands notification -->
+                <div class="relative">
+                    <button @click="showNotifications = !showNotifications"
+                        class="relative inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 active:scale-95">
+                        <Bell class="w-4 h-4" />
+                        Commands
+                        <span v-if="pendingRequests.length" class="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                            {{ pendingRequests.length }}
+                        </span>
+                    </button>
+                    <div v-if="showNotifications" class="absolute right-0 mt-2 w-96 max-w-[90vw] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-40 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <p class="text-xs font-black uppercase tracking-widest text-slate-500">President / VP Commands</p>
+                            <button @click="showNotifications = false" class="text-slate-400 hover:text-slate-600"><X class="w-4 h-4" /></button>
+                        </div>
+                        <div v-if="pendingRequests.length === 0" class="px-4 py-8 text-center text-xs text-slate-400 font-bold">
+                            No pending commands. Position changes require a President/VP request.
+                        </div>
+                        <div v-else class="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                            <button v-for="req in pendingRequests" :key="req.id" @click="openRequest(req)"
+                                class="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <span :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase', ['promote', 'assign_supervisor'].includes(req.action) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700']">
+                                        {{ req.action }}
+                                    </span>
+                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{{ req.target_name }}</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-1">
+                                    {{ requestCurrentLabel(req) }} → <strong>{{ req.requested_position }}</strong><span v-if="req.supervisor_department"> ({{ req.supervisor_department }})</span>
+                                    <span v-if="req.requested_role"> · {{ req.requested_role }}</span>
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">
+                                    by {{ req.requested_by_name }} ({{ req.requested_by_position }})
+                                    <span v-if="req.reason"> — “{{ req.reason }}”</span>
+                                </p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -219,12 +429,18 @@ const setLevel = (page, level) => {
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                         <tr v-for="u in filteredUsers" :key="u.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
                             <td class="px-6 py-3.5">
-                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ u.name }}</p>
+                                <p class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    {{ u.name }}
+                                    <span v-if="requestsForUser(u.id).length" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-black">
+                                        <Bell class="w-3 h-3" /> {{ requestsForUser(u.id).length }} command
+                                    </span>
+                                </p>
                                 <p class="text-[11px] text-slate-400">{{ u.email }}{{ u.employee_id ? ` · ${u.employee_id}` : '' }}</p>
                             </td>
                             <td class="px-6 py-3.5 whitespace-nowrap">
                                 <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black">{{ u.role }}</span>
-                                <span class="ml-1 text-xs text-slate-500 capitalize">{{ u.position.replace('_', ' ') }}</span>
+                                <span class="ml-1 text-xs text-slate-500 capitalize">{{ displayPositionLabel(u) }}</span>
+                                <span v-if="u.is_manufacturing_supervisor" class="ml-1.5 px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase">Supervisor{{ u.supervisor_department ? ` · ${u.supervisor_department}` : '' }}</span>
                             </td>
                             <td class="px-6 py-3.5">
                                 <span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase', statusPill(u)]">
@@ -253,7 +469,7 @@ const setLevel = (page, level) => {
             <div class="bg-white dark:bg-slate-800 w-full max-w-2xl h-full overflow-y-auto border-l border-slate-200 dark:border-slate-700 flex flex-col">
                 <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex items-start justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
                     <div>
-                        <p class="text-[11px] font-mono font-bold text-slate-400">{{ managing.role }} · {{ managing.position }}</p>
+                        <p class="text-[11px] font-mono font-bold text-slate-400">{{ managing.role }} · {{ displayPositionLabel(managing) }}<span v-if="managing.is_manufacturing_supervisor && managing.supervisor_department"> · {{ managing.supervisor_department }} dept</span></p>
                         <h2 class="text-lg font-black text-slate-900 dark:text-white">{{ managing.name }}</h2>
                         <p class="text-xs text-slate-400">{{ managing.email }}</p>
                     </div>
@@ -265,11 +481,12 @@ const setLevel = (page, level) => {
                         :class="['px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 -mb-px transition-colors',
                             activeTab === t.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600']">
                         {{ t.label }}
+                        <span v-if="t.key === 'position' && requestsForUser(managing.id).length" class="ml-1 px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px]">{{ requestsForUser(managing.id).length }}</span>
                     </button>
                 </div>
 
                 <div class="p-6 flex-1">
-                    <!-- ACCOUNT -->
+                    <!-- ACCOUNT (unchanged) -->
                     <div v-if="activeTab === 'account'" class="space-y-3">
                         <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
                             <p class="font-bold text-slate-700 dark:text-slate-200">Current status:
@@ -307,49 +524,104 @@ const setLevel = (page, level) => {
                         <p class="text-[11px] text-slate-400">Disabled accounts cannot log in anywhere. Suspended accounts show their release date. Every action is written to Access Logs.</p>
                     </div>
 
-                    <!-- POSITION -->
+                    <!-- POSITION (command-gated) -->
                     <div v-if="activeTab === 'position'" class="space-y-4">
+                        <div v-if="requestsForUser(managing.id).length === 0" class="p-4 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 font-bold">
+                            No pending President/VP command for this employee. IT cannot promote or demote without an executive command.
+                        </div>
+                        <div v-else class="space-y-2">
+                            <p class="text-xs font-black uppercase tracking-widest text-indigo-600">Executive commands (select one)</p>
+                            <button v-for="req in requestsForUser(managing.id)" :key="req.id" @click="selectRequest(req)"
+                                :class="['w-full text-left p-3 rounded-xl border text-xs transition-colors',
+                                    Number(selectedRequestId) === Number(req.id)
+                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                        : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300']">
+                                <span :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase', ['promote', 'assign_supervisor'].includes(req.action) ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700']">
+                                    {{ req.action }}
+                                </span>
+                                <span class="ml-2 font-bold text-slate-700 dark:text-slate-200">{{ requestCurrentLabel(req) }} → {{ req.requested_position }}<span v-if="req.supervisor_department"> ({{ req.supervisor_department }})</span></span>
+                                <span v-if="req.requested_role" class="ml-1 font-mono text-slate-400">· {{ req.requested_role }}</span>
+                                <span class="block text-[11px] text-slate-400 mt-1">by {{ req.requested_by_name }} ({{ req.requested_by_position }})<span v-if="req.reason"> — “{{ req.reason }}”</span></span>
+                            </button>
+                        </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase">Position</label>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Position (from command)</label>
                                 <select v-model="positionForm.position" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                                     <option v-for="p in assignablePositions" :key="p" :value="p">{{ p.replace('_', ' ') }}</option>
                                 </select>
                             </div>
-                            <div>
+                            <div v-if="positionForm.position === 'supervisor'">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Department seat *</label>
+                                <select v-model="positionForm.supervisor_department" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
+                                    <option value="" disabled>Select department…</option>
+                                    <option v-for="d in ['knitting', 'dyeing', 'finishing', 'maintenance', 'boiler']" :key="d" :value="d">{{ d }}</option>
+                                </select>
+                            </div>
+                            <div v-else>
                                 <label class="text-xs font-bold text-slate-500 uppercase">Home Module</label>
                                 <select v-model="positionForm.role" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                                     <option v-for="r in assignableRoles" :key="r" :value="r">{{ r }}</option>
                                 </select>
                             </div>
                         </div>
-                        <p class="text-[11px] text-slate-400">Demoting to staff clears module + page grants. Promoting to manager clears page grants (managers get full module access). One manager per module and one secretary org-wide are enforced.</p>
-                        <button @click="savePosition" :disabled="positionForm.processing"
-                            class="w-full py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">
-                            Save Position
-                        </button>
+                        <p class="text-[11px] text-slate-400">Position changes REQUIRE a pending executive command and must match it exactly. Demoting to staff clears module + page grants. Promoting to manager clears page grants. Supervisor seats are MAN-only, one per department — grants untouched. One manager per module and one secretary org-wide are enforced.</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click="askPositionConfirm" :disabled="positionForm.processing || !selectedRequestId"
+                                class="py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">
+                                Apply Command…
+                            </button>
+                            <button @click="rejectSelected" :disabled="positionForm.processing || !selectedRequestId"
+                                class="py-2.5 text-sm font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 active:scale-95 disabled:opacity-50">
+                                Reject Command
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- MODULES -->
+                    <!-- MODULES (root locked) -->
                     <div v-if="activeTab === 'modules'" class="space-y-4">
+                        <div class="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 text-[11px] text-indigo-700 dark:text-indigo-300 font-bold">
+                            <template v-if="isElevatedUser(managing)">
+                                Root module <strong>{{ rootOf(managing) }}</strong> is auto-checked + locked. All modules are shown — grant extras as commanded.
+                            </template>
+                            <template v-else>
+                                Staff hold ONLY their root module <strong>{{ rootOf(managing) }}</strong> (auto-checked + locked). Extra modules are for elevated roles only.
+                            </template>
+                        </div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            <label v-for="m in modules" :key="m.key"
-                                class="flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold cursor-pointer transition-colors"
-                                :class="modulesForm.modules.includes(m.key)
+                            <label v-for="m in visibleModules" :key="m.key"
+                                class="flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-colors"
+                                :class="[(modulesForm.modules.includes(m.key) || isRootLocked(m.key))
                                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                    : 'border-slate-200 dark:border-slate-700 text-slate-500'">
-                                <input type="checkbox" :value="m.key" v-model="modulesForm.modules" class="rounded text-blue-600" />
+                                    : 'border-slate-200 dark:border-slate-700 text-slate-500',
+                                    isRootLocked(m.key) ? 'opacity-90 cursor-not-allowed' : 'cursor-pointer']">
+                                <input type="checkbox" :value="m.key" :checked="modulesForm.modules.includes(m.key) || isRootLocked(m.key)"
+                                    :disabled="isRootLocked(m.key)" @change="toggleModule(m.key)" class="rounded text-blue-600" />
                                 {{ m.key }}
+                                <span v-if="isRootLocked(m.key)" class="ml-auto text-[9px] font-black uppercase text-blue-500">root · locked</span>
                             </label>
                         </div>
                         <button @click="saveModules" :disabled="modulesForm.processing"
                             class="w-full py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">
                             Save Module Grants
                         </button>
+                        <p class="text-[11px] text-slate-400">Saving grants seeds every page of each granted module as DISABLED — enable pages manually in Page Access.</p>
                     </div>
 
-                    <!-- PAGES -->
+                    <!-- PAGES (disabled / view / edit) -->
                     <div v-if="activeTab === 'pages'" class="space-y-4">
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500 font-bold">
+                            <template v-if="isElevatedUser(managing)">
+                                Showing root <strong>{{ rootOf(managing) }}</strong> + checked modules ({{ visiblePageModules.join(', ') || 'none' }}). New pages start DISABLED — IT enables each one.
+                                <span v-if="lockedRootOf(managing)" class="mt-1 flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                                    <Lock class="w-3.5 h-3.5" /> {{ managing.position === 'manager' ? 'Manager' : managing.is_manufacturing_supervisor ? 'Supervisor' : 'Higher-up' }} root
+                                    (<strong>{{ lockedRootOf(managing) }}</strong>) is default-on and cannot be disabled — VIEW or EDIT only.
+                                </span>
+                            </template>
+                            <template v-else>
+                                Staff see ONLY their home module pages (<strong>{{ managing.role }}</strong>).
+                            </template>
+                        </div>
                         <div class="flex flex-wrap gap-1.5">
                             <button v-for="key in moduleTabKeys" :key="key" @click="activeModule = key"
                                 :class="['px-3 py-1.5 text-[11px] font-black rounded-lg transition-colors',
@@ -357,7 +629,8 @@ const setLevel = (page, level) => {
                                 {{ key }}
                             </button>
                         </div>
-                        <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                        <div v-if="!currentModule" class="p-4 text-xs text-slate-400 font-bold">No page modules available for this employee.</div>
+                        <div v-else class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                             <table class="w-full text-left">
                                 <thead>
                                     <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700">
@@ -373,6 +646,12 @@ const setLevel = (page, level) => {
                                         </td>
                                         <td class="px-4 py-2.5 text-right whitespace-nowrap">
                                             <div class="inline-flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-[11px] font-black">
+                                                <span v-if="isPageLocked(currentModule)" title="Root pages of higher-ups are default-on and cannot be disabled"
+                                                    class="px-3 py-1.5 inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed">
+                                                    <Lock class="w-3 h-3" />LOCKED
+                                                </span>
+                                                <button v-else @click="setLevel(p.key, 'disabled')"
+                                                    :class="['px-3 py-1.5 transition-colors', (pageGrants[currentModule]?.[p.key] || 'disabled') === 'disabled' ? 'bg-slate-500 text-white' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700']">DISABLE</button>
                                                 <button @click="setLevel(p.key, 'view')"
                                                     :class="['px-3 py-1.5 transition-colors', (pageGrants[currentModule]?.[p.key] === 'view') ? 'bg-amber-500 text-white' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700']">VIEW</button>
                                                 <button @click="setLevel(p.key, 'edit')"
@@ -388,6 +667,33 @@ const setLevel = (page, level) => {
                             <Save class="w-4 h-4" /> Save Page Permissions
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final confirmation modal for position commands -->
+        <div v-if="confirmPosition && managing" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" @click.self="confirmPosition = null">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-md p-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                        <CheckCircle2 class="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase">Confirm {{ confirmPosition.action }}</h3>
+                        <p class="text-[11px] text-slate-400">Executive command #{{ confirmPosition.id }} · by {{ confirmPosition.requested_by_name }}</p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-600 dark:text-slate-300 mt-4">
+                    Apply <strong>{{ confirmPosition.action }}</strong> for <strong>{{ managing.name }}</strong>:
+                    {{ requestCurrentLabel(confirmPosition) }} → <strong>{{ positionForm.position }}</strong><span v-if="positionForm.position === 'supervisor' && positionForm.supervisor_department"> ({{ positionForm.supervisor_department }})</span>
+                    <span v-if="positionForm.role && positionForm.position !== 'supervisor'"> ({{ positionForm.role }})</span>?
+                </p>
+                <p v-if="confirmPosition.reason" class="text-xs text-slate-400 mt-2">Reason: “{{ confirmPosition.reason }}”</p>
+                <div class="grid grid-cols-2 gap-3 mt-6">
+                    <button @click="confirmPosition = null" class="py-2.5 text-sm font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200">Cancel</button>
+                    <button @click="savePosition" :disabled="positionForm.processing" class="inline-flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+                        <Ban v-if="false" /> Confirm &amp; Apply
+                    </button>
                 </div>
             </div>
         </div>

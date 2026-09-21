@@ -156,7 +156,7 @@ class EmployeeController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|in:HRM,SCM,FIN,MAN,INV,ORD,WAR,CRM,ECO,PRO,PROJ,IT,CEO',
+            'role' => 'required|in:HRM,SCM,FIN,MAN,INV,ORD,WAR,CRM,ECO,PRO,PROJ,IT,LOG,CEO,COO',
             'position' => 'required|in:staff,supervisor,manager,special_officer,secretary',
             'is_active' => 'required|boolean',
         ]);
@@ -170,8 +170,8 @@ class EmployeeController extends Controller
         if ($this->getRank($currentUser) <= $this->getPosRank($request->position)) {
             return back()->with('error', 'Authority Denied: You cannot promote someone to a rank equal to or higher than your own.');
         }
-        if ($request->role === 'CEO' && strtoupper($currentUser->role) !== 'CEO') {
-            return back()->with('error', 'Only the CEO can assign the CEO role.');
+        if (in_array($request->role, ['CEO', 'COO'], true) && strtoupper($currentUser->role) !== 'CEO') {
+            return back()->with('error', 'Only the CEO can assign the CEO or COO role.');
         }
 
         $employee->update($request->only('name', 'email', 'role', 'position', 'is_active'));
@@ -285,7 +285,7 @@ class EmployeeController extends Controller
     public function updateRolePosition(Request $request, $id)
     {
         $request->validate([
-            'role' => 'required|in:HRM,SCM,FIN,MAN,INV,ORD,WAR,CRM,ECO,PRO,PROJ,IT,CEO',
+            'role' => 'required|in:HRM,SCM,FIN,MAN,INV,ORD,WAR,CRM,ECO,PRO,PROJ,IT,LOG,CEO,COO',
             'position' => 'required|in:staff,supervisor,manager,special_officer,secretary',
         ]);
 

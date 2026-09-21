@@ -3,7 +3,7 @@ import { computed } from 'vue'
 /**
  * Overseer model: the President (CEO role) has NO module access here.
  * Executive oversight runs through the CEO module pages (dashboard,
- * reports, audit, approvals, access, geolocation) — never these helpers.
+ * reports, audit, approvals, access) — never these helpers.
  * (Secretary / special_officer rules below are unchanged.)
  */
 export function usePermissions(user, page) {
@@ -72,6 +72,35 @@ export function usePermissions(user, page) {
     const hasHrmPermission = (pageKey) => hasPagePermission('HRM', pageKey)
     const hasCrmPermission = (pageKey) => hasPagePermission('CRM', pageKey)
 
+    // Modules with ANY explicit PagePermission row (including all-'disabled'
+    // ones). Mirrors backend CheckPagePermission: explicit rows are the exact
+    // access set and override the native manager/staff full-access shortcut.
+    // A native manager with zero explicit rows keeps full access; the moment
+    // IT seeds rows (default disabled), only granted pages show.
+    const hasExplicitModuleGrants = (moduleKey) => {
+        const mods = user.value?.explicit_modules || []
+        return mods.some(m => String(m).toUpperCase() === String(moduleKey).toUpperCase())
+    }
+
+    // Home module of a secretary / special officer (shared by the backend,
+    // mirroring CheckPagePermission::getRootModuleForUser). Only this module
+    // carries automatic full access — extra granted modules are filtered
+    // per page, exactly like the backend enforces.
+    const rootModule = computed(() => {
+        const r = user.value?.root_module
+        return r ? String(r).toUpperCase() : null
+    })
+
+    // Whether the user holds any usable grant in a module. The shared list
+    // already excludes 'disabled' rows, so presence means view/edit access.
+    // Used by sidebar conditions so extra-module grants (e.g. a manager given
+    // pages of another module) actually display — mirroring the
+    // CheckModuleAccess explicit-grants allowance.
+    const hasAnyModuleGrant = (moduleKey) => {
+        const perms = user.value?.page_permissions || page.props.auth?.page_permissions || []
+        return perms.some(p => String(p.module || '').toUpperCase() === String(moduleKey).toUpperCase())
+    }
+
     const hasModulePermission = (moduleKey, permissionKey) => {
         if (user.value?.role === 'CEO') return false
         const modulePerms = user.value?.permissions?.[moduleKey]
@@ -121,11 +150,14 @@ export function usePermissions(user, page) {
 
     return {
         userModuleAccess,
+        rootModule,
+        hasAnyModuleGrant,
         grantedModules,
         canAccessModule,
         canAccessWorkforce,
         hasWorkforcePermission,
         hasPagePermission,
+        hasExplicitModuleGrants,
         hasHrmPermission,
         hasCrmPermission,
         hasModulePermission,

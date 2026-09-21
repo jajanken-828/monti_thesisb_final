@@ -35,8 +35,15 @@ class OrdersController extends Controller
      */
     public function acceptPurchaseOrder(Request $request, $id)
     {
-        // Add your logic to update order status here
-        
-        return back()->with('message', 'Order accepted successfully.');
+        $order = \App\Models\Ord\PurchaseOrder::where('client_id', Auth::guard('client')->id())
+            ->findOrFail($id);
+
+        if ($order->status !== 'pending_client_approval') {
+            return back()->withErrors(['error' => 'This order can no longer be accepted.']);
+        }
+
+        $order->update(['status' => 'approved']);
+
+        return back()->with('message', "Order {$order->po_number} accepted successfully.");
     }
 }

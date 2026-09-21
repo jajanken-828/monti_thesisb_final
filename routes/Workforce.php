@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Workforce\AbsentController;
-use App\Http\Controllers\Workforce\AccessController as WorkforceAccessController;
 use App\Http\Controllers\Workforce\LeaveController as WorkforceLeaveController;
 use App\Http\Controllers\Workforce\SchedulerController;
 use App\Http\Controllers\Workforce\WorkforceDashboardController;
@@ -29,6 +28,4 @@ Route::prefix('dashboard/workforce')->name('workforce.')->middleware(['auth', 'v
     Route::post('/leave/{id}/reject', [WorkforceLeaveController::class, 'reject'])->name('leave.reject');
     Route::get('/absent', [AbsentController::class, 'index'])->name('absent');
     Route::post('/absent/{id}/suspend', [AbsentController::class, 'suspend'])->name('absent.suspend');
-    Route::get('/access', [WorkforceAccessController::class, 'index'])->name('access');
-    Route::post('/access/update', [WorkforceAccessController::class, 'update'])->name('access.update');
 });

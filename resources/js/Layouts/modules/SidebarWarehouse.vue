@@ -1,5 +1,5 @@
 <script>
-import { Warehouse, Truck, Package, XCircle, ShieldCheck } from 'lucide-vue-next'
+import { Warehouse, Truck, Package, XCircle } from 'lucide-vue-next'
 
 export const warehouseModule = {
     key: 'WAR',
@@ -7,7 +7,8 @@ export const warehouseModule = {
     icon: Warehouse,
     group: 'feature',
 
-    condition: (ctx) => ctx.hasWarehouseAccess,
+    // Extra-module grants also display the section (filtered per page below).
+    condition: (ctx) => ctx.hasWarehouseAccess || ctx.hasAnyModuleGrant('WAR'),
 
     getChildren(ctx) {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, canAccessModule, hasModulePermission, grantedModules } = ctx
@@ -17,13 +18,15 @@ export const warehouseModule = {
             { label: 'Packages', href: route('warehouse.packages'), icon: Package, permKey: 'packages' },
             { label: 'Rejects', href: route('warehouse.rejects'), icon: XCircle, permKey: 'reject' },
         ]
-        if (isCEO) {
-            all.push({ label: 'Access Control', href: route('warehouse.access'), icon: ShieldCheck, permKey: 'access' })
-        }
         if (isCEO) return all
-        if (userPosition === 'manager' && user?.role === 'WAR') return all
-        if (isSecretaryOrGM && canAccessModule('WAR')) return all
-        if (user?.is_manufacturing_supervisor && grantedModules.includes('WAR')) return all
+        // Explicit rows (even all-'disabled') are the exact access set and
+        // override this shortcut — mirrors backend CheckPagePermission.
+        if (userPosition === 'manager' && user?.role === 'WAR' && !ctx.hasExplicitModuleGrants('WAR')) return all
+        // Auto-full on the root module only (mirrors backend CheckPagePermission);
+        // extra granted modules fall through to the per-page filter below.
+        if (isSecretaryOrGM && ctx.rootModule === 'WAR') return all
+        // No supervisor shortcut: the backend grants supervisors the module shell
+        // but every page still needs an explicit row — fall through to filter.
         return all.filter(child => hasModulePermission('WAR', child.permKey))
     },
 }

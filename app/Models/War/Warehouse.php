@@ -44,6 +44,14 @@ class Warehouse extends Model
     }
 
     /**
+     * Floors in this warehouse (multi-storey support).
+     */
+    public function floors(): HasMany
+    {
+        return $this->hasMany(WarehouseFloor::class)->orderBy('level');
+    }
+
+    /**
      * Get the sections in this warehouse.
      */
     public function sections(): HasMany

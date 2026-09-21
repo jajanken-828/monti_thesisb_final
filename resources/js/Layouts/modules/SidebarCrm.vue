@@ -1,7 +1,7 @@
 <script>
 import {
     LayoutDashboard, FileUser, Eye, Award, ClipboardCheck, Users,
-    AlertCircle, ShieldCheck, UserPen, Share2,
+    AlertCircle, UserPen, Share2,
 } from 'lucide-vue-next'
 
 export const crmModule = {
@@ -10,7 +10,8 @@ export const crmModule = {
     icon: UserPen,
     group: 'core',
 
-    condition: (ctx) => ctx.canAccessModule('CRM'),
+    // Extra-module grants also display the section (filtered per page below).
+    condition: (ctx) => ctx.canAccessModule('CRM') || ctx.hasAnyModuleGrant('CRM'),
 
     getChildren(ctx) {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, canAccessModule, hasCrmPermission, grantedModules } = ctx
@@ -21,15 +22,20 @@ export const crmModule = {
             { label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Users, permKey: 'customer_profiles' },
             { label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' },
             { label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' },
-            { label: 'Access Control', href: route('crm.access.index'), icon: ShieldCheck, permKey: 'access' },
         ]
         if (isCEO) return all
-        if (userPosition === 'manager' && user?.role === 'CRM') return all
-        if (isSecretaryOrGM && canAccessModule('CRM')) return all
-        if (user?.is_manufacturing_supervisor && grantedModules.includes('CRM')) return all
-        const filtered = all.filter(child => hasCrmPermission(child.permKey))
-        if (filtered.length === 0) return [all[0]]
-        return filtered
+        // Explicit rows (even all-'disabled') are the exact access set and
+        // override this shortcut — mirrors backend CheckPagePermission.
+        if (userPosition === 'manager' && user?.role === 'CRM' && !ctx.hasExplicitModuleGrants('CRM')) return all
+        // Auto-full on the root module only (mirrors backend CheckPagePermission);
+        // extra granted modules fall through to the per-page filter below.
+        if (isSecretaryOrGM && ctx.rootModule === 'CRM') return all
+        // No supervisor shortcut: the backend grants supervisors the module shell
+        // but every page still needs an explicit row — fall through to filter.
+        // No fallback: when every page is 'disabled' (the IT default), the
+        // filtered list is empty and buildNavItems skips this module entirely,
+        // leaving the sidebar empty → AwaitingAccess landing page.
+        return all.filter(child => hasCrmPermission(child.permKey))
     },
 }
 </script>

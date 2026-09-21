@@ -1,7 +1,11 @@
 <?php
 
-use App\Http\Controllers\Scm\ScmAccessController;
+use App\Http\Controllers\Scm\ScmAnalyticsController;
+use App\Http\Controllers\Scm\ScmDashboardController;
+use App\Http\Controllers\Scm\ScmDeliveriesController;
+use App\Http\Controllers\Scm\ScmPlanningController;
 use App\Http\Controllers\Scm\ScmProcurementOrderController;
+use App\Http\Controllers\Scm\ScmPurchaseController;
 use App\Http\Controllers\Scm\ScmSalesOrderController;
 use App\Http\Controllers\Scm\ScmVendorController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +20,10 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::prefix('dashboard/scm')->name('scm.')->middleware(['auth', 'verified', 'module.access:SCM'])->group(function () {
+    // Command Center (SCOR: Enable — pipeline overview)
+    Route::get('/dashboard', [ScmDashboardController::class, 'index'])
+        ->middleware('page.permission:dashboard,view')->name('dashboard');
+
     // Sales Orders (from ECO)
     Route::get('/sales-orders', [ScmSalesOrderController::class, 'index'])
         ->middleware('page.permission:sales,view')->name('sales-orders');
@@ -45,9 +53,22 @@ Route::prefix('dashboard/scm')->name('scm.')->middleware(['auth', 'verified', 'm
     Route::post('/vendors/{registration}/reject', [ScmVendorController::class, 'reject'])
         ->middleware('page.permission:vendor,edit')->name('vendors.reject');
 
-    // Access Control (CEO only)
-    Route::get('/access', [ScmAccessController::class, 'index'])
-        ->middleware('page.permission:access,view')->name('access.index');
-    Route::post('/access/update', [ScmAccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')->name('access.update');
+    // Demand & Materials Planning (SCOR: Plan — textile MRP-lite, read-only)
+    Route::get('/planning', [ScmPlanningController::class, 'index'])
+        ->middleware('page.permission:planning,view')->name('planning');
+
+    // Purchase Order Tracking (SCOR: Source — pipeline visibility; PRO executes)
+    Route::get('/purchase-orders', [ScmPurchaseController::class, 'index'])
+        ->middleware('page.permission:purchase,view')->name('purchase-orders');
+
+    // Inbound Deliveries & QC (SCOR: Source/Deliver — goods receipt history)
+    Route::get('/deliveries', [ScmDeliveriesController::class, 'index'])
+        ->middleware('page.permission:deliveries,view')->name('deliveries');
+
+    // Analytics (SCOR: Enable — supplier scorecard, spend, funnel)
+    Route::get('/analytics', [ScmAnalyticsController::class, 'index'])
+        ->middleware('page.permission:analytics,view')->name('analytics');
+
+    // Access control is centralized in the CEO module (view/request)
+    // and IT Access Control (fulfilment).
 });

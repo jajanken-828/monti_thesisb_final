@@ -37,6 +37,7 @@ class TrackingController extends Controller
             'deliveries'    => $deliveries,
             'filter'        => $filter,
             'montiLocation' => CeoLocation::latest()->first(),
+            'montiLocations' => CeoLocation::where('is_active', true)->latest()->get(),
         ]);
     }
 }

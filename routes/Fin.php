@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Fin\FinDashboardController;
-use App\Http\Controllers\Hrm\AccessController;
 use App\Http\Controllers\Hrm\InterviewController;
 use App\Http\Controllers\Hrm\TraineeController;
 use Illuminate\Support\Facades\Route;
@@ -12,32 +11,31 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Read-only dashboards carry page.permission:dashboard/receivables/... so
 | explicit per-page grants are enforced. FIN views perform no API writes.
-| (Top interview/trainee/access links render HRM pages and are untouched.)
+| (Top interview/trainee links render HRM pages and are untouched.
+| Access control lives in the CEO module + IT Access Control.)
 |--------------------------------------------------------------------------
 */
 Route::prefix('dashboard/fin')->name('fin.')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/interview', [InterviewController::class, 'index'])->name('interview.index');
     Route::get('/trainee', [TraineeController::class, 'index'])->name('trainee.index');
-    Route::get('/access', [AccessController::class, 'index'])->name('access.index');
-    Route::post('/access/update', [AccessController::class, 'update'])->name('access.update');
 
     Route::get('/manager', [FinDashboardController::class, 'managerDashboard'])
-        ->middleware(['module.access:FIN', 'position:manager', 'page.permission:dashboard,view'])
+        ->middleware(['module.access:FIN', 'position:manager,staff', 'page.permission:dashboard,view'])
         ->name('manager.dashboard');
     Route::get('/manager/receivables', [FinDashboardController::class, 'receivables'])
-        ->middleware(['module.access:FIN', 'position:manager', 'page.permission:receivables,view'])
+        ->middleware(['module.access:FIN', 'position:manager,staff', 'page.permission:receivables,view'])
         ->name('manager.receivables');
     Route::get('/manager/payables', [FinDashboardController::class, 'payables'])
-        ->middleware(['module.access:FIN', 'position:manager', 'page.permission:payables,view'])
+        ->middleware(['module.access:FIN', 'position:manager,staff', 'page.permission:payables,view'])
         ->name('manager.payables');
     Route::get('/manager/expenses', [FinDashboardController::class, 'expenses'])
-        ->middleware(['module.access:FIN', 'position:manager', 'page.permission:expenses,view'])
+        ->middleware(['module.access:FIN', 'position:manager,staff', 'page.permission:expenses,view'])
         ->name('manager.expenses');
     Route::get('/manager/payroll', [FinDashboardController::class, 'payroll'])
-        ->middleware(['module.access:FIN', 'position:manager', 'page.permission:payroll,view'])
+        ->middleware(['module.access:FIN', 'position:manager,staff', 'page.permission:payroll,view'])
         ->name('manager.payroll');
     Route::get('/manager/reports', [FinDashboardController::class, 'reports'])
-        ->middleware(['module.access:FIN', 'position:manager', 'page.permission:reports,view'])
+        ->middleware(['module.access:FIN', 'position:manager,staff', 'page.permission:reports,view'])
         ->name('manager.reports');
 
     Route::get('/staff', [FinDashboardController::class, 'staffDashboard'])

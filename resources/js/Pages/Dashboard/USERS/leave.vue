@@ -38,13 +38,13 @@ const submit = () => {
 };
 
 const getStatusStyles = (status) => {
-    if (!status) return 'bg-slate-100 text-slate-600';
+    if (!status) return 'bg-slate-100 dark:bg-zinc-800 text-slate-600';
     const styles = {
         'approved': 'bg-emerald-100 text-emerald-700',
         'pending': 'bg-amber-100 text-amber-700',
         'rejected': 'bg-rose-100 text-rose-700',
     };
-    return styles[status.toLowerCase()] || 'bg-slate-100 text-slate-600';
+    return styles[status.toLowerCase()] || 'bg-slate-100 dark:bg-zinc-800 text-slate-600';
 };
 
 const page = usePage();
@@ -85,15 +85,15 @@ const leaveBalances = computed(() => {
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div class="lg:col-span-8 space-y-8">
                         <div>
-                            <h1 class="text-3xl font-black text-slate-900 uppercase tracking-tight">
-                                Leave <span class="text-blue-600 font-light">Management</span>
+                            <h1 class="text-3xl font-black text-slate-900 dark:text-zinc-100 uppercase tracking-tight">
+                                Leave <span class="text-blue-600 dark:text-blue-400 font-light">Management</span>
                             </h1>
-                            <p class="text-sm text-slate-500 font-medium">Request time off and track your balances</p>
+                            <p class="text-sm text-slate-500 dark:text-zinc-400 font-medium">Request time off and track your balances</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div v-for="balance in leaveBalances" :key="balance.type"
-                                class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex items-center gap-8 transition-transform hover:scale-[1.02]">
+                                class="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 shadow-sm border border-slate-100 dark:border-zinc-800 flex items-center gap-8 transition-transform hover:scale-[1.02]">
                                 <div class="relative size-24 flex items-center justify-center flex-shrink-0">
                                     <svg class="size-full -rotate-90" viewBox="0 0 36 36">
                                         <circle cx="18" cy="18" r="16" fill="none" class="stroke-slate-100"
@@ -103,15 +103,15 @@ const leaveBalances = computed(() => {
                                             :stroke-dasharray="`${(balance.used / balance.total) * 100}, 100`"
                                             stroke-linecap="round"></circle>
                                     </svg>
-                                    <span class="absolute text-xl font-black text-slate-800 italic">{{ balance.total -
+                                    <span class="absolute text-xl font-black text-slate-800 dark:text-zinc-200 italic">{{ balance.total -
                                         balance.used }}</span>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                                    <p class="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest mb-1">
                                         Available Days</p>
                                     <h3 :class="['text-xl font-black uppercase italic', balance.text]">{{ balance.type
                                         }}</h3>
-                                    <p class="text-xs text-slate-400 font-medium mt-1">{{ balance.used }} days used of
+                                    <p class="text-xs text-slate-400 dark:text-zinc-500 font-medium mt-1">{{ balance.used }} days used of
                                         {{ balance.total }}</p>
                                 </div>
                             </div>
@@ -129,10 +129,10 @@ const leaveBalances = computed(() => {
                                             class="text-blue-100 text-[10px] font-bold uppercase ml-1" />
                                         <select id="leave_type" v-model="form.leave_type"
                                             class="w-full bg-white/10 border-white/20 rounded-xl text-sm font-bold text-white focus:ring-white/30">
-                                            <option value="" disabled class="text-slate-900">Select Type</option>
-                                            <option value="sick" class="text-slate-900">Sick Leave</option>
-                                            <option value="vacation" class="text-slate-900">Vacation</option>
-                                            <option value="personal" class="text-slate-900">Personal</option>
+                                            <option value="" disabled class="text-slate-900 dark:text-zinc-100">Select Type</option>
+                                            <option value="sick" class="text-slate-900 dark:text-zinc-100">Sick Leave</option>
+                                            <option value="vacation" class="text-slate-900 dark:text-zinc-100">Vacation</option>
+                                            <option value="personal" class="text-slate-900 dark:text-zinc-100">Personal</option>
                                         </select>
                                         <InputError :message="form.errors.leave_type" class="text-white mt-1" />
                                     </div>
@@ -162,7 +162,7 @@ const leaveBalances = computed(() => {
                                     </div>
                                     <div class="md:col-span-2 pt-4">
                                         <button type="submit" :disabled="form.processing"
-                                            class="w-full bg-white text-blue-600 font-black uppercase py-4 rounded-2xl shadow-lg hover:bg-blue-50 transition-all text-xs disabled:opacity-50">
+                                            class="w-full bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 font-black uppercase py-4 rounded-2xl shadow-lg hover:bg-blue-50 dark:bg-blue-900/30 transition-all text-xs disabled:opacity-50">
                                             {{ form.processing ? 'Submitting...' : 'Submit Request' }}
                                         </button>
                                     </div>
@@ -172,19 +172,19 @@ const leaveBalances = computed(() => {
                     </div>
 
                     <div class="lg:col-span-4">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 h-full">
-                            <h2 class="text-lg font-black text-slate-800 italic mb-10">Application Status</h2>
+                        <div class="bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-zinc-800 p-8 h-full">
+                            <h2 class="text-lg font-black text-slate-800 dark:text-zinc-200 italic mb-10">Application Status</h2>
                             <div class="space-y-6 relative">
-                                <div class="absolute left-[15px] top-0 h-full w-[2px] bg-slate-50"></div>
+                                <div class="absolute left-[15px] top-0 h-full w-[2px] bg-slate-50 dark:bg-zinc-800"></div>
 
-                                <div v-if="leaveHistory.length === 0" class="ml-8 text-xs text-slate-400 italic">
+                                <div v-if="leaveHistory.length === 0" class="ml-8 text-xs text-slate-400 dark:text-zinc-500 italic">
                                     No records found in database.
                                 </div>
 
                                 <div v-for="history in leaveHistory" :key="history.id"
                                     class="flex gap-4 relative group">
                                     <div
-                                        class="size-8 rounded-full bg-white border-4 border-slate-50 z-10 shadow-sm flex items-center justify-center">
+                                        class="size-8 rounded-full bg-white dark:bg-zinc-900 border-4 border-slate-50 dark:border-zinc-800 z-10 shadow-sm flex items-center justify-center">
                                         <CheckCircle2 v-if="history.status === 'approved'"
                                             class="size-3 text-emerald-500" />
                                         <XCircle v-else-if="history.status === 'rejected'"
@@ -192,14 +192,14 @@ const leaveBalances = computed(() => {
                                         <Clock v-else class="size-3 text-amber-500" />
                                     </div>
                                     <div
-                                        class="flex-1 bg-slate-50/50 p-4 rounded-[1.5rem] border border-slate-100 group-hover:bg-white transition-colors">
+                                        class="flex-1 bg-slate-50/50 p-4 rounded-[1.5rem] border border-slate-100 dark:border-zinc-800 group-hover:bg-white dark:bg-zinc-900 transition-colors">
                                         <div class="flex justify-between items-start">
                                             <div>
                                                 <p
-                                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                    class="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-widest">
                                                     {{ history.start_date }} - {{ history.end_date }}
                                                 </p>
-                                                <p class="text-sm font-bold text-slate-800 mt-1 uppercase">{{
+                                                <p class="text-sm font-bold text-slate-800 dark:text-zinc-200 mt-1 uppercase">{{
                                                     history.leave_type }}</p>
                                             </div>
                                             <span

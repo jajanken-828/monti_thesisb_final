@@ -736,6 +736,13 @@
                                     <p class="text-xs text-blue-100 mt-0.5">
                                         {{ recipes.length }} recipe(s) available · {{ inquiry.client?.company_name }}
                                     </p>
+                                    <div class="mt-2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-200">
+                                        <span class="rounded-full bg-white/20 px-2 py-0.5">1 · Review PO</span>
+                                        <span class="opacity-50">→</span>
+                                        <span class="rounded-full bg-white/20 px-2 py-0.5">2 · Add products</span>
+                                        <span class="opacity-50">→</span>
+                                        <span class="rounded-full bg-white/20 px-2 py-0.5">3 · Confirm</span>
+                                    </div>
                                 </div>
                                 <button @click="jobOrderModal.show = false"
                                     class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
@@ -758,6 +765,10 @@
                                             class="text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline">View PDF</a>
                                     </div>
                                 </div>
+                                <div v-else class="p-8 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-700 text-center">
+                                    <FileText class="h-8 w-8 text-gray-300 dark:text-zinc-600 mx-auto mb-2" />
+                                    <p class="text-xs font-bold text-gray-400">No PO file attached — verify details with the client in chat first.</p>
+                                </div>
                             </div>
 
                             <!-- Right: Form -->
@@ -767,8 +778,9 @@
                                         <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
                                             PO Number *
                                         </label>
-                                        <input v-model="jobOrderForm.po_number" type="text" required
-                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                        <input v-model="jobOrderForm.po_number" type="text" required placeholder="e.g. PO-2026-0001"
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                        <p class="text-[10px] text-gray-400 mt-1 font-medium">Must match the client's purchase order shown on the left.</p>
                                     </div>
 
                                     <!-- Product items -->
@@ -785,16 +797,29 @@
                                             </button>
                                         </div>
 
-                                        <select v-model="item.product_id" required
-                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
-                                            <option value="">Select Product</option>
-                                            <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
-                                        </select>
-
-                                        <input v-model="item.color" type="text" placeholder="Color" required
-                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                        <div>
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                Product *
+                                            </label>
+                                            <select v-model="item.product_id" required aria-label="Product"
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                                <option value="">Select Product</option>
+                                                <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
+                                            </select>
+                                        </div>
 
                                         <div>
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                Color *
+                                            </label>
+                                            <input v-model="item.color" type="text" placeholder="e.g. Royal Blue" required
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                Recipe <span class="normal-case font-normal">(optional)</span>
+                                            </label>
                                             <select v-model="item.recipe_id"
                                                 class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
                                                 <option :value="null">
@@ -822,11 +847,21 @@
                                         </div>
 
                                         <div class="grid grid-cols-2 gap-3">
-                                            <input v-model.number="item.kilos" type="number" placeholder="Kilos" required
-                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
-                                            <input v-model.number="item.unit_price" type="number" step="0.01"
-                                                placeholder="Price per kg" required
-                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                            <div>
+                                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                    Quantity (kg) *
+                                                </label>
+                                                <input v-model.number="item.kilos" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required
+                                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                    Price per kg (₱) *
+                                                </label>
+                                                <input v-model.number="item.unit_price" type="number" min="0" step="0.01" inputmode="decimal"
+                                                    placeholder="0.00" required
+                                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                            </div>
                                         </div>
 
                                         <div class="flex justify-end">
@@ -835,14 +870,25 @@
                                             </span>
                                         </div>
 
-                                        <textarea v-model="item.description" placeholder="Description (optional)" rows="2"
-                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"></textarea>
+                                        <div>
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                                                Description <span class="normal-case font-normal">(optional)</span>
+                                            </label>
+                                            <textarea v-model="item.description" placeholder="e.g. Special finishing, packaging notes…" rows="2"
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition"></textarea>
+                                        </div>
                                     </div>
 
                                     <button type="button" @click="addJobOrderItem"
                                         class="w-full py-2.5 border-2 border-dashed border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 rounded-2xl text-xs font-black uppercase tracking-wide hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition flex items-center justify-center gap-2">
                                         + Add Product
                                     </button>
+
+                                    <!-- Live order total -->
+                                    <div class="flex items-center justify-between rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 px-4 py-3">
+                                        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Order total · {{ jobOrderForm.items.length }} item(s)</span>
+                                        <span class="text-base font-black text-indigo-700 dark:text-indigo-300">₱{{ jobOrderGrandTotal }}</span>
+                                    </div>
 
                                     <!-- Error -->
                                     <div v-if="jobOrderModal.error"
@@ -1167,6 +1213,13 @@ const recipesForProduct = (productId) => {
         return byForeignKey || byRelationship;
     });
 };
+
+// Live grand total across all job-order items
+const jobOrderGrandTotal = computed(() =>
+    jobOrderForm.value.items
+        .reduce((sum, i) => sum + (Number(i.kilos) || 0) * (Number(i.unit_price) || 0), 0)
+        .toFixed(2)
+);
 
 const submitJobOrder = () => {
     jobOrderModal.value.error = null;

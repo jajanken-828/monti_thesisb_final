@@ -10,7 +10,8 @@ export const finModule = {
     icon: Wallet,
     group: 'feature',
 
-    condition: (ctx) => ctx.canAccessModule('FIN'),
+    // Extra-module grants also display the section (filtered per page below).
+    condition: (ctx) => ctx.canAccessModule('FIN') || ctx.hasAnyModuleGrant('FIN'),
 
     getChildren(ctx) {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, canAccessModule, hasModulePermission, grantedModules } = ctx
@@ -23,9 +24,14 @@ export const finModule = {
             { label: 'Reports', href: route('fin.manager.reports'), icon: BarChart3, permKey: 'reports' },
         ]
         if (isCEO) return all
-        if (userPosition === 'manager' && user?.role === 'FIN') return all
-        if (isSecretaryOrGM && canAccessModule('FIN')) return all
-        if (user?.is_manufacturing_supervisor && grantedModules.includes('FIN')) return all
+        // Explicit rows (even all-'disabled') are the exact access set and
+        // override this shortcut — mirrors backend CheckPagePermission.
+        if (userPosition === 'manager' && user?.role === 'FIN' && !ctx.hasExplicitModuleGrants('FIN')) return all
+        // Auto-full on the root module only (mirrors backend CheckPagePermission);
+        // extra granted modules fall through to the per-page filter below.
+        if (isSecretaryOrGM && ctx.rootModule === 'FIN') return all
+        // No supervisor shortcut: the backend grants supervisors the module shell
+        // but every page still needs an explicit row — fall through to filter.
         return all.filter(child => hasModulePermission('FIN', child.permKey))
     },
 }

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Core\PagePermission;
 use App\Models\Logistics\Driver;
+use App\Support\AccessGate;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -69,6 +72,17 @@ class DashboardController extends Controller
         // ---- CEO redirect ----
         if ($role === 'CEO') {
             return redirect()->route('ceo.dashboard');
+        }
+
+        // ---- No-access gate ----
+        // When IT has left every page on 'disabled' (the seeded default) and
+        // the account holds no other grant, land on a waiting page instead of
+        // bouncing the user into a module dashboard that would only 403.
+        // The sidebar stays empty until an admin enables at least one page.
+        if (! $this->hasAnyAccess($user)) {
+            return Inertia::render('Dashboard/AwaitingAccess', [
+                'user' => $user,
+            ]);
         }
 
         // ---- Role & position to route mapping ----
@@ -146,6 +160,17 @@ class DashboardController extends Controller
             return redirect()->route('dashboard'); // This route may not exist; better to use a fallback view.
         }
 
+        // ---- Explicit-grant landing ----
+        // IT may grant a subset that excludes the native dashboard (e.g. a FIN
+        // staffer with receivables + payables only). The native landing below
+        // would 403 for them, so send them to their first approved page
+        // instead. Native auto-access (no explicit rows for the own module)
+        // keeps the routing below unchanged.
+        $explicitLanding = $this->explicitGrantLanding($user, $role, $position);
+        if ($explicitLanding) {
+            return redirect()->route($explicitLanding);
+        }
+
         // Normal manager/staff redirection
         if (isset($routeMap[$role]) && isset($routeMap[$role][$position])) {
             return redirect()->route($routeMap[$role][$position]);
@@ -161,5 +186,195 @@ class DashboardController extends Controller
             ],
             'user' => $user,
         ]);
+    }
+
+    /**
+     * Landing route for accounts holding an explicit per-page set.
+     *
+     * Returns null when the native landing still applies (no explicit rows
+     * for the user's own module, or the native dashboard itself is granted).
+     * Otherwise returns the first approved page's route — own module first
+     * (sidebar order, dashboard preferred), then any other granted module —
+     * so the user never lands on a page that would only 403. Unmapped pages
+     * (e.g. parameterised routes) are skipped; nothing mapped → null.
+     */
+    protected function explicitGrantLanding($user, string $role, string $position): ?string
+    {
+        $nativeModule = strtoupper($role);
+
+        $explicitModules = PagePermission::where('user_id', $user->id)
+            ->distinct()
+            ->pluck('module')
+            ->map(fn ($m) => strtoupper((string) $m))
+            ->all();
+
+        $nativeUpper = strtoupper($nativeModule);
+        if (! in_array($nativeUpper, $explicitModules, true)) {
+            return null;
+        }
+
+        $usableByModule = PagePermission::where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->whereIn('permission_level', ['view', 'edit'])
+                    ->orWhereNull('permission_level');
+            })
+            ->get(['module', 'page'])
+            ->groupBy(fn ($row) => strtoupper((string) $row->module))
+            ->map(fn ($rows) => $rows->map(fn ($r) => strtolower((string) $r->page))->unique()->values()->all())
+            ->all();
+
+        $orderedModules = array_values(array_unique(array_merge(
+            [$nativeUpper],
+            $explicitModules,
+            array_keys($usableByModule)
+        )));
+
+        foreach ($orderedModules as $module) {
+            foreach ($this->landingPagesFor($module, $position) as $page => $routeName) {
+                if (! in_array($page, $usableByModule[$module] ?? [], true)) {
+                    continue;
+                }
+                // MAN overview pages (except the staff entry dashboard) require
+                // department-supervisor scope — plain MAN staff can only land
+                // on their staff dashboard; their role pages live outside the
+                // page-permission model.
+                if ($module === 'MAN' && $page !== 'dashboard'
+                    && strtolower($position) === 'staff'
+                    && empty($user->is_manufacturing_supervisor)) {
+                    continue;
+                }
+                if (Route::has($routeName)) {
+                    return $routeName;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Approved page → landing route map, in sidebar order (dashboard first).
+     * Route names mirror the sidebar modules; parameterised routes (e.g.
+     * warehouse.monitor) are intentionally absent.
+     */
+    protected function landingPagesFor(string $module, string $position): array
+    {
+        $isStaff = strtolower($position) === 'staff';
+
+        $map = [
+            'HRM' => [
+                'dashboard' => 'hrm.dashboard',
+                'employee' => 'hrm.employees.index',
+                'application' => 'hrm.applications.index',
+                'interview' => 'hrm.interview.index',
+                'trainee' => 'hrm.trainee.index',
+                'onboarding' => 'hrm.onboarding.index',
+                'payroll' => 'hrm.payroll',
+                'analytics' => 'hrm.analytics',
+            ],
+            'CRM' => [
+                'dashboard' => 'crm.dashboard',
+                'leads' => 'crm.lead',
+                'approvals' => 'crm.approval.index',
+                'customer_profiles' => 'crm.customerprofile.index',
+                'investigation' => 'crm.investigation.index',
+                'socials' => 'crm.socials.index',
+            ],
+            'MAN' => [
+                'dashboard' => $isStaff ? 'man.employee.dashboard' : 'man.manager.dashboard',
+                'production' => 'man.manager.production',
+                'reject' => 'man.manager.rejected',
+                'inventory' => 'man.inventory.index',
+            ],
+            'LOG' => [
+                'dashboard' => 'logistics.dashboard',
+                'load' => 'logistics.load.index',
+                'dispatch' => 'logistics.dispatch.index',
+                'fleet' => 'logistics.fleet.index',
+                'drivers' => 'logistics.drivers.index',
+                'routes' => 'logistics.routes',
+                'proof' => 'logistics.proof.index',
+                'reports' => 'logistics.reports.index',
+            ],
+            'ECO' => [
+                'dashboard' => 'eco.dashboard',
+                'store' => 'eco.store',
+                'inquiry' => 'eco.inquiries',
+                'supplier' => 'eco.suppliers',
+                'credit' => 'eco.credit',
+                'push' => 'eco.push',
+            ],
+            'ORD' => [
+                'orders' => 'ord.orders',
+                'productions' => 'ord.productions',
+                'delivery' => 'ord.delivery',
+            ],
+            'SCM' => [
+                'sales' => 'scm.sales-orders',
+                'procurement' => 'scm.procurement-orders',
+                'vendor' => 'scm.vendors',
+            ],
+            'WAR' => [
+                'warehouse' => 'warehouse.index',
+                'receiving' => 'warehouse.receiving',
+                'packages' => 'warehouse.packages',
+                'reject' => 'warehouse.rejects',
+            ],
+            'INV' => [
+                'dashboard' => 'inv.dashboard',
+                'materials' => 'inv.materials',
+                'products' => 'inv.products',
+                'bom' => 'inv.bom',
+                'checker' => 'inv.checker',
+            ],
+            'PRO' => [
+                'dashboard' => 'pro.manager.dashboard',
+                'requests' => 'pro.manager.material-requests',
+                'quotations' => 'pro.manager.supplier-quotations',
+                'receipt' => 'pro.manager.receipt',
+            ],
+            'FIN' => [
+                'dashboard' => $isStaff ? 'fin.employee.dashboard' : 'fin.manager.dashboard',
+                'receivables' => 'fin.manager.receivables',
+                'payables' => 'fin.manager.payables',
+                'expenses' => 'fin.manager.expenses',
+                'payroll' => 'fin.manager.payroll',
+                'reports' => 'fin.manager.reports',
+            ],
+            'PROJ' => [
+                'dashboard' => $isStaff ? 'proj.employee.dashboard' : 'proj.manager.dashboard',
+            ],
+            'IT' => [
+                'dashboard' => 'it.dashboard',
+                'tickets' => 'it.tickets',
+                'assets' => 'it.assets',
+                'monitoring' => 'it.monitoring',
+                'knowledge' => 'it.knowledge',
+                'changes' => 'it.changes',
+                'access_control' => 'it.access-control',
+                'access_logs' => 'it.access-logs',
+            ],
+        ];
+
+        return $map[strtoupper($module)] ?? [];
+    }
+
+    /**
+     * Whether the account holds ANY usable grant.
+     * Delegates to the shared gate (also used for friendly 403 handling).
+     */
+    protected function hasAnyAccess($user): bool
+    {
+        return AccessGate::hasAnyAccess($user);
+    }
+
+    /**
+     * Whether the user holds any usable page grant (view/edit; legacy NULL
+     * levels grandfathered as edit, mirroring CheckPagePermission and
+     * CheckModuleAccess). Module matching is case-tolerant.
+     */
+    protected function hasUsablePageGrants($user, ?string $module = null): bool
+    {
+        return AccessGate::hasUsablePageGrants($user, $module);
     }
 }

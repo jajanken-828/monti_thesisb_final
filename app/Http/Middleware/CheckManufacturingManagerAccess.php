@@ -18,9 +18,10 @@ class CheckManufacturingManagerAccess
      *
      * NOTE (overseer model): the President (CEO) keeps access here as a
      * personnel-governance exception — supervisor appointment/removal
-     * (man.access.manage) requires a cross-department authority, and without
-     * it a department with no supervisor could never get one. All other
-     * MAN operating pages are still driven by department scope.
+     * (fulfilled via the CEO module + IT Access Control) requires a
+     * cross-department authority, and without it a department with no
+     * supervisor could never get one. All other MAN operating pages are
+     * still driven by department scope.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */

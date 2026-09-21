@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Eco\EcoAccessController;
 use App\Http\Controllers\Eco\EcoCreditController;
 use App\Http\Controllers\Eco\EcoDashboardController;
 use App\Http\Controllers\Eco\EcoInquiryController;
@@ -58,15 +57,15 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
     // Push to SCM / Order Management
     Route::get('/push', [EcoPushController::class, 'index'])
         ->middleware('page.permission:push,view')->name('push');
+    // DSS: sustainability preview BEFORE accepting (quick inventory check)
+    Route::get('/push/dss/{order}', [EcoPushController::class, 'dssCheck'])
+        ->middleware('page.permission:push,view')->name('push.dss');
     Route::post('/push/scm/{order}', [EcoPushController::class, 'pushToScm'])
         ->middleware('page.permission:push,edit')->name('push.scm');
     Route::post('/push/order-mgmt/{order}', [EcoPushController::class, 'pushToOrderMgmt'])
         ->middleware('page.permission:push,edit')->name('push.ordermgmt');
-    // Access control (only CEO)
-    Route::get('/access', [EcoAccessController::class, 'index'])
-        ->middleware('page.permission:access,view')->name('access');
-    Route::post('/access/update', [EcoAccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')->name('access.update');
+    // Access control is centralized in the CEO module (view/request)
+    // and IT Access Control (fulfilment).
 
     // Inside ECO route group
     Route::get('/suppliers', [EcoSupplierController::class, 'index'])

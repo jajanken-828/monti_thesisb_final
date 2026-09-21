@@ -7,7 +7,6 @@ use App\Http\Controllers\Logistics\DriversController;
 use App\Http\Controllers\Logistics\FleetController;
 
 use App\Http\Controllers\Logistics\LoadController;
-use App\Http\Controllers\Logistics\LogAccessController;
 use App\Http\Controllers\Logistics\LogisticsDashboardController;
 use App\Http\Controllers\Logistics\ProofController;
 use App\Http\Controllers\Logistics\ReportController;
@@ -72,15 +71,11 @@ Route::middleware(['auth', 'verified', 'module.access:LOG'])->prefix('dashboard/
     Route::post('/conductor-portal/{delivery}/report', [ConductorController::class, 'storeReport'])
         ->middleware('page.permission:drivers,edit')->name('conductor.report');
 
-    // Reports & Access
+    // Reports
     Route::get('/proof-of-delivery', [ProofController::class, 'index'])
         ->middleware('page.permission:proof,view')->name('proof.index');
     Route::get('/conductor-reports', [ReportController::class, 'index'])
         ->middleware('page.permission:reports,view')->name('reports.index');
-    Route::get('/access-control', [LogAccessController::class, 'index'])
-        ->middleware('page.permission:access,view')->name('access.index');
-    Route::post('/access-control', [LogAccessController::class, 'update'])
-        ->middleware('page.permission:access,edit')->name('access.update');
 
     // ── Delivery Routes (map-based, client-linked) ────────────────────────
     Route::get('/routes', [RoutesController::class, 'index'])

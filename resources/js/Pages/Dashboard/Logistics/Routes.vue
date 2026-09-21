@@ -72,7 +72,7 @@
                             <div class="text-center">
                                 <AlertTriangle class="h-8 w-8 text-amber-500 mx-auto mb-2 animate-bounce-soft" />
                                 <p class="text-sm font-black text-amber-700 dark:text-amber-400">MontiTextiles HQ location not set.</p>
-                                <p class="text-xs text-amber-600 mt-1">Please set a location in the CEO Geolocation module first.</p>
+                                <p class="text-xs text-amber-600 mt-1">Please set a location in the IT Geolocation module first.</p>
                             </div>
                         </div>
                         <div id="main-map" class="w-full rounded-3xl z-0" style="height:520px;"></div>

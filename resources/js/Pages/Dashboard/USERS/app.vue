@@ -105,7 +105,7 @@ const schedule = [
         time: props.assigned_shift ? 'Duty' : 'N/A',
         title: shiftDisplay.value,
         type: 'Assigned Schedule',
-        color: props.assigned_shift ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'
+        color: props.assigned_shift ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 border-slate-200'
     },
 ];
 
@@ -123,16 +123,16 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
 
                     <div class="lg:col-span-8 space-y-8">
                         <div class="flex justify-between items-center">
-                            <h1 class="text-3xl font-bold text-slate-800 italic uppercase tracking-tighter">
-                                System <span class="text-blue-600 font-light">Overview</span>
+                            <h1 class="text-3xl font-bold text-slate-800 dark:text-zinc-200 italic uppercase tracking-tighter">
+                                System <span class="text-blue-600 dark:text-blue-400 font-light">Overview</span>
                             </h1>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div
-                                class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col items-center justify-center relative overflow-hidden">
+                                class="bg-white dark:bg-zinc-900 rounded-[2rem] p-8 shadow-sm border border-slate-100 dark:border-zinc-800 flex flex-col items-center justify-center relative overflow-hidden">
                                 <span
-                                    class="absolute top-4 left-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Efficiency</span>
+                                    class="absolute top-4 left-6 text-[10px] font-black uppercase text-slate-400 dark:text-zinc-500 tracking-widest">Efficiency</span>
                                 <div class="relative size-32 flex items-center justify-center">
                                     <svg class="size-full -rotate-90" viewBox="0 0 36 36">
                                         <circle cx="18" cy="18" r="16" fill="none" class="stroke-slate-100"
@@ -141,16 +141,16 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                             stroke-width="3" :stroke-dasharray="`${attendanceRate}, 100`"
                                             stroke-linecap="round"></circle>
                                     </svg>
-                                    <span class="absolute text-3xl font-black text-slate-800 italic">{{ attendanceRate
+                                    <span class="absolute text-3xl font-black text-slate-800 dark:text-zinc-200 italic">{{ attendanceRate
                                         }}%</span>
                                 </div>
                                 <p
-                                    class="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                                    class="mt-4 text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest text-center">
                                     Active Service Records</p>
                             </div>
 
                             <div
-                                class="relative group h-full min-h-[320px] rounded-[2rem] overflow-hidden shadow-xl shadow-blue-500/5 border border-slate-100 bg-slate-900">
+                                class="relative group h-full min-h-[320px] rounded-[2rem] overflow-hidden shadow-xl shadow-blue-500/5 border border-slate-100 dark:border-zinc-800 bg-slate-900">
                                 <img :src="userPhotoUrl" alt="Profile"
                                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-80" />
                                 <div
@@ -162,13 +162,13 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                         </h2>
                                         <!-- <BadgeCheck class="size-5 text-blue-400 fill-white" /> -->
                                     </div>
-                                    <p class="text-slate-300 text-[11px] font-bold uppercase tracking-widest mb-6">
+                                    <p class="text-slate-300 dark:text-zinc-500 text-[11px] font-bold uppercase tracking-widest mb-6">
                                         {{ user.role }} | {{ user.position }} | ID: {{ user.id.toString().padStart(5,
                                             '0') }}
                                     </p>
                                     <div class="flex items-center justify-between">
                                         <button @click="openEditModal"
-                                            class="bg-white text-slate-900 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-colors shadow-lg">
+                                            class="bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 dark:bg-blue-900/30 transition-colors shadow-lg">
                                             Edit Identity
                                         </button>
                                     </div>
@@ -204,35 +204,35 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                 </div>
                             </div>
 
-                            <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 min-h-[220px]">
+                            <div class="bg-white dark:bg-zinc-900 rounded-[2rem] p-8 shadow-sm border border-slate-100 dark:border-zinc-800 min-h-[220px]">
                                 <div class="flex justify-between items-center mb-6">
                                     <h3
-                                        class="text-slate-800 font-black flex items-center gap-2 uppercase text-[11px] tracking-widest">
-                                        <Activity class="size-4 text-blue-600" /> Recent Activity
+                                        class="text-slate-800 dark:text-zinc-200 font-black flex items-center gap-2 uppercase text-[11px] tracking-widest">
+                                        <Activity class="size-4 text-blue-600 dark:text-blue-400" /> Recent Activity
                                     </h3>
-                                    <MoreHorizontal class="size-4 text-slate-300" />
+                                    <MoreHorizontal class="size-4 text-slate-300 dark:text-zinc-500" />
                                 </div>
                                 <div v-if="attendance_history.length > 0" class="space-y-4">
                                     <div v-for="log in attendance_history" :key="log.date"
-                                        class="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-colors border border-transparent hover:border-slate-100">
+                                        class="flex items-center justify-between p-3 hover:bg-slate-50 dark:bg-zinc-800 rounded-2xl transition-colors border border-transparent hover:border-slate-100 dark:border-zinc-800">
                                         <div class="flex items-center gap-3">
-                                            <div class="bg-blue-50 p-2 rounded-xl text-blue-600">
+                                            <div class="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600 dark:text-blue-400">
                                                 <CalendarIcon class="size-4" />
                                             </div>
                                             <div>
-                                                <p class="text-xs font-black uppercase text-slate-700 tracking-tighter">
+                                                <p class="text-xs font-black uppercase text-slate-700 dark:text-zinc-300 tracking-tighter">
                                                     {{ log.date }}</p>
                                                 <p :class="log.status === 'On-Time' ? 'text-emerald-500' : 'text-amber-500'"
                                                     class="text-[8px] font-black uppercase tracking-widest">{{
                                                         log.status }}</p>
                                             </div>
                                         </div>
-                                        <span class="text-[10px] font-mono font-black text-slate-400 italic">{{
+                                        <span class="text-[10px] font-mono font-black text-slate-400 dark:text-zinc-500 italic">{{
                                             log.clockIn }}</span>
                                     </div>
                                 </div>
                                 <div v-else class="py-10 text-center opacity-40">
-                                    <Clock class="size-8 mx-auto mb-2 text-slate-300" />
+                                    <Clock class="size-8 mx-auto mb-2 text-slate-300 dark:text-zinc-500" />
                                     <p class="text-[9px] font-black uppercase tracking-widest">No Logs Detected</p>
                                 </div>
                             </div>
@@ -240,23 +240,23 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                     </div>
 
                     <div class="lg:col-span-4">
-                        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 sticky top-8">
-                            <h2 class="text-xl font-black text-slate-800 uppercase italic tracking-tighter mb-8">Service
-                                <span class="text-blue-600 font-light">Calendar</span>
+                        <div class="bg-white dark:bg-zinc-900 rounded-[2rem] shadow-sm border border-slate-100 dark:border-zinc-800 p-8 sticky top-8">
+                            <h2 class="text-xl font-black text-slate-800 dark:text-zinc-200 uppercase italic tracking-tighter mb-8">Service
+                                <span class="text-blue-600 dark:text-blue-400 font-light">Calendar</span>
                             </h2>
                             <div class="grid grid-cols-7 gap-1 text-center mb-8">
                                 <span v-for="d in ['S', 'M', 'T', 'W', 'T', 'F', 'S']" :key="d"
-                                    class="text-[9px] font-black text-slate-300 uppercase">{{ d }}</span>
+                                    class="text-[9px] font-black text-slate-300 dark:text-zinc-500 uppercase">{{ d }}</span>
                                 <div v-for="i in 31" :key="i"
-                                    :class="['aspect-square flex items-center justify-center text-[10px] font-black rounded-xl transition-all cursor-default', i === new Date().getDate() ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 hover:bg-slate-50']">
+                                    :class="['aspect-square flex items-center justify-center text-[10px] font-black rounded-xl transition-all cursor-default', i === new Date().getDate() ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-500 dark:text-zinc-400 hover:bg-slate-50']">
                                     {{ i }}</div>
                             </div>
-                            <hr class="border-slate-50 mb-8" />
+                            <hr class="border-slate-50 dark:border-zinc-800 mb-8" />
                             <div class="space-y-6 relative">
-                                <div class="absolute left-[39px] top-0 h-full w-[1px] bg-slate-50"></div>
+                                <div class="absolute left-[39px] top-0 h-full w-[1px] bg-slate-50 dark:bg-zinc-800"></div>
                                 <div v-for="item in schedule" :key="item.time" class="flex gap-6 relative group">
                                     <span
-                                        class="text-[10px] font-black text-slate-300 w-10 text-right uppercase mt-4">{{
+                                        class="text-[10px] font-black text-slate-300 dark:text-zinc-500 w-10 text-right uppercase mt-4">{{
                                             item.time }}</span>
                                     <div class="flex-1">
                                         <div :class="item.color"
@@ -282,17 +282,17 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md" @click="closeEditModal"></div>
 
                     <div
-                        class="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden transform transition-all scale-100">
-                        <div class="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                        class="relative bg-white dark:bg-zinc-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden transform transition-all scale-100">
+                        <div class="p-8 border-b border-slate-50 dark:border-zinc-800 flex items-center justify-between bg-slate-50/30">
                             <div>
-                                <h3 class="text-xl font-black text-slate-800 uppercase italic tracking-tighter">Edit
-                                    <span class="text-blue-600 font-light">Identity</span>
+                                <h3 class="text-xl font-black text-slate-800 dark:text-zinc-200 uppercase italic tracking-tighter">Edit
+                                    <span class="text-blue-600 dark:text-blue-400 font-light">Identity</span>
                                 </h3>
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Update
+                                <p class="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-widest mt-1">Update
                                     your system credentials</p>
                             </div>
                             <button @click="closeEditModal"
-                                class="p-2 hover:bg-white rounded-xl transition-colors text-slate-400 hover:text-slate-600 border border-transparent hover:border-slate-100">
+                                class="p-2 hover:bg-white dark:bg-zinc-900 rounded-xl transition-colors text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:text-zinc-400 border border-transparent hover:border-slate-100 dark:border-zinc-800">
                                 <X class="size-5" />
                             </button>
                         </div>
@@ -303,7 +303,7 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                     <input type="file" class="hidden" ref="photoInput" @change="handlePhotoChange"
                                         accept="image/*">
                                     <div
-                                        class="size-24 rounded-[2rem] bg-slate-100 border-4 border-white shadow-sm overflow-hidden flex items-center justify-center">
+                                        class="size-24 rounded-[2rem] bg-slate-100 dark:bg-zinc-800 border-4 border-white shadow-sm overflow-hidden flex items-center justify-center">
                                         <img v-if="photoPreview" :src="photoPreview" class="size-full object-cover" />
                                         <img v-else :src="userPhotoUrl" class="size-full object-cover" />
                                     </div>
@@ -317,30 +317,30 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                             <div class="grid grid-cols-1 gap-6">
                                 <div class="space-y-2">
                                     <label
-                                        class="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Full
+                                        class="text-[10px] font-black uppercase text-slate-400 dark:text-zinc-500 tracking-[0.2em] ml-1">Full
                                         Name</label>
                                     <div class="relative group">
                                         <div
-                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
+                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-600 dark:text-blue-400">
                                             <UserIcon class="size-4" />
                                         </div>
                                         <input v-model="form.name" type="text"
-                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 transition-all"
+                                            class="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-zinc-300 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 dark:text-zinc-500 transition-all"
                                             placeholder="Enter your name" required />
                                     </div>
                                 </div>
 
                                 <div class="space-y-2">
                                     <label
-                                        class="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] ml-1">Email
+                                        class="text-[10px] font-black uppercase text-slate-400 dark:text-zinc-500 tracking-[0.2em] ml-1">Email
                                         Address</label>
                                     <div class="relative group">
                                         <div
-                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-600">
+                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-600 dark:text-blue-400">
                                             <Mail class="size-4" />
                                         </div>
                                         <input v-model="form.email" type="email"
-                                            class="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 transition-all"
+                                            class="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-zinc-300 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 dark:text-zinc-500 transition-all"
                                             placeholder="Enter your email" required />
                                     </div>
                                 </div>
@@ -348,7 +348,7 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
 
                             <div class="flex flex-col sm:flex-row gap-3 pt-4">
                                 <button type="button" @click="closeEditModal"
-                                    class="flex-1 px-8 py-4 rounded-2xl bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-transparent">Cancel</button>
+                                    class="flex-1 px-8 py-4 rounded-2xl bg-slate-50 dark:bg-zinc-800 text-slate-400 dark:text-zinc-500 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-transparent">Cancel</button>
                                 <button type="submit" :disabled="form.processing"
                                     class="flex-1 px-8 py-4 rounded-2xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50">
                                     {{ form.processing ? 'Updating...' : 'Save Changes' }}

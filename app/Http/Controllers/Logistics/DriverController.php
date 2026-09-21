@@ -72,6 +72,7 @@ class DriverController extends Controller
             'driver'        => $driver->load('user'),
             'user'          => $user->only('id', 'name', 'email', 'profile_photo_path'),
             'montiLocation' => $montiLocation,
+            'montiLocations' => CeoLocation::where('is_active', true)->latest()->get(),
         ]);
     }
 

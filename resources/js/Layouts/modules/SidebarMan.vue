@@ -1,7 +1,7 @@
 <script>
 import {
     Factory, LayoutDashboard, ClipboardList, XCircle, Boxes, CheckCircle2,
-    Eye, Award, ShieldCheck, FileText, Sparkles, Palette, Wrench, History, Cog, Flag, FlaskConical,
+    Eye, Award, FileText, Sparkles, Palette, Wrench, History, Cog, Flag, FlaskConical,
     ClipboardCheck, ArrowRightLeft, Leaf, HardHat, Flame,
 } from 'lucide-vue-next'
 
@@ -37,8 +37,19 @@ const DEPARTMENT_ROLES = {
     boiler: ['boiler_operator'],
 }
 
+// Canonical route slugs per manufacturing_role.
+// Most roles map 1:1 via underscores→hyphens, but pollution_control_operator
+// uses the shorter `pollution-control` prefix (see routes/Man.php).
+const ROLE_ROUTE_SLUGS = {
+    pollution_control_operator: 'pollution-control',
+}
+
+function roleToSlug(roleWithUnderscores) {
+    return ROLE_ROUTE_SLUGS[roleWithUnderscores] ?? roleWithUnderscores.replace(/_/g, '-')
+}
+
 function getRoleLinks(route, roleWithUnderscores, label, icon, hasReports = true, hasHistory = false, hasFlags = false, hasLab = false) {
-    const roleWithHyphens = roleWithUnderscores.replace(/_/g, '-')
+    const roleWithHyphens = roleToSlug(roleWithUnderscores)
     const routePrefix = `man.staff.${roleWithHyphens}`
     const links = [
         { label: 'Dashboard', href: route(`${routePrefix}.dashboard`), icon: LayoutDashboard },
@@ -88,10 +99,20 @@ export const manModule = {
     icon: Factory,
     group: 'core',
 
-    condition: (ctx) => ctx.canAccessModule('MAN'),
+    // Extra-module grants also display the section (filtered per page below).
+    // When IT leaves every MAN page 'disabled' the filter below yields []
+    // and buildNavItems skips this module entirely → empty sidebar →
+    // AwaitingAccess landing page (same as every other module).
+    condition: (ctx) => ctx.canAccessModule('MAN') || ctx.hasAnyModuleGrant('MAN'),
 
     getChildren(ctx) {
         const { route, isCEO, isSecretaryOrGM, userPosition, user, isManufacturingSupervisor, qualityChecker } = ctx
+        // Usable (view/edit) MAN grants — the shared list already excludes
+        // 'disabled' rows, so presence means IT actually approved the page.
+        // Staff with no explicit rows keep native full access via the
+        // backend auto-grant, which is also reflected in this list.
+        const can = (permKey) => ctx.hasModulePermission('MAN', permKey);
+        const hasStaffEntry = can('production') || can('dashboard');
 
         const qualityCheckerChildren = [
             { label: 'Dashboard', href: '/dashboard/man/checker-quality', icon: LayoutDashboard },
@@ -107,35 +128,52 @@ export const manModule = {
 
         // Quality Checker is its own Finishing department now: the Finishing
         // supervisor reaches it via their Department Staff dropdown below,
-        // so the overview entry is shown only to CEO / secretary / GM.
-        if (isCEO || isSecretaryOrGM) {
-            managerChildren.push({
-                label: 'Quality Checker',
-                icon: CheckCircle2,
-                isDropdown: true,
-                isOpen: qualityChecker.isOpen,
-                toggle: qualityChecker.toggle,
-                children: qualityCheckerChildren,
-            })
+        // so the overview entry is shown only to CEO / root-MAN secretary / GM.
+        // Its routes require production,view, so non-CEO viewers still need
+        // that usable grant (locked roots always hold it).
+        if (isCEO || (isSecretaryOrGM && ctx.rootModule === 'MAN')) {
+            if (isCEO || hasStaffEntry) {
+                managerChildren.push({
+                    label: 'Quality Checker',
+                    icon: CheckCircle2,
+                    isDropdown: true,
+                    isOpen: qualityChecker.isOpen,
+                    toggle: qualityChecker.toggle,
+                    children: qualityCheckerChildren,
+                })
+            }
         }
 
         // NOTE: no manufacturing manager exists anymore — legacy MAN-manager
         // accounts fall through to an empty menu (their routes now return
         // 403; reassign them as department supervisors).
-        if (isCEO || isSecretaryOrGM) {
-            managerChildren.push({ label: 'Access Control', href: route('man.access.manage'), icon: ShieldCheck, permKey: 'access' })
+
+        // CEO keeps the full overview.
+        if (isCEO) {
+            return managerChildren
+        }
+
+        // Secretary / special officer: auto-full on the root MAN module only
+        // (mirrors backend CheckPagePermission); extra-module holders fall
+        // through to the exact per-page set below.
+        if (isSecretaryOrGM) {
+            if (ctx.rootModule === 'MAN') {
+                return managerChildren
+            }
+            return managerChildren.filter(child => !child.permKey || can(child.permKey))
         }
 
         let children = []
 
-        // Case 1: department overview access (CEO, secretary/GM, or supervisor).
-        // No manufacturing manager: each supervisor sees the shared overview
-        // pages (data is scoped to their department server-side) plus their
-        // own department's staff dropdowns.
-        if (isCEO || isSecretaryOrGM || isManufacturingSupervisor) {
-            children = [...managerChildren]
+        // Case 1: department overview access (supervisor).
+        // Each supervisor sees the shared overview pages they hold usable
+        // grants for (data is scoped to their department server-side) plus
+        // their own department's staff dropdowns (role pages require
+        // production,view). All-'disabled' (IT default) yields [] → hidden.
+        if (isManufacturingSupervisor) {
+            children = managerChildren.filter(child => !child.permKey || can(child.permKey))
 
-            if (isManufacturingSupervisor && ctx.supervisedDepartment) {
+            if (ctx.supervisedDepartment && hasStaffEntry) {
                 const staffDropdowns = departmentStaffDropdowns(ctx)
                 if (staffDropdowns.length) {
                     children.push({ isDivider: true, label: '── Department Staff ──' })
@@ -143,7 +181,12 @@ export const manModule = {
                 }
             }
         } else {
-            // Case 2: regular staff with a single manufacturing_role
+            // Case 2: regular staff with a single manufacturing_role.
+            // Role pages require production (or dashboard) — without a usable
+            // grant the menu stays empty so the sidebar hides this module.
+            if (!hasStaffEntry) {
+                return []
+            }
             const manufacturingRole = user?.manufacturing_role
             const config = STAFF_ROLE_CONFIG[manufacturingRole]
             if (config) {

@@ -9,6 +9,8 @@ use App\Http\Controllers\Trainee\TraineeTimeKeepingController;
 use App\Http\Controllers\Users\AppController;
 use App\Http\Controllers\Users\ClockController;
 use App\Http\Controllers\Users\LeaveController as UserLeaveController;
+use App\Http\Controllers\Users\MessengerController;
+use App\Http\Controllers\Users\TopbarController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -38,9 +40,39 @@ Route::post('/apply/store', [HrmApplicantController::class, 'store'])->name('app
 */
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Shown when every page permission is still 'disabled' (IT default).
+    Route::get('/awaiting-access', function () {
+        return inertia('Dashboard/AwaitingAccess', ['user' => auth()->user()]);
+    })->name('awaiting.access');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    /*
+    |----------------------------------------------------------------------
+    | Universal top bar (all internal roles) — JSON endpoints for the
+    | notification feed, published memos, user directory and messenger.
+    | Polling-based; no socket server required.
+    |----------------------------------------------------------------------
+    */
+    Route::prefix('/topbar')->name('topbar.')->group(function () {
+        Route::get('/summary', [TopbarController::class, 'summary'])->name('summary');
+        Route::get('/search', [TopbarController::class, 'search'])->name('search');
+        Route::get('/notifications', [TopbarController::class, 'notifications'])->name('notifications');
+        Route::patch('/notifications/{notification}/read', [TopbarController::class, 'readNotification'])->name('notifications.read');
+        Route::post('/notifications/read-all', [TopbarController::class, 'readAllNotifications'])->name('notifications.read-all');
+        Route::get('/memos', [TopbarController::class, 'memos'])->name('memos');
+        Route::get('/directory', [TopbarController::class, 'directory'])->name('directory');
+
+        Route::get('/threads', [MessengerController::class, 'threads'])->name('threads');
+        Route::post('/threads', [MessengerController::class, 'store'])->name('threads.store');
+        Route::get('/threads/{thread}', [MessengerController::class, 'show'])->name('threads.show');
+        Route::post('/threads/{thread}/send', [MessengerController::class, 'send'])->name('threads.send');
+        Route::patch('/threads/{thread}', [MessengerController::class, 'update'])->name('threads.update');
+        Route::post('/threads/{thread}/members', [MessengerController::class, 'addMembers'])->name('threads.members.add');
+        Route::delete('/threads/{thread}/members/{user}', [MessengerController::class, 'removeMember'])->name('threads.members.remove');
+        Route::post('/threads/{thread}/leave', [MessengerController::class, 'leave'])->name('threads.leave');
+    });
 });
 
 /*

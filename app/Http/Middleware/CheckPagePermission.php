@@ -13,8 +13,10 @@ class CheckPagePermission
      * Handle an incoming request.
      *
      * Permission levels: 'view' grants read-only access, 'edit' grants
-     * read + write. 'edit' implies 'view'. Role-based shortcuts (CEO,
-     * module-native manager/staff) still grant full access.
+     * read + write, 'disabled' explicitly blocks access (set by IT).
+     * 'edit' implies 'view'. Role-based shortcuts (CEO,
+     * module-native manager/staff) still grant full access — UNLESS an
+     * explicit 'disabled' row exists, which always wins.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      * @param  string  $page  The page identifier (e.g., 'dashboard', 'employees')
@@ -39,6 +41,23 @@ class CheckPagePermission
 
         // Determine the module from the route name or URI
         $module = $this->detectModule($request);
+
+        // Fetch the explicit record first — an explicit 'disabled' row set by
+        // IT always denies, even for native managers/staff or secretaries.
+        $record = null;
+        $grantedLevel = null;
+        if ($module && method_exists($user, 'pagePermissions')) {
+            $record = $user->pagePermissions()
+                ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
+                ->get(['module', 'page', 'permission_level'])
+                ->first(fn ($row) => strtolower((string) $row->page) === strtolower($page));
+            if ($record !== null) {
+                $grantedLevel = strtolower($record->permission_level ?? 'edit');
+                if ($grantedLevel === 'disabled') {
+                    abort(403, "The '{$page}' page in the {$module} module is disabled for this account by IT Access Control.");
+                }
+            }
+        }
 
         // Module-native managers and staff automatically have full access —
         // UNLESS explicit page_permissions rows exist for them in this module.
@@ -76,14 +95,8 @@ class CheckPagePermission
         // permission_level is NULL is still recognised as a grant.
         // Module/page matching is case-tolerant: writers store UPPER module
         // codes but legacy rows may differ.
-        $record = null;
-        if (method_exists($user, 'pagePermissions')) {
-            $record = $user->pagePermissions()
-                ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
-                ->get(['module', 'page', 'permission_level'])
-                ->first(fn ($row) => strtolower((string) $row->page) === strtolower($page));
-        }
-
+        // ($record already loaded above so the 'disabled' short-circuit ran
+        // before any native shortcut.)
         if ($record !== null) {
             // Legacy rows created before permission_level existed have NULL;
             // grandfather them as 'edit' to avoid locking out existing users.

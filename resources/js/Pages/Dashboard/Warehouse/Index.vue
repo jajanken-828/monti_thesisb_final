@@ -31,9 +31,17 @@ const props = defineProps({
     auth: Object,
 });
 
+import { usePageAccess } from '@/composables/usePageAccess';
+
+const { canEdit } = usePageAccess();
+
 const page = usePage();
 const user = computed(() => props.auth?.user);
+// Respect IT Access Control: anyone holding WAR/warehouse=edit (e.g. a
+// supervisor granted edit in the IT module) can manage — not just CEO.
+// Native WAR managers/staff already receive auto-grants via shared props.
 const canManage = computed(() => {
+    if (canEdit('WAR', 'warehouse')) return true;
     const role = user.value?.role;
     const position = user.value?.position;
     return role === 'CEO' || position === 'secretary' || position === 'special_officer';

@@ -102,7 +102,7 @@ const openGenerateModal = async () => {
     if (employeeList.value.length === 0) {
         loadingEmployees.value = true
         try {
-            const response = await fetch('/api/active-employees')
+            const response = await fetch(route('hrm.payroll.employees.json'))
             const data = await response.json()
             employeeList.value = data
         } catch (error) {

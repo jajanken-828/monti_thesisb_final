@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Hrm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Hrm\Applicant;
+use App\Models\Hrm\ApplicantStatusHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -13,6 +14,17 @@ use App\Traits\HasPagePermissions;
 class ApplicantController extends Controller
 {
     use HasPagePermissions;
+
+    /**
+     * Manual-entry application form (HRM_NEW Temp_applicationForm).
+     * Submits to hrm.temp.application.submit (store).
+     */
+    public function tempForm()
+    {
+        return Inertia::render('Dashboard/HRM_NEW/Temp_applicationForm', [
+            'permissions' => $this->getPagePermissionsForModule('HRM'),
+        ]);
+    }
 
     /**
      * Display pending applications.
@@ -46,10 +58,16 @@ class ApplicantController extends Controller
         $request->validate(['module' => 'required|in:HRM,ECO,CRM,SCM,MAN,PROJ,FIN,LOG,IT']);
 
         $applicant = Applicant::findOrFail($id);
+        $from = $applicant->status;
         $applicant->update([
             'status' => 'Interview',
             'assigned_module' => $request->module,
             'archived' => false,
+        ]);
+        ApplicantStatusHistory::create([
+            'applicant_id' => $applicant->id, 'from_status' => $from,
+            'to_status' => 'Interview', 'changed_by' => $request->user()->id,
+            'reason' => "Accepted → {$request->module} (HRM)",
         ]);
 
         return back()->with('message', "Applicant assigned to {$request->module} for interview.");
@@ -66,10 +84,16 @@ class ApplicantController extends Controller
         $request->validate(['reason' => 'required|string']);
 
         $applicant = Applicant::findOrFail($id);
+        $from = $applicant->status;
         $applicant->update([
             'status' => 'Rejected',
             'archived' => true,
             'rejection_reason' => $request->reason,
+        ]);
+        ApplicantStatusHistory::create([
+            'applicant_id' => $applicant->id, 'from_status' => $from,
+            'to_status' => 'Rejected', 'changed_by' => $request->user()->id,
+            'reason' => $request->reason,
         ]);
 
         return back()->with('message', 'Applicant rejected and archived.');

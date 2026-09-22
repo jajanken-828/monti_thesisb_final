@@ -10,6 +10,16 @@ return [
         'onboarding'   => 'Onboarding',
         'payroll'      => 'Payroll',
         'analytics'    => 'Analytics',
+        // HRM_NEW dynamic pages (old 8 keys kept for BC)
+        'workforce'    => 'Workforce',
+        'recruitment'  => 'Recruitment',
+        'onboarding_templates' => 'Onboarding Templates',
+        'organization' => 'Organization',
+        'performance'  => 'Performance',
+        'training'     => 'Training',
+        'attendance'   => 'Attendance',
+        'leave'        => 'Leave',
+        'archive'      => 'Archive',
     ],
 
     'crm' => [

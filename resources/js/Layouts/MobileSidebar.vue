@@ -24,6 +24,7 @@ const showLogoutModal = ref(false)
 
 // Dropdown states
 const isWorkforceSubOpen = ref(false)
+const isApplicantsOpen = ref(false)
 const isHrmOpen = ref(false)
 const isCrmOpen = ref(false)
 const isEcoOpen = ref(false)
@@ -52,6 +53,7 @@ const getRoleDropdownState = (roleKey, defaultState = false) => {
 }
 
 const toggleWorkforceSub = () => { isWorkforceSubOpen.value = !isWorkforceSubOpen.value }
+const toggleApplicants = () => { isApplicantsOpen.value = !isApplicantsOpen.value }
 const toggleHrm = () => { isHrmOpen.value = !isHrmOpen.value }
 const toggleCrm = () => { isCrmOpen.value = !isCrmOpen.value }
 const toggleEco = () => { isEcoOpen.value = !isEcoOpen.value }
@@ -70,11 +72,13 @@ const user = computed(() => page.props.auth.user)
 const unreadCount = computed(() => page.props.notifications_unread || 0)
 const client = computed(() => page.props.auth.client)
 const supplier = computed(() => page.props.auth.supplier || (page.props.auth.user?.business_name ? page.props.auth.user : null))
+const applicantUser = computed(() => page.props.auth.applicant)
 const currentUrl = computed(() => page.url)
 
 const isEmployeePortal = computed(() => currentUrl.value.startsWith('/dashboard/employee-ui'))
 const isClient = computed(() => !!client.value)
 const isSupplier = computed(() => !!supplier.value || currentUrl.value.startsWith('/supplier'))
+const isApplicant = computed(() => !!applicantUser.value || currentUrl.value.startsWith('/applicant'))
 
 const userModuleAccess = computed(() => {
     if (user.value?.position === 'secretary' || user.value?.position === 'special_officer') {
@@ -360,6 +364,26 @@ const getFilteredWorkforceChildren = () => {
     return all.filter(child => hasWorkforcePermission(child.permKey))
 }
 
+// Applicants module (applicant master, connected to HRM recruitment).
+// Mirrors SidebarApplicants.vue (desktop): HRM access + `application` grant.
+const getFilteredApplicantsChildren = () => {
+    const safe = (name, params) => {
+        try { return route(name, params) } catch { return '#' }
+    }
+    const all = [
+        { label: 'Applicant Queue', href: safe('applicants.index'), icon: LayoutDashboard, permKey: 'application' },
+        { label: 'HRM Applications', href: safe('hrm.recruitment.applications.index'), icon: FileText, permKey: 'application' },
+        { label: 'Interviews', href: safe('hrm.recruitment.interviews.index'), icon: Eye, permKey: 'interview' },
+        { label: 'To Onboarding', href: safe('hrm.onboarding.status.index'), icon: UserPlus, permKey: 'onboarding' },
+        { label: 'Archive', href: safe('hrm.applications.rejected'), icon: Archive, permKey: 'application' },
+        { label: 'Restore Applic.', href: safe('applicants.index', { archived: 1 }), icon: History, permKey: 'application' },
+    ].filter(child => child.href && child.href !== '#')
+    if (user.value?.role === 'CEO') return all
+    if (user.value?.position === 'manager' && user.value?.role === 'HRM' && !hasExplicitModuleGrants('HRM')) return all
+    if ((user.value?.position === 'secretary' || user.value?.position === 'special_officer') && rootModule.value === 'HRM') return all
+    return all.filter(child => hasHrmPermission(child.permKey))
+}
+
 const getFilteredManChildren = () => {
     // Mirrors SidebarMan.vue (desktop): every MAN page needs a usable
     // (view/edit) grant. All-'disabled' (IT default) yields [] → the module
@@ -615,6 +639,21 @@ const navItems = computed(() => {
             { label: 'Payslip', href: route('employee.ui.payslip'), icon: HandCoins },
         ]
     }
+    if (isApplicant.value) {
+        const applicantRoute = (name, fallback) => {
+            try { return route(name) } catch { return fallback }
+        }
+        return [
+            { label: 'Dashboard', href: applicantRoute('applicant.dashboard', '/applicant/dashboard'), icon: LayoutDashboard },
+            { label: 'Find Jobs', href: applicantRoute('applicant.jobs.index', '/applicant/jobs'), icon: ShoppingBag },
+            { label: 'My Applications', href: applicantRoute('applicant.applications.index', '/applicant/applications'), icon: FileText },
+            { label: 'Interviews', href: applicantRoute('applicant.interviews', '/applicant/interviews'), icon: CalendarDays },
+            { label: 'Onboarding', href: applicantRoute('applicant.onboarding.index', '/applicant/onboarding'), icon: ClipboardList },
+            { label: 'Notifications', href: applicantRoute('applicant.notifications.index', '/applicant/notifications'), icon: Bell },
+            { label: 'My Profile', href: applicantRoute('applicant.profile.index', '/applicant/profile'), icon: User },
+            { label: 'Account', href: applicantRoute('applicant.account.index', '/applicant/account'), icon: UserCog },
+        ]
+    }
 
     const items = []
     const userRole = user.value?.role?.toUpperCase()
@@ -676,6 +715,7 @@ const navItems = computed(() => {
 
     const modules = [
         { key: 'HRM', label: 'Human Resource', icon: Users, childrenGetter: getFilteredHrmChildren, isOpen: isHrmOpen, toggle: toggleHrm, condition: canAccessModule('HRM') || hasAnyModuleGrant('HRM') },
+        { key: 'APL', label: 'Applicants', icon: FileText, childrenGetter: getFilteredApplicantsChildren, isOpen: isApplicantsOpen, toggle: toggleApplicants, condition: canAccessModule('HRM') || hasAnyModuleGrant('HRM') },
         { key: 'CRM', label: 'Customer Relationship', icon: UserPen, childrenGetter: getFilteredCrmChildren, isOpen: isCrmOpen, toggle: toggleCrm, condition: canAccessModule('CRM') || hasAnyModuleGrant('CRM') },
         { key: 'MAN', label: 'Manufacturing', icon: Factory, childrenGetter: getFilteredManChildren, isOpen: isManOpen, toggle: toggleMan, condition: canAccessModule('MAN') || hasAnyModuleGrant('MAN') },
         { key: 'LOG', label: 'Logistics', icon: Truck, childrenGetter: getFilteredLogisticsChildren, isOpen: isLogisticsOpen, toggle: toggleLogistics, condition: hasLogisticsAccess.value || hasAnyModuleGrant('LOG') },
@@ -704,7 +744,7 @@ const navItems = computed(() => {
             toggle: mod.toggle,
             children: children
         }
-        if (['HRM', 'CRM', 'MAN', 'LOG'].includes(mod.key)) {
+        if (['HRM', 'APL', 'CRM', 'MAN', 'LOG'].includes(mod.key)) {
             coreModules.push(moduleItem)
         } else {
             featureModules.push(moduleItem)
@@ -741,6 +781,7 @@ const handleNavClick = () => { isOpen.value = false }
 const displayName = computed(() => {
     if (isSupplier.value) return supplier.value?.representative_name
     if (isClient.value) return client.value?.company_name
+    if (isApplicant.value) return applicantUser.value?.first_name ? `${applicantUser.value.first_name} ${applicantUser.value.last_name || ''}`.trim() : applicantUser.value?.email
     return user.value?.name
 })
 const displayInitial = computed(() => displayName.value?.charAt(0) ?? '?')
@@ -751,11 +792,13 @@ const userPhotoUrl = computed(() => {
     return null
 })
 const displayDepartment = computed(() => {
+    if (isApplicant.value) return 'Applicant'
     if (isSupplier.value) return 'Supplier'
     if (isClient.value) return client.value?.business_type
     return user.value?.role
 })
 const displayPosition = computed(() => {
+    if (isApplicant.value) return applicantUser.value?.status || 'Applicant'
     if (isSupplier.value) return supplier.value?.business_name ?? 'Vendor'
     if (isEmployeePortal.value) return user.value?.employee_id ?? 'Staff'
     if (isClient.value) return 'Partner'
@@ -763,12 +806,14 @@ const displayPosition = computed(() => {
     return user.value?.position
 })
 const sidebarLabel = computed(() => {
+    if (isApplicant.value) return 'Applicant'
     if (isSupplier.value) return 'Vendor'
     if (isClient.value) return 'Partner'
     if (isEmployeePortal.value) return 'Employee'
     return 'System'
 })
 const logoutRoute = computed(() => {
+    if (isApplicant.value) return route('applicant.logout')
     if (isClient.value) return route('client.logout')
     if (isSupplier.value) return route('supplier.logout')
     return route('logout')

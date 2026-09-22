@@ -71,6 +71,22 @@ class User extends Authenticatable
         'manufacturing_role',
         'is_manufacturing_supervisor',
         'supervisor_department',
+        // HRM_NEW dynamic hooks (DB-rooted roles/positions)
+        'hrm_role_id',
+        'hrm_department_id',
+        'hrm_position_id',
+        'hrm_employment_type_id',
+        // Employee Master Record fields
+        'first_name', 'middle_name', 'last_name', 'suffix', 'nickname', 'preferred_name',
+        'gender', 'date_of_birth', 'civil_status', 'nationality', 'personal_email',
+        'mobile_number', 'telephone', 'emergency_contact_name', 'emergency_contact_number',
+        'current_address', 'permanent_address', 'country', 'province', 'city', 'postal_code',
+        'company', 'branch', 'business_unit', 'cost_center', 'work_location',
+        'department_head', 'immediate_supervisor', 'payroll_group', 'salary_grade',
+        'basic_salary', 'bank_account', 'tax_id', 'sss_id', 'work_schedule', 'shift',
+        'timezone', 'biometrics_id', 'probation_end_date', 'regularization_date',
+        'resignation_date', 'last_working_day', 'education', 'certifications',
+        'skills', 'languages', 'trainings',
     ];
 
     /**
@@ -311,6 +327,27 @@ class User extends Authenticatable
     public function pagePermissions()
     {
         return $this->hasMany(PagePermission::class);
+    }
+
+    // HRM_NEW dynamic org links (nullable for BC rollout)
+    public function hrmRole()
+    {
+        return $this->belongsTo(\App\Models\Hrm\HrmRole::class, 'hrm_role_id');
+    }
+
+    public function hrmDepartment()
+    {
+        return $this->belongsTo(\App\Models\Hrm\HrmDepartment::class, 'hrm_department_id');
+    }
+
+    public function hrmOrgPosition()
+    {
+        return $this->belongsTo(\App\Models\Hrm\HrmPosition::class, 'hrm_position_id');
+    }
+
+    public function hrmEmploymentType()
+    {
+        return $this->belongsTo(\App\Models\Hrm\HrmEmploymentType::class, 'hrm_employment_type_id');
     }
 
     public function workforcePermissions()

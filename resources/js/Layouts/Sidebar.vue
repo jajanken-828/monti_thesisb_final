@@ -20,6 +20,7 @@ const page = usePage()
     const unreadCount = computed(() => page.props.notifications_unread || 0)
 const client = computed(() => page.props.auth.client)
 const supplier = computed(() => page.props.auth.supplier || (page.props.auth.user?.business_name ? page.props.auth.user : null))
+const applicantUser = computed(() => page.props.auth.applicant)
 const currentUrl = computed(() => page.url)
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ const { scrollRef: sidebarScrollRef } = useSidebarScroll()
 // One persisted dropdown per top-level module (keys match module.key in navItems/buildNavItems.js)
 const moduleDropdowns = {
     HRM: useDropdown('hrm'),
+    APL: useDropdown('applicants'),
     CRM: useDropdown('crm'),
     MAN: useDropdown('man'),
     LOG: useDropdown('logistics'),
@@ -62,8 +64,9 @@ const showLogoutModal = ref(false)
 const isDriver = computed(() => user.value?.driver !== null || user.value?.log_role === 'driver')
 const isConductor = computed(() => user.value?.conductor !== null || user.value?.log_role === 'conductor')
 const isEmployeePortal = computed(() => currentUrl.value.startsWith('/dashboard/employee-ui'))
-const isClient = computed(() => !!client.value)
-const isSupplier = computed(() => !!supplier.value || currentUrl.value.startsWith('/supplier'))
+    const isClient = computed(() => !!client.value)
+    const isSupplier = computed(() => !!supplier.value || currentUrl.value.startsWith('/supplier'))
+    const isApplicant = computed(() => !!applicantUser.value || currentUrl.value.startsWith('/applicant'))
 
 // ─── NAV ITEMS ────────────────────────────────────────────────────────────────
 const navItems = computed(() => {
@@ -156,6 +159,24 @@ const navItems = computed(() => {
         return items
     }
 
+    // ─── APPLICANT PORTAL (official APPLICANTS module) ──
+    if (isApplicant.value) {
+        const applicantRoute = (name, fallback) => {
+            try { return route(name) } catch { return fallback }
+        }
+        items.push(
+            { label: 'Dashboard', href: applicantRoute('applicant.dashboard', '/applicant/dashboard'), icon: LayoutDashboard },
+            { label: 'Find Jobs', href: applicantRoute('applicant.jobs.index', '/applicant/jobs'), icon: ShoppingBag },
+            { label: 'My Applications', href: applicantRoute('applicant.applications.index', '/applicant/applications'), icon: FileText },
+            { label: 'Interviews', href: applicantRoute('applicant.interviews', '/applicant/interviews'), icon: CalendarDays },
+            { label: 'Onboarding', href: applicantRoute('applicant.onboarding.index', '/applicant/onboarding'), icon: ClipboardList },
+            { label: 'Notifications', href: applicantRoute('applicant.notifications.index', '/applicant/notifications'), icon: Bell },
+            { label: 'My Profile', href: applicantRoute('applicant.profile.index', '/applicant/profile'), icon: User },
+            { label: 'Account', href: applicantRoute('applicant.account.index', '/applicant/account'), icon: UserCog2 },
+        )
+        return items
+    }
+
     // ─── MODULE ITEMS (HRM, CRM, MAN, LOG, ECO, ORD, SCM, WAR, INV, PRO, WRF) ──
     const ctx = {
         route,
@@ -197,6 +218,7 @@ const isActive = (href) => {
 const displayName = computed(() => {
     if (isSupplier.value) return supplier.value?.representative_name
     if (isClient.value) return client.value?.company_name
+    if (isApplicant.value) return applicantUser.value?.first_name ? `${applicantUser.value.first_name} ${applicantUser.value.last_name || ''}`.trim() : applicantUser.value?.email
     return user.value?.name
 })
 const displayInitial = computed(() => displayName.value?.charAt(0) ?? '?')
@@ -206,15 +228,25 @@ const userPhotoUrl = computed(() => {
     if (client.value?.profile_photo_path) return `/storage/${client.value.profile_photo_path}`
     return null
 })
-const displayDepartment = computed(() => isSupplier.value ? 'Supplier' : (isClient.value ? client.value?.business_type : user.value?.role))
+const displayDepartment = computed(() => {
+    if (isApplicant.value) return 'Applicant'
+    return isSupplier.value ? 'Supplier' : (isClient.value ? client.value?.business_type : user.value?.role)
+})
 const displayPosition = computed(() => {
+    if (isApplicant.value) return applicantUser.value?.status || 'Applicant'
     if (isSupplier.value) return supplier.value?.business_name ?? 'Vendor'
     if (isClient.value) return 'Partner'
     if (user.value?.is_manufacturing_supervisor) return 'Supervisor'
     return user.value?.position
 })
-const sidebarLabel = computed(() => isSupplier.value ? 'Vendor' : (isClient.value ? 'Partner' : (isEmployeePortal.value ? 'Employee' : 'System')))
-const logoutRoute = computed(() => isClient.value ? route('client.logout') : (isSupplier.value ? route('supplier.logout') : route('logout')))
+const sidebarLabel = computed(() => {
+    if (isApplicant.value) return 'Applicant'
+    return isSupplier.value ? 'Vendor' : (isClient.value ? 'Partner' : (isEmployeePortal.value ? 'Employee' : 'System'))
+})
+const logoutRoute = computed(() => {
+    if (isApplicant.value) return route('applicant.logout')
+    return isClient.value ? route('client.logout') : (isSupplier.value ? route('supplier.logout') : route('logout'))
+})
 </script>
 
 <template>

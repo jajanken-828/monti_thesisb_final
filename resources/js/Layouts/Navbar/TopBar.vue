@@ -13,34 +13,40 @@ const page = usePage();
 const user = computed(() => page.props.auth.user);
 const client = computed(() => page.props.auth.client);
 const supplier = computed(() => page.props.auth.supplier || (page.props.auth.user?.business_name ? page.props.auth.user : null));
+const applicantUser = computed(() => page.props.auth.applicant);
 const currentUrl = computed(() => page.url);
 
 const isClient = computed(() => !!client.value);
 const isSupplier = computed(() => !!supplier.value || currentUrl.value.startsWith('/supplier'));
-const isInternal = computed(() => !!user.value && !isClient.value && !isSupplier.value);
+const isApplicant = computed(() => !!applicantUser.value || currentUrl.value.startsWith('/applicant'));
+const isInternal = computed(() => !!user.value && !isClient.value && !isSupplier.value && !isApplicant.value);
 const isCEO = computed(() => user.value?.role === 'CEO');
 const ceoUnread = computed(() => page.props.notifications_unread || 0);
 
 const displayName = computed(() => {
     if (isSupplier.value) return supplier.value?.representative_name || supplier.value?.business_name || 'Vendor';
     if (isClient.value) return client.value?.company_name || 'Client';
+    if (isApplicant.value) return applicantUser.value?.first_name ? `${applicantUser.value.first_name} ${applicantUser.value.last_name || ''}`.trim() : applicantUser.value?.email || 'Applicant';
     return user.value?.name || 'Account';
 });
 const displaySub = computed(() => {
     if (isSupplier.value) return supplier.value?.business_name || 'Supplier portal';
     if (isClient.value) return client.value?.email || 'Client portal';
+    if (isApplicant.value) return applicantUser.value?.email || 'Applicant portal';
     const bits = [user.value?.role, user.value?.position].filter(Boolean);
     return bits.join(' · ') || user.value?.email || '';
 });
 const displayInitial = computed(() => (displayName.value || '?').charAt(0).toUpperCase());
 const profileHref = computed(() => {
     if (isClient.value) return route('client.profile.edit');
+    if (isApplicant.value) return route('applicant.profile.index');
     if (isInternal.value) return route('profile.edit');
     return null;
 });
 const logoutHref = computed(() => {
     if (isClient.value) return route('client.logout');
     if (isSupplier.value) return route('supplier.logout');
+    if (isApplicant.value) return route('applicant.logout');
     return route('logout');
 });
 

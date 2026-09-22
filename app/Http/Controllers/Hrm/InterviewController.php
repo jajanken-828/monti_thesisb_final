@@ -60,11 +60,11 @@ class InterviewController extends Controller
     public function pass(Request $request, $id)
     {
         $applicant = Applicant::findOrFail($id);
-        $module = $applicant->assigned_module;  // Keep the original module for trainee role
+        $module = $applicant->assigned_module ?: 'HRM';  // Keep the original module for trainee role
 
-        $user = User::create([
+        // Idempotent: re-passing an already-converted applicant reuses the account.
+        $user = User::firstOrCreate(['email' => $applicant->email], [
             'name' => $applicant->first_name.' '.$applicant->last_name,
-            'email' => $applicant->email,
             'password' => Hash::make('password'),
             'role' => $module,
             'position' => 'trainee',

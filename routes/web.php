@@ -19,6 +19,9 @@ require __DIR__.'/Core.php';
 // Human Resources Management
 require __DIR__.'/Hrm.php';
 
+// Applicants Module (applicant master, connected to HRM recruitment)
+require __DIR__.'/Applicants.php';
+
 // Workforce Management (scheduling, leave, absences)
 require __DIR__.'/Workforce.php';
 

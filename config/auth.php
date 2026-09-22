@@ -36,6 +36,12 @@ return [
             'driver' => 'session',
             'provider' => 'suppliers',
         ],
+
+        // ✅ Added for Job Applicants (applicant portal)
+        'applicant' => [
+            'driver' => 'session',
+            'provider' => 'applicants',
+        ],
     ],
 
     /*
@@ -60,6 +66,12 @@ return [
         'suppliers' => [
             'driver' => 'eloquent',
             'model' => App\Models\Pro\Supplier::class,
+        ],
+
+        // ✅ Added for Job Applicants (applicant portal)
+        'applicants' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Hrm\Applicant::class,
         ],
     ],
 
@@ -88,6 +100,14 @@ return [
         // ✅ Added password reset broker for Suppliers
         'suppliers' => [
             'provider' => 'suppliers',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        // ✅ Added password reset broker for Applicants
+        'applicants' => [
+            'provider' => 'applicants',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

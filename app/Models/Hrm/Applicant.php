@@ -3,10 +3,15 @@
 namespace App\Models\Hrm;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Applicant extends Model
+class Applicant extends Authenticatable
 {
+    use Notifiable;
     /**
      * The attributes that are mass assignable.
      */
@@ -43,12 +48,30 @@ class Applicant extends Model
 
         // Workflow
         'assigned_module', 'archived', 'rejection_reason', 'interview_feedback',
+        // APPLICANTS module: HRM_NEW links (nullable FKs)
+        'job_posting_id', 'department_id', 'org_position_id', 'employment_type_id',
+        'assigned_hr_id', 'hired_user_id',
+        // Applicant portal profile columns (Dashboard/APPLICANTS/Profile)
+        'suffix', 'barangay', 'highest_education', 'school', 'course',
+        'graduation_year', 'profile_photo_path', 'email_verified_at',
+        // Applicant portal credentials
+        'password',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
     /**
      * The attributes that should be cast.
      */
     protected $casts = [
+        'password' => 'hashed',
+        'email_verified_at' => 'datetime',
         'expected_salary' => 'decimal:2',
         'weight' => 'decimal:2',
         'height' => 'decimal:2',
@@ -108,5 +131,57 @@ class Applicant extends Model
     public function interview(): HasOne
     {
         return $this->hasOne(Interview::class);
+    }
+
+    // APPLICANTS module: HRM_NEW links
+    public function jobPosting(): BelongsTo
+    {
+        return $this->belongsTo(HrmJobPosting::class, 'job_posting_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(HrmDepartment::class, 'department_id');
+    }
+
+    public function orgPosition(): BelongsTo
+    {
+        return $this->belongsTo(HrmPosition::class, 'org_position_id');
+    }
+
+    public function employmentType(): BelongsTo
+    {
+        return $this->belongsTo(HrmEmploymentType::class, 'employment_type_id');
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(ApplicantDocument::class, 'applicant_id');
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(ApplicantStatusHistory::class, 'applicant_id')->latest();
+    }
+
+    public function screenings(): HasMany
+    {
+        return $this->hasMany(HrmApplicationScreening::class, 'applicant_id')->latest();
+    }
+
+    public function hrmInterviews(): HasMany
+    {
+        return $this->hasMany(HrmInterview::class, 'applicant_id')->latest();
+    }
+
+    // Official APPLICANTS portal relations
+    public function jobApplications(): HasMany
+    {
+        return $this->hasMany(ApplicantJobApplication::class, 'applicant_id')->latest();
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(ApplicantNotification::class, 'applicant_id')->latest();
     }
 }

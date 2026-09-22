@@ -360,6 +360,12 @@ const coreValues = [
                         Login
                     </Link>
 
+                    <!-- Applicant Login Button -->
+                    <Link :href="getSafeRoute('applicant.login', '/applicant/login')"
+                        class="text-[9px] sm:text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-emerald-600/30 active:scale-95">
+                        Applicant Login
+                    </Link>
+
                     <!-- Be our Partner (Register) Button -->
                     <Link v-if="canRegister" :href="getSafeRoute('client.register', '/register')"
                         class="text-[9px] sm:text-xs font-bold bg-white/15 backdrop-blur-md border border-white/30 text-white px-3 py-1.5 rounded-lg hover:bg-white/25 transition-all shadow-lg active:scale-95">
@@ -571,6 +577,12 @@ const coreValues = [
                         <Link :href="getSafeRoute('apply', '/apply')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Send Application
                         </Link>
+                        <Link :href="getSafeRoute('applicant.register', '/applicant/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Registration
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.login', '/applicant/login')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Login
+                        </Link>
                         <Link :href="getSafeRoute('supplier.register', '/supplier/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Register Business
                         </Link>
@@ -700,6 +712,12 @@ const coreValues = [
                         <Link :href="getSafeRoute('apply', '/apply')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Send Application
                         </Link>
+                        <Link :href="getSafeRoute('applicant.register', '/applicant/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Registration
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.login', '/applicant/login')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Login
+                        </Link>
                         <Link :href="getSafeRoute('supplier.register', '/supplier/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Register Business
                         </Link>
@@ -791,6 +809,12 @@ const coreValues = [
                         <Link :href="getSafeRoute('apply', '/apply')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Send Application
                         </Link>
+                        <Link :href="getSafeRoute('applicant.register', '/applicant/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Registration
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.login', '/applicant/login')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Login
+                        </Link>
                         <Link :href="getSafeRoute('supplier.register', '/supplier/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Register Business
                         </Link>
@@ -849,6 +873,21 @@ const coreValues = [
 
                     <!-- Search & Filters -->
                     <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 mb-6">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-white/10">
+                            <p class="text-xs text-slate-300">
+                                Already applied? Track your hiring progress in the applicant portal.
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                <Link :href="getSafeRoute('applicant.login', '/applicant/login')"
+                                    class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95">
+                                    Applicant Login
+                                </Link>
+                                <Link :href="getSafeRoute('applicant.register', '/applicant/register')"
+                                    class="px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-lg text-xs font-bold hover:bg-white/20 transition-all active:scale-95">
+                                    Create Account
+                                </Link>
+                            </div>
+                        </div>
                         <div class="flex flex-wrap gap-3">
                             <div class="flex-1 min-w-[200px]">
                                 <input
@@ -939,6 +978,12 @@ const coreValues = [
                         </Link>
                         <Link :href="getSafeRoute('apply', '/apply')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Send Application
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.register', '/applicant/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Registration
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.login', '/applicant/login')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Login
                         </Link>
                         <Link :href="getSafeRoute('supplier.register', '/supplier/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Register Business
@@ -1081,6 +1126,12 @@ const coreValues = [
                         </Link>
                         <Link :href="getSafeRoute('apply', '/apply')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Send Application
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.register', '/applicant/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Registration
+                        </Link>
+                        <Link :href="getSafeRoute('applicant.login', '/applicant/login')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
+                            Applicant Login
                         </Link>
                         <Link :href="getSafeRoute('supplier.register', '/supplier/register')" class="text-[10px] font-bold text-slate-300 hover:text-white transition-colors uppercase tracking-widest">
                             Register Business

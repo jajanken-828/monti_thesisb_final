@@ -129,6 +129,21 @@ class PayrollController extends Controller
     }
 
     /**
+     * JSON list of active employees (used by the generate-payroll form
+     * when the prop list is empty).
+     */
+    public function employeesJson()
+    {
+        return response()->json(
+            User::where('is_active', true)
+                ->whereIn('position', ['staff', 'manager'])
+                ->select('id', 'name', 'position as role')
+                ->orderBy('name')
+                ->get()
+        );
+    }
+
+    /**
      * Show the form for generating payroll (or return data for modal).
      */
     public function create()

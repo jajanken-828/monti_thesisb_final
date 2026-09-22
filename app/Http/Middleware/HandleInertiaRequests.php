@@ -120,6 +120,7 @@ class HandleInertiaRequests extends Middleware
                 'assigned_client_ids' => $assignedClientIds,
                 'client'              => $this->getGuardUser('client'),
                 'supplier'            => $this->getGuardUser('supplier'),
+                'applicant'           => $this->getGuardUser('applicant'),
             ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),

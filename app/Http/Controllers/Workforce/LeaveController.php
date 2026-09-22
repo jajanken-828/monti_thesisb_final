@@ -39,6 +39,9 @@ class LeaveController extends Controller
     
     public function approve($id)
     {
+        if (! Auth::user()->canAccessWorkforce(null, null, 'manage')) {
+            abort(403);
+        }
         $leave = LeaveRequest::findOrFail($id);
         $leave->update(['status' => 'approved']);
         return back()->with('message', 'Leave approved.');
@@ -46,6 +49,9 @@ class LeaveController extends Controller
     
     public function reject(Request $request, $id)
     {
+        if (! Auth::user()->canAccessWorkforce(null, null, 'manage')) {
+            abort(403);
+        }
         $request->validate(['reason' => 'required|string']);
         $leave = LeaveRequest::findOrFail($id);
         $leave->update(['status' => 'rejected', 'reason' => $request->reason]);

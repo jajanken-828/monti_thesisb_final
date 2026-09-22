@@ -25,6 +25,11 @@ class RedirectIfAuthenticated
                     return redirect()->route('client.dashboard');
                 }
 
+                // ✅ Redirect Applicants to their portal
+                if ($guard === 'applicant') {
+                    return redirect()->route('applicant.dashboard');
+                }
+
                 // ✅ Redirect Employees to the internal ERP dashboard
                 // Adjust this to your actual employee dashboard route name
                 return redirect()->route('dashboard');

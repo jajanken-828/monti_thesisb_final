@@ -57,6 +57,9 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('partner/*') || $request->is('client/*')) {
                 return route('client.login');
             }
+            if ($request->is('applicant/*')) {
+                return route('applicant.login');
+            }
             return route('login');
         });
     })

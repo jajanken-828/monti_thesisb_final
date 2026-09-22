@@ -18,7 +18,9 @@ class TraineeGrade extends Model
         'safety_awareness',
         'productivity',
         'total_percentage',
+        'passed_to_hr',
     ];
+    protected $casts = ['passed_to_hr' => 'boolean'];
 
     public function user()
     {

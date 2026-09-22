@@ -74,7 +74,7 @@ const isSubmitting   = ref(false);
 
 const form = useForm({
     company_name: '', contact_person: '', email: '', phone: '',
-    interest_fabric: 'Cotton', estimated_value: '', logo: null,
+    logo: null,
 });
 
 const conversionForm = useForm({
@@ -100,6 +100,31 @@ const handleConversionLogoChange = (e) => {
 const noteForm      = useForm({ note: '' });
 const interviewForm = useForm({ scheduled_at: '', location: '', notes: '' });
 const rejectForm    = useForm({ reject_reason: '' });
+const qualifyForm   = useForm({
+    budget: '', authority: '', need_summary: '', timeline: '',
+    next_step: '', next_step_due: '',
+});
+const showQualifyModal = ref(false);
+
+const openQualifyModal = (lead) => {
+    if (!canEdit.value) return;
+    currentLead.value = lead;
+    qualifyForm.reset();
+    qualifyForm.clearErrors();
+    qualifyForm.budget = lead.budget || '';
+    qualifyForm.authority = lead.authority || '';
+    qualifyForm.need_summary = lead.need_summary || '';
+    qualifyForm.timeline = lead.timeline || '';
+    qualifyForm.next_step = lead.next_step || '';
+    qualifyForm.next_step_due = lead.next_step_due || '';
+    showQualifyModal.value = true;
+};
+const submitQualify = () => {
+    qualifyForm.post(route('crm.lead.qualify', currentLead.value.id), {
+        preserveScroll: true,
+        onSuccess: () => { showQualifyModal.value = false; router.reload({ only: ['leads'] }); },
+    });
+};
 
 // ─────────────────────────────────────────────────
 // Stage Movement
@@ -416,6 +441,16 @@ const stageAccent = (status) => ({
                                         >
                                             <MessageSquare class="w-3.5 h-3.5" /> Add Note
                                         </button>
+                                        <button
+                                            v-if="canEdit"
+                                            @click="openQualifyModal(lead)"
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-50 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-600 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-300 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 rounded-xl text-xs font-bold transition-all active:scale-95"
+                                        >
+                                            <CheckCircle2 class="w-3.5 h-3.5" /> Qualify
+                                        </button>
+                                    </div>
+                                    <div v-if="lead.next_step" class="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl px-3 py-2">
+                                        <Clock class="w-3.5 h-3.5" /> Next: {{ lead.next_step }}{{ lead.next_step_due ? ` · due ${lead.next_step_due}` : '' }}
                                     </div>
                                     <div v-if="lead.notes && lead.notes.length">
                                         <button @click="toggleNotes(lead.id)" class="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors">
@@ -887,31 +922,6 @@ const stageAccent = (status) => ({
                                     />
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Estimated Value (₱) <span class="text-rose-500">*</span></label>
-                                    <input
-                                        v-model="form.estimated_value"
-                                        type="number"
-                                        placeholder="0.00"
-                                        required
-                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none text-sm transition dark:text-white placeholder:text-gray-400"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Fabric Interest</label>
-                                    <select
-                                        v-model="form.interest_fabric"
-                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 outline-none text-sm transition dark:text-white"
-                                    >
-                                        <option>Cotton</option>
-                                        <option>Wool</option>
-                                        <option>Nylon</option>
-                                        <option>Polyester</option>
-                                        <option>Silk</option>
-                                    </select>
-                                </div>
-                            </div>
                             <div>
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Company Logo (optional)</label>
                                 <div class="flex items-center gap-3">
@@ -927,6 +937,9 @@ const stageAccent = (status) => ({
                             </div>
                         </div>
                         <!-- Footer -->
+                        <div class="px-6 pb-2 flex-shrink-0">
+                            <p v-if="form.errors.error" class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold px-4 py-2.5">{{ form.errors.error }}</p>
+                        </div>
                         <div class="px-6 pb-6 flex-shrink-0 flex gap-3">
                             <button @click="showCreateModal = false" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 font-bold text-sm hover:bg-gray-200 active:scale-95 transition">Cancel</button>
                             <button
@@ -938,6 +951,66 @@ const stageAccent = (status) => ({
                                 {{ form.processing ? 'Creating…' : 'Create Deal' }}
                             </button>
                         </div>
+                    </div>
+                </div>
+            </Transition>
+
+            <!-- ── Qualify (BANT-lite + next step) ── -->
+            <Transition name="modal">
+                <div v-if="showQualifyModal" class="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showQualifyModal = false">
+                    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-5 flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 ring-1 ring-white/30">
+                                <CheckCircle2 class="w-5 h-5 text-white" />
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="text-white font-black">Qualify Lead</h3>
+                                <p class="text-xs text-emerald-50 truncate">{{ currentLead?.company_name }}</p>
+                            </div>
+                            <button @click="showQualifyModal = false" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35">&times;</button>
+                        </div>
+                        <form @submit.prevent="submitQualify" class="p-6 space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Budget</label>
+                                    <input v-model="qualifyForm.budget" placeholder="e.g. ₱500k approved"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-emerald-400 outline-none text-sm dark:text-white" />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Authority</label>
+                                    <input v-model="qualifyForm.authority" placeholder="e.g. Owner decides"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-emerald-400 outline-none text-sm dark:text-white" />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Need</label>
+                                <textarea v-model="qualifyForm.need_summary" rows="2" placeholder="What fabric problem are we solving?"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-emerald-400 outline-none text-sm resize-none dark:text-white"></textarea>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Timeline</label>
+                                <input v-model="qualifyForm.timeline" placeholder="e.g. Needs goods by December"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-emerald-400 outline-none text-sm dark:text-white" />
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Next step</label>
+                                    <input v-model="qualifyForm.next_step" placeholder="e.g. Send samples"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-emerald-400 outline-none text-sm dark:text-white" />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Due</label>
+                                    <input v-model="qualifyForm.next_step_due" type="date"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent outline-none text-sm dark:text-white" />
+                                </div>
+                            </div>
+                            <div class="flex gap-3 pt-1">
+                                <button type="button" @click="showQualifyModal = false" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 font-bold text-sm hover:bg-gray-200 active:scale-95 transition">Cancel</button>
+                                <button type="submit" :disabled="qualifyForm.processing" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm shadow-lg disabled:opacity-60 hover:scale-[1.02] active:scale-95 transition-all">
+                                    {{ qualifyForm.processing ? 'Saving…' : 'Save' }}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </Transition>

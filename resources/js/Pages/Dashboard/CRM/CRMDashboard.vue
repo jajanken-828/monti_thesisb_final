@@ -4,8 +4,9 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     Users, Briefcase, TrendingUp, Clock, Calendar, MessageSquare,
-    CheckCircle, XCircle, AlertCircle, Building2,
-    PieChart, BarChart3, ArrowRight, Eye, Share2, Sparkles, LayoutDashboard
+    CheckCircle, XCircle, AlertCircle, Building2, KanbanSquare,
+    PieChart, BarChart3, ArrowRight, Eye, Share2, Sparkles, LayoutDashboard,
+    FileText, Activity, Megaphone
 } from 'lucide-vue-next';
 
 const page = usePage();
@@ -19,6 +20,10 @@ const props = defineProps({
             open_feedback: 0,
         }),
     },
+    pipeline: { type: Object, default: () => ({ deals: 0, value: 0, forecast: 0 }) },
+    funnel: { type: Object, default: () => ({ leads: 0, qualified: 0, open_deals: 0, won: 0, win_rate: 0 }) },
+    avgCycle: { type: [Number, null], default: null },
+    service: { type: Object, default: () => ({ open_cases: 0, urgent_cases: 0, overdue_tasks: 0 }) },
     recentFeedback: {
         type: Array,
         default: () => [],
@@ -55,14 +60,29 @@ const quickLinks = computed(() => {
     if (canViewPage('leads')) {
         links.push({ label: 'Lead Pipeline', href: route('crm.lead'), icon: Briefcase, permKey: 'leads' });
     }
+    if (canViewPage('opportunities')) {
+        links.push({ label: 'Opportunities', href: route('crm.opportunities'), icon: KanbanSquare, permKey: 'opportunities' });
+    }
+    if (canViewPage('customer_profiles')) {
+        links.push({ label: 'Accounts', href: route('crm.customerprofile.index'), icon: Building2, permKey: 'customer_profiles' });
+    }
+    if (canViewPage('quotations')) {
+        links.push({ label: 'Quotations', href: route('crm.quotations'), icon: FileText, permKey: 'quotations' });
+    }
+    if (canViewPage('activities')) {
+        links.push({ label: 'Activities', href: route('crm.activities'), icon: Activity, permKey: 'activities' });
+    }
+    if (canViewPage('cases')) {
+        links.push({ label: 'Cases', href: route('crm.cases'), icon: AlertCircle, permKey: 'cases' });
+    }
     if (canViewPage('approvals')) {
         links.push({ label: 'Pending Approvals', href: route('crm.approval.index'), icon: Clock, permKey: 'approvals' });
     }
-    if (canViewPage('investigation')) {
-        links.push({ label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' });
+    if (canViewPage('campaigns')) {
+        links.push({ label: 'Campaigns', href: route('crm.campaigns'), icon: Megaphone, permKey: 'campaigns' });
     }
-    if (canViewPage('customer_profiles')) {
-        links.push({ label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Building2, permKey: 'customer_profiles' });
+    if (canViewPage('investigation')) {
+        links.push({ label: 'Due Diligence', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' });
     }
     if (canViewPage('socials')) {
         links.push({ label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' });
@@ -82,11 +102,15 @@ const canManageFeedback = computed(() => {
     return isCeo.value || isManager.value || props.permissions.investigation === 'edit';
 });
 
+const peso0 = (v) => '₱' + Number(v || 0).toLocaleString('en-PH', { maximumFractionDigits: 0 });
+
 const statCards = computed(() => ([
     { key: 'clients', label: 'Active Clients', value: props.stats.total_clients, icon: Users, foot: '+8% from last month', footIcon: TrendingUp, footClass: 'text-blue-600 dark:text-blue-400', tint: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400', bar: 'from-blue-500 to-indigo-500' },
+    { key: 'forecast', label: 'Weighted Forecast', value: peso0(props.pipeline.forecast), icon: TrendingUp, foot: `${props.pipeline.deals} open deals`, footIcon: null, footClass: 'text-emerald-600 dark:text-emerald-400', tint: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400', bar: 'from-emerald-500 to-teal-500' },
+    { key: 'winrate', label: 'Win Rate', value: `${props.funnel.win_rate}%`, icon: PieChart, foot: props.avgCycle !== null ? `Avg cycle ${props.avgCycle}d` : 'No closed deals yet', footIcon: null, footClass: 'text-purple-600 dark:text-purple-400', tint: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400', bar: 'from-violet-500 to-fuchsia-500' },
+    { key: 'service', label: 'Open Cases', value: props.service.open_cases, icon: AlertCircle, foot: `${props.service.urgent_cases} urgent · ${props.service.overdue_tasks} overdue tasks`, footIcon: null, footClass: 'text-red-600 dark:text-red-400', tint: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400', bar: 'from-rose-500 to-red-500' },
     { key: 'pending', label: 'Pending Approvals', value: props.stats.pending_clients, icon: Clock, foot: 'Awaiting review', footIcon: null, footClass: 'text-amber-600 dark:text-amber-400', tint: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400', bar: 'from-amber-500 to-orange-500' },
     { key: 'leads', label: 'Active Leads', value: props.stats.total_leads, icon: Briefcase, foot: 'In pipeline', footIcon: null, footClass: 'text-purple-600 dark:text-purple-400', tint: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400', bar: 'from-violet-500 to-fuchsia-500' },
-    { key: 'feedback', label: 'Open Feedback', value: props.stats.open_feedback, icon: AlertCircle, foot: 'Requires attention', footIcon: null, footClass: 'text-red-600 dark:text-red-400', tint: 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400', bar: 'from-rose-500 to-red-500' },
 ]));
 </script>
 
@@ -157,6 +181,30 @@ const statCards = computed(() => ([
                         <div :class="['mt-3 text-xs font-bold flex items-center gap-1', card.footClass]">
                             <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
                             <component v-if="card.footIcon" :is="card.footIcon" class="w-3 h-3" /> {{ card.foot }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Funnel: leads → qualified → open deals → won -->
+                <div class="animate-fade-up bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-xl transition-all duration-300">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/20"><BarChart3 class="w-4 h-4 text-indigo-500" /></span>
+                        <h3 class="text-[11px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-200">Sales Funnel</h3>
+                        <span class="ml-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-black px-2.5 py-1">{{ funnel.win_rate }}% win rate</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div v-for="(s, i) in [
+                            { label: 'Leads in', value: funnel.leads, bar: 'from-blue-500 to-indigo-500', pct: 100 },
+                            { label: 'Qualified', value: funnel.qualified, bar: 'from-indigo-500 to-violet-500', pct: funnel.leads ? Math.round(funnel.qualified / funnel.leads * 100) : 0 },
+                            { label: 'Open deals', value: funnel.open_deals, bar: 'from-violet-500 to-fuchsia-500', pct: funnel.leads ? Math.round(funnel.open_deals / funnel.leads * 100) : 0 },
+                            { label: 'Won', value: funnel.won, bar: 'from-emerald-500 to-teal-500', pct: funnel.win_rate },
+                        ]" :key="i" class="rounded-2xl bg-slate-50 dark:bg-zinc-800/60 p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ s.label }}</p>
+                            <p class="text-2xl font-black mt-1">{{ s.value }}</p>
+                            <div class="mt-2 h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r transition-all duration-700" :class="s.bar" :style="{ width: `${Math.min(100, s.pct)}%` }" />
+                            </div>
+                            <p class="mt-1 text-[10px] font-bold text-gray-400">{{ s.pct }}%</p>
                         </div>
                     </div>
                 </div>

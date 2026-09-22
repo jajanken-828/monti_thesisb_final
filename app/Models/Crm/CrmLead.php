@@ -23,9 +23,21 @@ class CrmLead extends Model
         'phone',
         'interest_fabric',
         'estimated_value',
+        'source',
+        'external_id',
+        'budget',
+        'authority',
+        'need_summary',
+        'timeline',
+        'next_step',
+        'next_step_due',
         'status',
         'assigned_staff_id', // Critical for linking to the staff member
         'lost_reason',
+    ];
+
+    protected $casts = [
+        'next_step_due' => 'date',
     ];
 
     public function staff()
@@ -66,5 +78,20 @@ class CrmLead extends Model
     public function logo()
     {
         return $this->hasOne(CrmLogoPartner::class, 'crm_lead_id')->latestOfMany();
+    }
+
+    public function contacts()
+    {
+        return $this->hasMany(CrmContact::class, 'lead_id');
+    }
+
+    public function opportunities()
+    {
+        return $this->hasMany(CrmOpportunity::class, 'lead_id');
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(CrmActivity::class, 'lead_id');
     }
 }

@@ -60,7 +60,8 @@ class CustomerProfileController extends Controller
     }
 
     /**
-     * Show the detailed profile of a specific client.
+     * Account 360: company record + contacts, open deals, order history,
+     * activity timeline, cases, meetings/feedback and credit standing.
      */
     public function show($id)
     {
@@ -70,8 +71,8 @@ class CustomerProfileController extends Controller
         // Restrict staff to only their assigned clients
         if ($user->role === 'CRM' && $user->position === 'staff') {
             $isAssigned = CrmClientAssignment::where('client_id', $client->id)
-                                             ->where('staff_id', $user->id)
-                                             ->exists();
+                                              ->where('staff_id', $user->id)
+                                              ->exists();
             if (!$isAssigned) {
                 abort(403, 'You are not assigned to this client.');
             }
@@ -79,8 +80,19 @@ class CustomerProfileController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
+        $client->load([
+            'contacts', 'creditAccount',
+            'opportunities.owner', 'opportunities.lead',
+            'activities.owner', 'cases.owner',
+            'purchaseOrders' => fn ($q) => $q->latest()->take(10),
+        ]);
+
         $meetings = CrmMeeting::where('client_id', $client->id)->latest()->get();
         $feedback = CrmFeedback::where('client_id', $client->id)->with('assignee')->latest()->get();
+
+        $openValue = $client->opportunities
+            ->reject(fn ($o) => in_array($o->stage, ['won', 'lost'], true))
+            ->sum(fn ($o) => (float) $o->value);
 
         $permissions = $this->getPagePermissionsForModule('CRM');
 
@@ -88,6 +100,7 @@ class CustomerProfileController extends Controller
             'client'   => $client,
             'meetings' => $meetings,
             'feedback' => $feedback,
+            'openPipeline' => round($openValue, 2),
             'permissions' => $permissions,
         ]);
     }

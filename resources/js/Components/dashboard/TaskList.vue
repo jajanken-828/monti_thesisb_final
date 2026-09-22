@@ -39,7 +39,7 @@ const priorityColors = {
             <div v-for="task in tasks" :key="task.id" class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded dark:hover:bg-zinc-800">
                 <Checkbox :checked="task.completed" @change="completeTask(task.id)" />
                 <div class="flex-1">
-                    <p :class="cn('text-sm text-gray-900 dark:text-gray-100', task.completed && 'line-through text-gray-500 dark:text-gray-500')">
+                    <p :class="cn('text-sm text-gray-900 dark:text-zinc-100', task.completed && 'line-through text-gray-500 dark:text-zinc-500)">
                         {{ task.title }}
                     </p>
                     <div class="flex items-center space-x-2 mt-1">

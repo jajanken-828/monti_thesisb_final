@@ -90,7 +90,7 @@ const payslipDetails = ref({
 
                 <div class="flex items-center space-x-3">
                     <button @click="showAnnouncements = true"
-                        class="relative p-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full hover:bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-800 transition shadow-sm">
+                        class="relative p-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-full hover:bg-gray-50 dark:hover:bg-zinc-800 transition shadow-sm">
                         <span class="absolute top-1 right-1 flex h-3 w-3">
                             <span
                                 class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -274,15 +274,10 @@ const payslipDetails = ref({
                             <div class="p-6">
                                 <div class="space-y-4">
                                     <div v-for="notif in notifications" :key="notif.id"
-                                        class="p-4 rounded-xl border border-gray-100 dark:border-zinc-800 hover:border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50/30 transition-all cursor-pointer group">
+                                        class="p-4 rounded-xl border border-gray-100 dark:border-zinc-800 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all cursor-pointer group">
                                         <div class="flex justify-between items-start mb-1">
                                             <div class="flex items-center">
-                                                <div :class="{
-                                                    'bg-blue-100 dark:bg-blue-900/40 text-blue-600': notif.type === 'upcoming',
-                                                    'bg-red-100 dark:bg-red-900/30 text-red-600': notif.type === 'late',
-                                                    'bg-amber-100 text-amber-600': notif.type === 'action',
-                                                    'bg-green-100 dark:bg-green-900/30 text-green-600': notif.type === 'info'
-                                                }" class="p-2 rounded-lg mr-3">
+                                                <div :class="{ 'bg-blue-100 dark:bg-blue-900/40 text-blue-600': notif.type === 'upcoming', 'bg-red-100 text-red-600': notif.type === 'late', 'bg-amber-100 text-amber-600': notif.type === 'action', 'bg-green-100 text-green-600': notif.type === 'info' }" class="p-2 rounded-lg mr-3">
                                                     <svg v-if="notif.type === 'upcoming'" class="w-4 h-4" fill="none"
                                                         stroke="currentColor" viewBox="0 0 24 24">
                                                         <path
@@ -300,12 +295,7 @@ const payslipDetails = ref({
                                                 </div>
                                                 <p class="text-sm font-bold text-gray-800 dark:text-zinc-200">{{ notif.title }}</p>
                                             </div>
-                                            <span :class="{
-                                                'bg-blue-50 dark:bg-blue-900/30 text-blue-700': notif.type === 'upcoming',
-                                                'bg-red-50 dark:bg-red-900/20 text-red-700': notif.type === 'late',
-                                                'bg-amber-50 dark:bg-amber-900/20 text-amber-700': notif.type === 'action',
-                                                'bg-green-50 dark:bg-green-900/20 text-green-700': notif.type === 'info'
-                                            }" class="text-[10px] font-black uppercase px-2 py-0.5 rounded">
+                                            <span :class="{ 'bg-blue-50 dark:bg-blue-900/30 text-blue-700': notif.type === 'upcoming', 'bg-red-50 text-red-700': notif.type === 'late', 'bg-amber-50 text-amber-700': notif.type === 'action', 'bg-green-50 text-green-700': notif.type === 'info' }" class="text-[10px] font-black uppercase px-2 py-0.5 rounded">
                                                 {{ notif.status }}
                                             </span>
                                         </div>
@@ -384,7 +374,7 @@ const payslipDetails = ref({
                             Download PDF
                         </button>
                         <button @click="showPayslip = false"
-                            class="bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 px-6 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 dark:bg-zinc-700 transition">Close</button>
+                            class="bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 px-6 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 transition">Close</button>
                     </div>
                 </div>
             </div>
@@ -470,7 +460,7 @@ const payslipDetails = ref({
                         </div>
                         <div class="flex items-center justify-end space-x-4 pt-4">
                             <button type="button" @click="showLeaveForm = false"
-                                class="text-sm font-bold text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:text-zinc-400">Discard</button>
+                                class="text-sm font-bold text-gray-400 dark:text-zinc-500 hover:text-gray-600">Discard</button>
                             <button type="submit"
                                 class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition">Submit
                                 Application</button>

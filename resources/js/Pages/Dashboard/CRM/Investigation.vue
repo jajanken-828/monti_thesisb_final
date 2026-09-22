@@ -123,7 +123,7 @@ const getStatusClass = (status) => {
 </script>
 
 <template>
-    <Head title="Investigation & Feedback" />
+    <Head title="Due Diligence" />
 
     <AuthenticatedLayout>
         <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
@@ -142,10 +142,10 @@ const getStatusClass = (status) => {
                                 <Eye class="h-3.5 w-3.5" /> CRM · Oversight
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">
-                                Investigation <span class="text-blue-200">Center</span>
+                                Due Diligence <span class="text-blue-200">Center</span>
                             </h1>
                             <p class="text-sm text-blue-100/90">
-                                Monitor client feedback, complaints, and assign staff.
+                                Credit-worthiness checks, client feedback and staff assignments before big orders.
                             </p>
                         </div>
                         <div class="flex items-center gap-2">

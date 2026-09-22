@@ -112,21 +112,11 @@ const downloadPayslipPDF = (payslipId: number) => {
           </div>
 
           <div v-else class="space-y-3 max-h-96 overflow-y-auto">
-            <button v-for="payslip in props.payslips" :key="payslip.id" @click="selectPayslip(payslip.id)" :class="[
-              'w-full p-4 text-left rounded-lg border-2 transition-all',
-              selectedPayslip?.id === payslip.id
-                ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500'
-                : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 hover:border-gray-300',
-            ]">
+            <button v-for="payslip in props.payslips" :key="payslip.id" @click="selectPayslip(payslip.id)" :class="[ 'w-full p-4 text-left rounded-lg border-2 transition-all', selectedPayslip?.id === payslip.id ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500' : 'bg-gray-50 border-gray-200 dark:border-zinc-700 hover:border-gray-300', ]">
               <p class="font-semibold text-gray-900 dark:text-zinc-100">{{ payslip.period }}</p>
               <p class="text-sm text-gray-600 dark:text-zinc-400 mt-1">{{ format(new Date(payslip.date), 'MMM d, yyyy') }}</p>
               <div class="flex items-center justify-between mt-2">
-                <span :class="[
-                  'px-2 py-1 rounded text-xs font-semibold',
-                  payslip.statusBadge.color === 'success' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' :
-                    payslip.statusBadge.color === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800' :
-                      payslip.statusBadge.color === 'danger' ? 'bg-red-100 dark:bg-red-900/30 text-red-800' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800',
-                ]">
+                <span :class="[ 'px-2 py-1 rounded text-xs font-semibold', payslip.statusBadge.color === 'success' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' : payslip.statusBadge.color === 'warning' ? 'bg-yellow-100 text-yellow-800' : payslip.statusBadge.color === 'danger' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800', ]">
                   {{ payslip.statusBadge.label }}
                 </span>
                 <p class="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
@@ -258,12 +248,7 @@ const downloadPayslipPDF = (payslipId: number) => {
             </div>
 
             <!-- Status Badge -->
-            <div :class="[
-              'p-4 rounded-lg font-semibold text-center',
-              selectedPayslip.status === 'paid' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' :
-                selectedPayslip.status === 'approved' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800' :
-                  selectedPayslip.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800' : 'bg-red-100 dark:bg-red-900/30 text-red-800',
-            ]">
+            <div :class="[ 'p-4 rounded-lg font-semibold text-center', selectedPayslip.status === 'paid' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' : selectedPayslip.status === 'approved' ? 'bg-blue-100 text-blue-800' : selectedPayslip.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800', ]">
               Status: {{ selectedPayslip.status }}
             </div>
           </div>

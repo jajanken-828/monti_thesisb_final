@@ -93,7 +93,7 @@ const formatTimeDisplay = (timeString: string | null): string => {
           <p class="text-sm text-gray-500 dark:text-zinc-400">{{ currentDate }}</p>
         </div>
         <Link href="/trainee/dashboard"
-          class="inline-flex items-center px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-md font-semibold text-xs text-gray-700 dark:text-zinc-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-800 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+          class="inline-flex items-center px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-md font-semibold text-xs text-gray-700 dark:text-zinc-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
           Dashboard
         </Link>
       </div>
@@ -142,11 +142,7 @@ const formatTimeDisplay = (timeString: string | null): string => {
                 class="bg-gray-50 dark:bg-zinc-800 py-2 text-center text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase">
                 {{ day }}
               </div>
-              <div v-for="day in props.calendarDays" :key="day.date" :class="[
-                'relative min-h-[80px] p-2 bg-white dark:bg-zinc-900 transition-colors',
-                day.hasRecord ? 'hover:brightness-95' : '',
-                !day.day ? 'bg-gray-50/50' : ''
-              ]">
+              <div v-for="day in props.calendarDays" :key="day.date" :class="[ 'relative min-h-[80px] p-2 bg-white dark:bg-zinc-900 transition-colors', day.hasRecord ? 'hover:brightness-95' : '', !day.day ? 'bg-gray-50/50' : '' ]">
                 <span v-if="day.day"
                   :class="['text-sm font-medium', day.hasRecord ? 'text-gray-900' : 'text-gray-400']">
                   {{ day.day }}

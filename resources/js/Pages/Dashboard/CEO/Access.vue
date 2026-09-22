@@ -33,9 +33,9 @@ const props = defineProps({
 // ─── Core module definitions ──────────────────────────────────────────────────
 
 const CORE_MODULES = [
-    { key: 'HRM', name: 'Human Resource',        short: 'HRM', accent: '#2563eb', light: '#eff6ff', border: '#bfdbfe', ring: 'ring-blue-400',    badge: 'bg-blue-100 text-blue-800 border-blue-200'   },
+    { key: 'HRM', name: 'Human Resource',        short: 'HRM', accent: '#2563eb', light: '#eff6ff', border: '#bfdbfe', ring: 'ring-blue-400',    badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-200'   },
     { key: 'CRM', name: 'Customer Relationship', short: 'CRM', accent: '#9333ea', light: '#faf5ff', border: '#e9d5ff', ring: 'ring-purple-400',  badge: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { key: 'MAN', name: 'Manufacturing',         short: 'MAN', accent: '#059669', light: '#f0fdf4', border: '#a7f3d0', ring: 'ring-emerald-400', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { key: 'MAN', name: 'Manufacturing',         short: 'MAN', accent: '#059669', light: '#f0fdf4', border: '#a7f3d0', ring: 'ring-emerald-400', badge: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 border-emerald-200' },
     { key: 'LOG', name: 'Logistics',             short: 'LOG', accent: '#ea580c', light: '#fff7ed', border: '#fed7aa', ring: 'ring-orange-400',  badge: 'bg-orange-100 text-orange-800 border-orange-200' },
 ];
 
@@ -553,12 +553,12 @@ async function saveClientAssignments(staffId) {
                     </div>
 
                     <div class="relative mt-6 max-w-md">
-                        <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
                         <input
                             v-model="searchQuery"
                             type="text"
                             placeholder="Search name, email, role or label…"
-                            class="w-full rounded-2xl border-0 bg-white/95 dark:bg-zinc-900/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 dark:text-zinc-100 shadow-lg placeholder:text-gray-400 dark:text-zinc-500 focus:ring-2 focus:ring-white/70 outline-none transition"
+                            class="w-full rounded-2xl border-0 bg-white/95 dark:bg-zinc-900/95 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 dark:text-zinc-100 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-white/70 outline-none transition"
                         />
                     </div>
                 </div>
@@ -571,13 +571,12 @@ async function saveClientAssignments(staffId) {
                 <div class="flex flex-col items-center mb-0">
                     <div class="tier-label flex items-center gap-2 mb-3">
                         <div class="h-px w-12 bg-amber-300/50"></div>
-                        <span class="text-xs font-bold text-amber-600 uppercase tracking-widest">President</span>
+                        <span class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">President</span>
                         <div class="h-px w-12 bg-amber-300/50"></div>
                     </div>
 
                     <div v-if="props.ceo" class="animate-fade-up relative group">
-                        <div :class="['org-node-ceo group relative overflow-hidden flex items-center gap-4 px-5 py-4 rounded-3xl border-2 border-amber-300 dark:border-amber-500/40 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 min-w-[260px] max-w-xs',
-                             matchesSearch({...props.ceo, smart_label:'CEO', role:'CEO', employee_id:''}) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
+                        <div :class="['org-node-ceo group relative overflow-hidden flex items-center gap-4 px-5 py-4 rounded-3xl border-2 border-amber-300 dark:border-amber-500/40 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 min-w-[260px] max-w-xs', matchesSearch({...props.ceo, smart_label:'CEO', role:'CEO', employee_id:''}) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
                             <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center shadow-md">
                                 <Crown class="w-3.5 h-3.5 text-white" />
@@ -616,8 +615,7 @@ async function saveClientAssignments(staffId) {
 
                     <div v-if="props.vicePresident"
                          @click="openPanel(props.vicePresident, 'vp')"
-                         :class="['relative group overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border-2 border-indigo-300 dark:border-indigo-700 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 min-w-[240px] max-w-xs',
-                                  matchesSearch(props.vicePresident) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
+                         :class="['relative group overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border-2 border-indigo-300 dark:border-indigo-700 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 min-w-[240px] max-w-xs', matchesSearch(props.vicePresident) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
                         <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <img v-if="props.vicePresident.profile_photo" :src="props.vicePresident.profile_photo" :alt="props.vicePresident.name"
                              class="w-11 h-11 rounded-xl object-cover ring-2 ring-indigo-200 shadow shrink-0" />
@@ -650,8 +648,7 @@ async function saveClientAssignments(staffId) {
 
                     <div v-if="props.secretary"
                          @click="openPanel(props.secretary, 'secretary')"
-                         :class="['relative group overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border-2 border-violet-300 dark:border-violet-700 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 min-w-[240px] max-w-xs',
-                                  matchesSearch(props.secretary) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
+                         :class="['relative group overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border-2 border-violet-300 dark:border-violet-700 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 min-w-[240px] max-w-xs', matchesSearch(props.secretary) ? 'ring-2 ring-yellow-400 ring-offset-2' : '']">
                         <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <img v-if="props.secretary.profile_photo" :src="props.secretary.profile_photo" :alt="props.secretary.name"
                              class="w-11 h-11 rounded-xl object-cover ring-2 ring-violet-200 shadow shrink-0" />
@@ -687,8 +684,7 @@ async function saveClientAssignments(staffId) {
                             v-for="so in props.specialOfficers"
                             :key="so.id"
                             @click="openPanel(so, 'so')"
-                            :class="['group relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:border-indigo-200 dark:border-indigo-800 dark:hover:border-indigo-800 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 w-56',
-                                     matchesSearch(so) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
+                            :class="['group relative overflow-hidden flex items-center gap-3 px-4 py-3 rounded-3xl border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 transition-all duration-300 w-56', matchesSearch(so) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
                         >
                             <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <img v-if="so.profile_photo" :src="so.profile_photo" :alt="so.name"
@@ -714,7 +710,7 @@ async function saveClientAssignments(staffId) {
                     <div class="flex-1 h-px bg-gradient-to-r from-transparent via-indigo-300 dark:via-indigo-700 to-transparent"></div>
                     <div class="flex items-center gap-2 px-4 py-1.5 bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-gray-100 dark:border-zinc-800 rounded-full shadow-sm">
                         <Building2 class="w-3.5 h-3.5 text-indigo-500" />
-                        <span class="text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-[0.2em]">Core Module Departments</span>
+                        <span class="text-[11px] font-black text-slate-600 dark:text-zinc-400 uppercase tracking-[0.2em]">Core Module Departments</span>
                     </div>
                     <div class="flex-1 h-px bg-gradient-to-r from-transparent via-indigo-300 dark:via-indigo-700 to-transparent"></div>
                 </div>
@@ -747,8 +743,7 @@ async function saveClientAssignments(staffId) {
                         <div v-if="mod.key !== 'MAN'" class="mb-2">
                             <div v-if="managerByModule(mod.key)"
                                  @click="openPanel(managerByModule(mod.key), 'manager')"
-                                 :class="['group relative overflow-hidden flex items-center gap-3 px-3 py-3 rounded-3xl border-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300',
-                                          matchesSearch(managerByModule(mod.key)) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
+                                 :class="['group relative overflow-hidden flex items-center gap-3 px-3 py-3 rounded-3xl border-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur shadow-sm cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300', matchesSearch(managerByModule(mod.key)) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']"
                                  :style="{borderColor: mod.border}">
                                 <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                 <img v-if="managerByModule(mod.key).profile_photo"
@@ -790,13 +785,12 @@ async function saveClientAssignments(staffId) {
                                     <div class="flex items-center gap-1.5 mb-2 px-1">
                                         <Factory class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                         <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">{{ MAN_DEPT_LABELS[dept] }}</span>
-                                        <span class="text-[10px] text-emerald-500 bg-emerald-100 border border-emerald-200 dark:border-emerald-800 rounded-full px-1.5">{{ manStaffByDept(dept).length }} staff</span>
+                                        <span class="text-[10px] text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-full px-1.5">{{ manStaffByDept(dept).length }} staff</span>
                                     </div>
                                     <!-- Supervisor seat (one per department) -->
                                     <div v-if="manSupervisorOf(dept)"
                                          @click="openPanel(manSupervisorOf(dept), 'supervisor')"
-                                         :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-emerald-300 cursor-pointer hover:border-emerald-500 hover:shadow-sm transition-all mb-1.5',
-                                                  matchesSearch(manSupervisorOf(dept)) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']">
+                                         :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-emerald-300 cursor-pointer hover:border-emerald-500 hover:shadow-sm transition-all mb-1.5', matchesSearch(manSupervisorOf(dept)) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']">
                                         <img v-if="manSupervisorOf(dept).profile_photo" :src="manSupervisorOf(dept).profile_photo"
                                              class="w-8 h-8 rounded-lg object-cover ring-1 ring-emerald-200 shrink-0" />
                                         <div v-else :class="`bg-gradient-to-br ${getAvatarColor(manSupervisorOf(dept).name)} w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0`">
@@ -815,8 +809,7 @@ async function saveClientAssignments(staffId) {
                                             v-for="s in manStaffByDept(dept)"
                                             :key="s.id"
                                             @click="openPanel(s, s.position === 'manager' ? 'manager' : 'staff')"
-                                            :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border cursor-pointer hover:shadow-sm transition-all',
-                                                     matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300']"
+                                            :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border cursor-pointer hover:shadow-sm transition-all', matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300']"
                                         >
                                             <img v-if="s.profile_photo" :src="s.profile_photo"
                                                  class="w-7 h-7 rounded-lg object-cover ring-1 ring-gray-200 shrink-0" />
@@ -836,12 +829,11 @@ async function saveClientAssignments(staffId) {
                                         <div class="flex items-center gap-1.5 mb-1.5 px-1">
                                             <Factory class="w-3 h-3 text-emerald-500" />
                                             <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Boiler Department</span>
-                                            <span class="text-[10px] text-emerald-500 bg-emerald-100 border border-emerald-200 dark:border-emerald-800 rounded-full px-1.5">{{ manStaffByDept('boiler').length }} staff</span>
+                                            <span class="text-[10px] text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-full px-1.5">{{ manStaffByDept('boiler').length }} staff</span>
                                         </div>
                                         <div v-if="manSupervisorOf('boiler')"
                                              @click="openPanel(manSupervisorOf('boiler'), 'supervisor')"
-                                             :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-emerald-300 cursor-pointer hover:border-emerald-500 hover:shadow-sm transition-all mb-1.5',
-                                                      matchesSearch(manSupervisorOf('boiler')) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']">
+                                             :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-emerald-300 cursor-pointer hover:border-emerald-500 hover:shadow-sm transition-all mb-1.5', matchesSearch(manSupervisorOf('boiler')) ? 'ring-2 ring-yellow-400 ring-offset-1' : '']">
                                             <img v-if="manSupervisorOf('boiler').profile_photo" :src="manSupervisorOf('boiler').profile_photo"
                                                  class="w-8 h-8 rounded-lg object-cover ring-1 ring-emerald-200 shrink-0" />
                                             <div v-else :class="`bg-gradient-to-br ${getAvatarColor(manSupervisorOf('boiler').name)} w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0`">
@@ -859,8 +851,7 @@ async function saveClientAssignments(staffId) {
                                                 v-for="s in manStaffByDept('boiler')"
                                                 :key="s.id"
                                                 @click="openPanel(s, s.position === 'manager' ? 'manager' : 'staff')"
-                                                :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border cursor-pointer hover:shadow-sm transition-all',
-                                                         matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300']"
+                                                :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border cursor-pointer hover:shadow-sm transition-all', matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300']"
                                             >
                                                 <img v-if="s.profile_photo" :src="s.profile_photo"
                                                      class="w-7 h-7 rounded-lg object-cover ring-1 ring-gray-200 shrink-0" />
@@ -915,8 +906,7 @@ async function saveClientAssignments(staffId) {
                                     v-for="s in staffByModule(mod.key)"
                                     :key="s.id"
                                     @click="openPanel(s, s.position === 'manager' ? 'manager' : 'staff')"
-                                    :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border cursor-pointer hover:shadow-sm transition-all',
-                                             matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300']"
+                                    :class="['group flex items-center gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border cursor-pointer hover:shadow-sm transition-all', matchesSearch(s) ? 'ring-2 ring-yellow-400 ring-offset-1' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300']"
                                 >
                                     <img v-if="s.profile_photo" :src="s.profile_photo"
                                          class="w-7 h-7 rounded-lg object-cover ring-1 ring-gray-200 shrink-0" />
@@ -979,13 +969,7 @@ async function saveClientAssignments(staffId) {
                                             <div class="text-sm text-gray-500 dark:text-zinc-400 truncate">{{ panelUser.email }}</div>
                                             <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                                 <span class="text-[11px] font-semibold px-2 py-0.5 rounded-lg border"
-                                                      :class="{
-                                                        'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200': selectedType === 'secretary',
-                                                        'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200': selectedType === 'so',
-                                                        'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200': selectedType === 'manager',
-                                                        'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200': selectedType === 'supervisor',
-                                                        'bg-slate-50 text-slate-600 border-slate-200': selectedType === 'staff',
-                                                      }">
+                                                      :class="{ 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200': selectedType === 'secretary', 'bg-indigo-50 text-indigo-700 border-indigo-200': selectedType === 'so', 'bg-blue-50 text-blue-700 border-blue-200': selectedType === 'manager', 'bg-emerald-50 text-emerald-700 border-emerald-200': selectedType === 'supervisor', 'bg-slate-50 text-slate-600 border-slate-200': selectedType === 'staff', }">
                                                     {{ panelUser.smart_label }}
                                                 </span>
                                                 <span class="text-[11px] text-gray-400 dark:text-zinc-500 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-2 py-0.5 rounded-lg">
@@ -994,7 +978,7 @@ async function saveClientAssignments(staffId) {
                                                 <span v-if="panelUser.employee_id" class="text-[11px] text-gray-400 dark:text-zinc-500">{{ panelUser.employee_id }}</span>
                                             </div>
                                         </div>
-                                        <button @click="closePanel" class="p-1.5 rounded-lg hover:bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 transition-colors shrink-0">
+                                        <button @click="closePanel" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 transition-colors shrink-0">
                                             <X class="w-5 h-5" />
                                         </button>
                                     </div>
@@ -1003,20 +987,14 @@ async function saveClientAssignments(staffId) {
                                     <div class="flex gap-1 mt-4 bg-gray-100 dark:bg-zinc-800 rounded-xl p-1">
                                         <button
                                             @click="switchTab('access')"
-                                            :class="['flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all',
-                                                panelTab === 'access'
-                                                    ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm'
-                                                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700']"
+                                            :class="['flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all', panelTab === 'access' ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm' : 'text-gray-500 hover:text-gray-700']"
                                         >
                                             <ShieldCheck class="w-3.5 h-3.5" />
                                             Access Control
                                         </button>
                                         <button
                                             @click="switchTab('personal')"
-                                            :class="['flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all',
-                                                panelTab === 'personal'
-                                                    ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm'
-                                                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-700']"
+                                            :class="['flex-1 flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-lg transition-all', panelTab === 'personal' ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm' : 'text-gray-500 hover:text-gray-700']"
                                         >
                                             <User class="w-3.5 h-3.5" />
                                             Personal Information
@@ -1070,7 +1048,7 @@ async function saveClientAssignments(staffId) {
                                             </button>
                                             <div v-if="requestsFor(panelId).length" class="mt-3 space-y-1">
                                                 <div v-for="r in requestsFor(panelId)" :key="r.id" class="flex items-center justify-between text-[11px] px-2 py-1.5 rounded-lg border"
-                                                    :class="r.status === 'pending' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700' : r.status === 'fulfilled' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700' : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-500'">
+                                                    :class="r.status === 'pending' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700' : r.status === 'fulfilled' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gray-50 border-gray-200 text-gray-500'">
                                                     <span>#{{ r.id }} · {{ r.action }} → {{ r.requested_position }}<span v-if="r.supervisor_department"> ({{ r.supervisor_department }})</span> · {{ r.status }}</span>
                                                     <button v-if="r.status === 'pending'" @click="cancelPositionRequest(r.id)" class="underline font-bold">Cancel</button>
                                                 </div>
@@ -1097,11 +1075,7 @@ async function saveClientAssignments(staffId) {
                                                 <div
                                                     v-for="moduleKey in panelUser.assignable_modules"
                                                     :key="moduleKey"
-                                                    :class="['rounded-xl border p-2.5 transition-all',
-                                                        selectedModules[panelId]?.includes(moduleKey)
-                                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 shadow-sm'
-                                                            : 'bg-gray-50 dark:bg-zinc-800 border-gray-200',
-                                                        isRootModule(panelUser, moduleKey) ? 'ring-2 ring-indigo-300' : '']"
+                                                    :class="['rounded-xl border p-2.5 transition-all', selectedModules[panelId]?.includes(moduleKey) ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 shadow-sm' : 'bg-gray-50 border-gray-200', isRootModule(panelUser, moduleKey) ? 'ring-2 ring-indigo-300' : '']"
                                                 >
                                                     <label class="flex items-center gap-2 cursor-pointer select-none">
                                                         <input
@@ -1117,18 +1091,14 @@ async function saveClientAssignments(staffId) {
                                                     <div v-if="selectedModules[panelId]?.includes(moduleKey) && !isRootModule(panelUser, moduleKey)" class="flex gap-1 mt-2">
                                                         <button
                                                             @click="setModulePerm(panelId, moduleKey, 'view')"
-                                                            :class="(modulePermissions[panelId]?.[moduleKey] || 'edit') === 'view'
-                                                                ? 'bg-amber-500 text-white border-amber-500'
-                                                                : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:bg-amber-50'"
+                                                            :class="(modulePermissions[panelId]?.[moduleKey] || 'edit') === 'view' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:bg-amber-50'"
                                                             class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg border transition-all"
                                                         >
                                                             <Eye class="w-3 h-3" /> View
                                                         </button>
                                                         <button
                                                             @click="setModulePerm(panelId, moduleKey, 'edit')"
-                                                            :class="(modulePermissions[panelId]?.[moduleKey] || 'edit') === 'edit'
-                                                                ? 'bg-emerald-500 text-white border-emerald-500'
-                                                                : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:bg-emerald-50'"
+                                                            :class="(modulePermissions[panelId]?.[moduleKey] || 'edit') === 'edit' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-zinc-900 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:bg-emerald-50'"
                                                             class="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-bold rounded-lg border transition-all"
                                                         >
                                                             <Pencil class="w-3 h-3" /> Edit
@@ -1331,7 +1301,7 @@ async function saveClientAssignments(staffId) {
                                                     <div class="info-field">
                                                         <div class="info-label">Status</div>
                                                         <div class="info-value">
-                                                            <span :class="personalInfo.user.is_active ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200' : 'text-red-500 bg-red-50 dark:bg-red-900/20 border-red-200'"
+                                                            <span :class="personalInfo.user.is_active ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200' : 'text-red-500 bg-red-50 border-red-200'"
                                                                   class="text-[11px] font-bold px-2 py-0.5 rounded-full border">
                                                                 {{ personalInfo.user.is_active ? 'Active' : 'Inactive' }}
                                                             </span>
@@ -1659,12 +1629,7 @@ async function saveClientAssignments(staffId) {
                                                     <div class="info-field">
                                                         <div class="info-label">App. Status</div>
                                                         <div class="info-value">
-                                                            <span :class="{
-                                                                'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200': personalInfo.applicant.status === 'Passed',
-                                                                'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200': personalInfo.applicant.status?.includes('Failed') || personalInfo.applicant.status === 'Rejected',
-                                                                'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border-amber-200': personalInfo.applicant.status === 'Pending',
-                                                                'text-gray-600 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-800 border-gray-200': !['Passed','Rejected','Pending'].includes(personalInfo.applicant.status),
-                                                            }" class="text-[11px] font-bold px-2 py-0.5 rounded-full border">
+                                                            <span :class="{ 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200': personalInfo.applicant.status === 'Passed', 'text-red-600 bg-red-50 border-red-200': personalInfo.applicant.status?.includes('Failed') || personalInfo.applicant.status === 'Rejected', 'text-amber-700 bg-amber-50 border-amber-200': personalInfo.applicant.status === 'Pending', 'text-gray-600 bg-gray-50 border-gray-200': !['Passed','Rejected','Pending'].includes(personalInfo.applicant.status), }" class="text-[11px] font-bold px-2 py-0.5 rounded-full border">
                                                                 {{ personalInfo.applicant.status || '—' }}
                                                             </span>
                                                         </div>
@@ -1727,9 +1692,7 @@ async function saveClientAssignments(staffId) {
                                 <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
                                 <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
                                 <div class="relative flex flex-col items-center">
-                                <div :class="[
-                                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md bg-white/15 ring-1 ring-white/30 backdrop-blur animate-pop',
-                                ]">
+                                <div :class="[ 'w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-md bg-white/15 ring-1 ring-white/30 backdrop-blur animate-pop', ]">
                                     <AlertTriangle v-if="confirmModal.icon === 'warning'" class="w-7 h-7" />
                                     <ShieldCheck   v-else-if="confirmModal.icon === 'shield'"  class="w-7 h-7" />
                                     <Info          v-else class="w-7 h-7" />
@@ -1741,7 +1704,7 @@ async function saveClientAssignments(staffId) {
                             <div class="flex gap-2 px-6 pb-6">
                                 <button
                                     @click="closeConfirm"
-                                    class="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:bg-zinc-700 rounded-xl transition-all"
+                                    class="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 rounded-xl transition-all"
                                 >
                                     Cancel
                                 </button>

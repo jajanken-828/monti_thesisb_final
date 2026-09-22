@@ -1,7 +1,8 @@
 <script>
 import {
     LayoutDashboard, FileUser, Eye, Award, ClipboardCheck, Users,
-    AlertCircle, UserPen, Share2,
+    AlertCircle, UserPen, Share2, KanbanSquare, FileText, Activity,
+    Briefcase, Megaphone, ShieldCheck,
 } from 'lucide-vue-next'
 
 export const crmModule = {
@@ -18,9 +19,14 @@ export const crmModule = {
         const all = [
             { label: 'Dashboard', href: route('crm.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
             { label: 'Leads', href: route('crm.lead'), icon: FileUser, permKey: 'leads' },
+            { label: 'Accounts', href: route('crm.customerprofile.index'), icon: Users, permKey: 'customer_profiles' },
+            { label: 'Opportunities', href: route('crm.opportunities'), icon: KanbanSquare, permKey: 'opportunities' },
             { label: 'Approvals', href: route('crm.approval.index'), icon: ClipboardCheck, permKey: 'approvals' },
-            { label: 'Customer Profiles', href: route('crm.customerprofile.index'), icon: Users, permKey: 'customer_profiles' },
-            { label: 'Investigation', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' },
+            { label: 'Quotations', href: route('crm.quotations'), icon: FileText, permKey: 'quotations' },
+            { label: 'Activities', href: route('crm.activities'), icon: Activity, permKey: 'activities' },
+            { label: 'Cases', href: route('crm.cases'), icon: Briefcase, permKey: 'cases' },
+            { label: 'Campaigns', href: route('crm.campaigns'), icon: Megaphone, permKey: 'campaigns' },
+            { label: 'Due Diligence', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' },
             { label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' },
         ]
         if (isCEO) return all

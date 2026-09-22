@@ -126,7 +126,7 @@ const statusBgClass = (status: string): string => {
             Check In/Out
           </Link>
           <Link href="/trainee/attendance"
-            class="block w-full px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg font-medium hover:bg-blue-100 dark:bg-blue-900/40 transition text-center text-sm">
+            class="block w-full px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg font-medium hover:bg-blue-100 transition text-center text-sm">
             View Attendance
           </Link>
         </div>
@@ -171,18 +171,13 @@ const statusBgClass = (status: string): string => {
               <p class="font-medium text-gray-900 dark:text-zinc-100">{{ format(new Date(record.date), 'MMM d, yyyy') }}</p>
               <p class="text-sm text-gray-600 dark:text-zinc-400">{{ record.clockIn }} - {{ record.clockOut || 'Not clocked out' }}</p>
             </div>
-            <span :class="[
-              'px-3 py-1 rounded-full text-xs font-semibold',
-              record.status === 'present' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' :
-                record.status === 'late' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800' :
-                  record.status === 'absent' ? 'bg-red-100 dark:bg-red-900/30 text-red-800' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800',
-            ]">
+            <span :class="[ 'px-3 py-1 rounded-full text-xs font-semibold', record.status === 'present' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' : record.status === 'late' ? 'bg-yellow-100 text-yellow-800' : record.status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800', ]">
               {{ record.status }}
             </span>
           </div>
         </div>
         <Link href="/trainee/attendance"
-          class="block text-center mt-4 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 font-medium text-sm">
+          class="block text-center mt-4 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-medium text-sm">
           View All Records →
         </Link>
       </div>

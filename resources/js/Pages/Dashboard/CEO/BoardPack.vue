@@ -63,7 +63,7 @@ const toneBg = {
 <template>
     <Head title="Board Pack" />
     <AuthenticatedLayout>
-        <div class="min-h-screen bg-slate-100 print:bg-white">
+        <div class="min-h-screen bg-slate-100 dark:bg-zinc-800 print:bg-white">
             <div class="mx-auto max-w-6xl space-y-5 p-4 pb-16 sm:p-6 print:m-0 print:max-w-none print:p-0 print:pb-0 print:space-y-0">
 
                 <!-- ═══ SCREEN HERO (never printed) ═══ -->
@@ -84,7 +84,7 @@ const toneBg = {
                             </p>
                         </div>
                         <button @click="printPack"
-                            class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-extrabold uppercase tracking-wide text-indigo-700 shadow-lg transition hover:bg-indigo-50 active:scale-95">
+                            class="inline-flex items-center gap-2 rounded-xl bg-white dark:bg-zinc-900 px-5 py-3 text-xs font-extrabold uppercase tracking-wide text-indigo-700 dark:text-indigo-300 shadow-lg transition hover:bg-indigo-50 active:scale-95">
                             <Printer class="h-4 w-4" /> Print / PDF
                         </button>
                     </div>

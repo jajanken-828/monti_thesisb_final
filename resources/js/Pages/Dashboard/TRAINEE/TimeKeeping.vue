@@ -163,10 +163,7 @@ const formatTimeDisplay = (timeString: string | null): string => {
 
         <!-- Action Buttons -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
-          <button @click="handleClockIn" :disabled="!canClockIn || isLoading" :class="[
-            'relative px-6 py-4 rounded-lg font-bold text-lg transition-all duration-300',
-            canClockIn ? 'bg-white dark:bg-zinc-900 text-green-600 dark:text-green-400 hover:bg-green-50 dark:bg-green-900/20 shadow-lg' : 'bg-gray-50 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 cursor-not-allowed opacity-50',
-          ]">
+          <button @click="handleClockIn" :disabled="!canClockIn || isLoading" :class="[ 'relative px-6 py-4 rounded-lg font-bold text-lg transition-all duration-300', canClockIn ? 'bg-white dark:bg-zinc-900 text-green-600 dark:text-green-400 hover:bg-green-50 shadow-lg' : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-50', ]">
             <span v-if="!isLoading">Clock In</span>
             <span v-else class="flex items-center justify-center">
               <svg class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -176,10 +173,7 @@ const formatTimeDisplay = (timeString: string | null): string => {
               </svg>
             </span>
           </button>
-          <button @click="handleClockOut" :disabled="!canClockOut || isLoading" :class="[
-            'relative px-6 py-4 rounded-lg font-bold text-lg transition-all duration-300',
-            canClockOut ? 'bg-white dark:bg-zinc-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-900/20 shadow-lg' : 'bg-gray-50 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 cursor-not-allowed opacity-50',
-          ]">
+          <button @click="handleClockOut" :disabled="!canClockOut || isLoading" :class="[ 'relative px-6 py-4 rounded-lg font-bold text-lg transition-all duration-300', canClockOut ? 'bg-white dark:bg-zinc-900 text-red-600 dark:text-red-400 hover:bg-red-50 shadow-lg' : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-50', ]">
             <span v-if="!isLoading">Clock Out</span>
             <span v-else class="flex items-center justify-center">
               <svg class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -211,12 +205,7 @@ const formatTimeDisplay = (timeString: string | null): string => {
         </div>
         <div class="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
           <p class="text-sm text-gray-600 dark:text-zinc-400 font-medium">Status</p>
-          <span :class="[
-            'inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold',
-            props.todayAttendance.status === 'present' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' :
-              props.todayAttendance.status === 'late' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800' :
-                props.todayAttendance.status === 'absent' ? 'bg-red-100 dark:bg-red-900/30 text-red-800' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800',
-          ]">
+          <span :class="[ 'inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold', props.todayAttendance.status === 'present' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' : props.todayAttendance.status === 'late' ? 'bg-yellow-100 text-yellow-800' : props.todayAttendance.status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800', ]">
             {{ props.todayAttendance.status }}
           </span>
         </div>
@@ -260,12 +249,7 @@ const formatTimeDisplay = (timeString: string | null): string => {
               <td class="px-4 py-3 text-gray-600 dark:text-zinc-400">{{ formatTimeDisplay(record.clockOut) }}</td>
               <td class="px-4 py-3 text-gray-600 dark:text-zinc-400">{{ record.duration || '--:--' }}</td>
               <td class="px-4 py-3">
-                <span :class="[
-                  'px-3 py-1 rounded-full text-xs font-semibold',
-                  record.status === 'present' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' :
-                    record.status === 'late' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800' :
-                      record.status === 'absent' ? 'bg-red-100 dark:bg-red-900/30 text-red-800' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800',
-                ]">
+                <span :class="[ 'px-3 py-1 rounded-full text-xs font-semibold', record.status === 'present' ? 'bg-green-100 dark:bg-green-900/30 text-green-800' : record.status === 'late' ? 'bg-yellow-100 text-yellow-800' : record.status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800', ]">
                   {{ record.status }}
                 </span>
               </td>

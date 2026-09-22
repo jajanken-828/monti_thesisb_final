@@ -39,7 +39,7 @@ const cards = [
                         </div>
                         <div class="flex gap-1.5 rounded-2xl bg-white/15 p-1 ring-1 ring-white/25 backdrop-blur">
                             <button v-for="m in [3, 6, 12]" :key="m" @click="setRange(m)"
-                                :class="['px-3 py-1.5 rounded-xl text-xs font-black transition', months === m ? 'bg-white text-indigo-700 shadow' : 'text-white/80 hover:text-white']">{{ m }}M</button>
+                                :class="['px-3 py-1.5 rounded-xl text-xs font-black transition', months === m ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-300 shadow' : 'text-white/80 hover:text-white']">{{ m }}M</button>
                         </div>
                     </div>
                 </div>
@@ -48,57 +48,57 @@ const cards = [
                     <div v-for="c in cards" :key="c.label" class="rounded-3xl bg-white/80 dark:bg-zinc-900/80 border border-gray-100 dark:border-zinc-800 p-4 shadow-sm">
                         <component :is="c.icon" class="h-5 w-5" :class="c.up ? 'text-emerald-600' : 'text-indigo-500'" />
                         <p class="text-xl font-black mt-1 truncate">{{ c.value }}</p>
-                        <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500">{{ c.label }}</p>
+                        <p class="text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">{{ c.label }}</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="bg-white/80 dark:bg-zinc-900/80 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800">
                         <h3 class="text-sm font-black mb-1">Revenue vs Procurement Spend</h3>
-                        <p class="text-[11px] text-gray-400 mb-4">Approved order revenue against purchasing spend per month</p>
+                        <p class="text-[11px] text-gray-400 dark:text-zinc-500 mb-4">Approved order revenue against purchasing spend per month</p>
                         <div class="h-48 flex items-end gap-2">
                             <div v-for="(label, i) in trends.labels" :key="label" class="flex-1 flex flex-col items-center gap-1">
                                 <div class="w-full flex items-end justify-center gap-0.5 h-36">
                                     <div class="w-1/2 max-w-4 bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t" :style="{ height: `${(trends.revenue[i] / maxOf(trends.revenue)) * 100}%`, minHeight: '3px' }" :title="`Revenue ${peso(trends.revenue[i])}`" />
                                     <div class="w-1/2 max-w-4 bg-gradient-to-t from-amber-500 to-orange-400 rounded-t" :style="{ height: `${(trends.spend[i] / maxOf(trends.spend)) * 100}%`, minHeight: '3px' }" :title="`Spend ${peso(trends.spend[i])}`" />
                                 </div>
-                                <span class="text-[9px] text-gray-500">{{ label }}</span>
+                                <span class="text-[9px] text-gray-500 dark:text-zinc-400">{{ label }}</span>
                             </div>
                         </div>
-                        <div class="flex gap-4 mt-2 text-[11px] text-gray-500"><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-indigo-500" /> Revenue</span><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-500" /> Spend</span></div>
+                        <div class="flex gap-4 mt-2 text-[11px] text-gray-500 dark:text-zinc-400"><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-indigo-500" /> Revenue</span><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-500" /> Spend</span></div>
                     </div>
                     <div class="bg-white/80 dark:bg-zinc-900/80 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800">
                         <h3 class="text-sm font-black mb-1">Production Output vs Rejects</h3>
-                        <p class="text-[11px] text-gray-400 mb-4">Fabrics recorded and rejected per month</p>
+                        <p class="text-[11px] text-gray-400 dark:text-zinc-500 mb-4">Fabrics recorded and rejected per month</p>
                         <div class="h-48 flex items-end gap-2">
                             <div v-for="(label, i) in trends.labels" :key="label" class="flex-1 flex flex-col items-center gap-1">
                                 <div class="w-full flex items-end justify-center gap-0.5 h-36">
                                     <div class="w-1/2 max-w-4 bg-gradient-to-t from-emerald-600 to-teal-400 rounded-t" :style="{ height: `${(trends.output[i] / maxOf(trends.output)) * 100}%`, minHeight: '3px' }" :title="`Output ${trends.output[i]}`" />
                                     <div class="w-1/2 max-w-4 bg-gradient-to-t from-rose-600 to-pink-400 rounded-t" :style="{ height: `${(trends.rejects[i] / maxOf(trends.rejects)) * 100}%`, minHeight: '3px' }" :title="`Rejects ${trends.rejects[i]}`" />
                                 </div>
-                                <span class="text-[9px] text-gray-500">{{ label }}</span>
+                                <span class="text-[9px] text-gray-500 dark:text-zinc-400">{{ label }}</span>
                             </div>
                         </div>
-                        <div class="flex gap-4 mt-2 text-[11px] text-gray-500"><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500" /> Output</span><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-rose-500" /> Rejects</span></div>
+                        <div class="flex gap-4 mt-2 text-[11px] text-gray-500 dark:text-zinc-400"><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500" /> Output</span><span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-rose-500" /> Rejects</span></div>
                     </div>
                 </div>
 
                 <div class="bg-white/80 dark:bg-zinc-900/80 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-zinc-800">
                     <h3 class="text-sm font-black mb-1">Monthly Payroll Cost</h3>
-                    <p class="text-[11px] text-gray-400 mb-4">Net pay totals per month</p>
+                    <p class="text-[11px] text-gray-400 dark:text-zinc-500 mb-4">Net pay totals per month</p>
                     <div class="h-40 flex items-end gap-2">
                         <div v-for="(label, i) in trends.labels" :key="label" class="flex-1 flex flex-col items-center gap-1">
                             <div class="w-full max-w-10 bg-gradient-to-t from-violet-600 to-fuchsia-400 rounded-t" :style="{ height: `${(trends.payroll[i] / maxOf(trends.payroll)) * 100}%`, minHeight: '3px' }" :title="peso(trends.payroll[i])" />
-                            <span class="text-[9px] text-gray-500">{{ label }}</span>
+                            <span class="text-[9px] text-gray-500 dark:text-zinc-400">{{ label }}</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.orders_open) }}</p><p class="text-[10px] font-bold uppercase text-gray-500">Open orders</p></div>
-                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.packages_pending) }}</p><p class="text-[10px] font-bold uppercase text-gray-500">Packages pending</p></div>
-                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.leads_open) }} / {{ num(kpis.leads_won) }}</p><p class="text-[10px] font-bold uppercase text-gray-500">Leads open / won</p></div>
-                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.headcount) }}</p><p class="text-[10px] font-bold uppercase text-gray-500">Active headcount</p></div>
+                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.orders_open) }}</p><p class="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400">Open orders</p></div>
+                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.packages_pending) }}</p><p class="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400">Packages pending</p></div>
+                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.leads_open) }} / {{ num(kpis.leads_won) }}</p><p class="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400">Leads open / won</p></div>
+                    <div class="rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3"><p class="text-xl font-black">{{ num(kpis.headcount) }}</p><p class="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400">Active headcount</p></div>
                 </div>
             </div>
         </div>

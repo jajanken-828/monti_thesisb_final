@@ -21,8 +21,68 @@ const props = defineProps({
       emails: { metrics: {}, emails: [], interactions: [] } // added emails
     })
   },
-  permissions: { type: Object, default: () => ({}) }
+  permissions: { type: Object, default: () => ({}) },
+  fbAccount: { type: Object, default: () => ({ connected: false }) },
+  fbError: { type: [String, null], default: null },
+  convertedExternalIds: { type: Array, default: () => [] },
 });
+
+// ─── Live Facebook Page connection ──────────────────────────────────
+import { useForm } from '@inertiajs/vue3';
+const fbForm = useForm({ page_input: '', access_token: '' });
+const connecting = ref(false);
+const connectFb = () => {
+  connecting.value = true;
+  fbForm.post(route('crm.socials.facebook.connect'), {
+    preserveScroll: true,
+    onFinish: () => { connecting.value = false; },
+  });
+};
+const disconnectFb = () => {
+  if (!confirm('Disconnect the Facebook page? The demo feed returns until you reconnect.')) return;
+  router.delete(route('crm.socials.facebook.disconnect'), { preserveScroll: true });
+};
+
+// ─── Live comments per post (best-effort; needs token permission) ───
+import axios from 'axios';
+const commentsByPost = ref({});
+const commentsLoading = ref({});
+const commentsError = ref({});
+const viewComments = async (post) => {
+  if (!post.live) return;
+  const id = post.id;
+  if (commentsByPost.value[id]) { delete commentsByPost.value[id]; return; }
+  commentsLoading.value[id] = true;
+  commentsError.value[id] = null;
+  try {
+    const { data } = await axios.get(route('crm.socials.facebook.comments'), { params: { post_id: id } });
+    commentsByPost.value[id] = data.comments || [];
+    if (data.error) commentsError.value[id] = data.error;
+  } catch {
+    commentsError.value[id] = 'Could not load comments.';
+  }
+  commentsLoading.value[id] = false;
+};
+
+// ─── Convert social items into REAL CRM leads ───────────────────────
+const converting = ref(null);
+const convertPost = (post) => {
+  converting.value = `post-${post.id}`;
+  router.post(route('crm.socials.facebook.convert-post'), { post_id: post.id }, {
+    preserveScroll: true,
+    onFinish: () => { converting.value = null; },
+  });
+};
+const convertComment = (comment, postId) => {
+  converting.value = `comment-${comment.id}`;
+  router.post(route('crm.socials.facebook.convert-comment'), {
+    comment_id: comment.id, name: comment.user, message: comment.comment, post_id: postId,
+  }, {
+    preserveScroll: true,
+    onFinish: () => { converting.value = null; },
+  });
+};
+const isConverted = (id) => (props.convertedExternalIds || []).includes(id);
 
 // ─── State ──────────────────────────────────────────────────
 const activePlatform = ref('facebook');
@@ -116,13 +176,9 @@ const syncData = () => {
 };
 
 const createLead = (item) => {
-  // For emails, we pass the email data
+  // Emails tab (demo): unchanged placeholder.
   const name = item.from || item.user || 'Contact';
   alert(`Lead created from ${activePlatform.value} by ${name}`);
-};
-
-const viewComments = (post) => {
-  alert(`Showing comments for post: ${post.caption?.substring(0, 30) || 'Post'}...`);
 };
 
 const switchPlatform = (platform) => {
@@ -321,6 +377,39 @@ const switchPlatform = (platform) => {
                 </div>
               </div>
 
+              <!-- Facebook connection panel -->
+              <div v-if="activePlatform === 'facebook'" class="border-b border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-blue-50/70 to-transparent dark:from-blue-900/10 px-5 py-4">
+                <div v-if="!fbAccount.connected">
+                  <p class="text-xs font-black uppercase tracking-widest text-gray-500 mb-1">Connect a real Facebook page</p>
+                  <p class="text-[11px] text-gray-400 mb-3">Paste your page link + a Page access token. Posts below are demo data until you connect — Meta does not allow token-free page feeds.</p>
+                  <div class="grid sm:grid-cols-2 gap-2.5">
+                    <input v-model="fbForm.page_input" placeholder="https://facebook.com/your-page or Page ID"
+                      class="px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <input v-model="fbForm.access_token" type="password" placeholder="Page access token (EAAG…)"
+                      class="px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                  <p v-if="fbForm.errors.page_input || fbForm.errors.access_token || fbForm.errors.error" class="mt-1.5 text-[11px] font-bold text-rose-500">
+                    {{ fbForm.errors.page_input || fbForm.errors.access_token || fbForm.errors.error }}
+                  </p>
+                  <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                    <button @click="connectFb" :disabled="connecting || !fbForm.page_input || !fbForm.access_token"
+                      class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#1877F2] text-white rounded-xl text-[11px] font-black uppercase tracking-wide hover:brightness-110 active:scale-95 transition disabled:opacity-50">
+                      <Facebook class="w-3.5 h-3.5" /> {{ connecting ? 'Connecting…' : 'Connect page' }}
+                    </button>
+                    <span class="text-[10px] font-bold text-gray-400">Token: Meta Developers → your App → Page access token (pages_read_engagement). Stored encrypted, never shown again.</span>
+                  </div>
+                </div>
+                <div v-else class="flex flex-wrap items-center gap-2.5">
+                  <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1877F2] text-white"><Facebook class="h-4 w-4" /></span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-black truncate">{{ fbAccount.page_name || 'Facebook page' }} <span class="ml-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 px-2 py-0.5 text-[10px] uppercase">Live</span></p>
+                    <p class="text-[11px] text-gray-400 truncate">{{ fbAccount.page_url }} · synced {{ fbAccount.last_synced_at ? formatDate(fbAccount.last_synced_at) : 'just now' }}</p>
+                  </div>
+                  <button @click="disconnectFb" class="px-3 py-2 rounded-xl bg-gray-100 dark:bg-zinc-800 text-[11px] font-black uppercase text-gray-500 hover:text-rose-500 transition">Disconnect</button>
+                </div>
+                <p v-if="fbError" class="mt-2 text-[11px] font-bold text-rose-500">Facebook error: {{ fbError }} — showing demo posts meanwhile.</p>
+              </div>
+
               <!-- Items (posts or emails) -->
               <div class="divide-y divide-gray-100 dark:divide-zinc-800">
                 <!-- Skeleton loading -->
@@ -416,20 +505,61 @@ const switchPlatform = (platform) => {
                     </div>
 
                     <!-- Action bar -->
-                    <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
-                      <button
-                        @click="viewComments(post)"
-                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95"
-                      >
-                        <MessageCircle class="w-3.5 h-3.5" /> View Comments
-                      </button>
-                      <button
-                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-105 active:scale-95 text-white rounded-xl text-[11px] font-black uppercase tracking-wide transition-all ml-auto"
-                        @click="createLead({ user: 'Commenter', comment: post.caption || post.message })"
-                      >
-                        <UserPlus class="w-3.5 h-3.5" /> Create Lead
-                      </button>
-                    </div>
+                      <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
+                        <button
+                          v-if="post.live"
+                          @click="viewComments(post)"
+                          :disabled="commentsLoading[post.id]"
+                          class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95 disabled:opacity-60"
+                        >
+                          <MessageCircle class="w-3.5 h-3.5" /> {{ commentsByPost[post.id] ? 'Hide Comments' : commentsLoading[post.id] ? 'Loading…' : 'View Comments' }}
+                        </button>
+                        <button
+                          v-else
+                          @click="viewComments(post)"
+                          class="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95"
+                        >
+                          <MessageCircle class="w-3.5 h-3.5" /> View Comments
+                        </button>
+                        <button
+                          v-if="post.live"
+                          :disabled="converting === `post-${post.id}` || isConverted(post.id)"
+                          class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all ml-auto active:scale-95 disabled:opacity-60"
+                          :class="isConverted(post.id) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-105 text-white'"
+                          @click="convertPost(post)"
+                        >
+                          <UserPlus class="w-3.5 h-3.5" /> {{ isConverted(post.id) ? 'Converted ✓' : converting === `post-${post.id}` ? 'Converting…' : 'Create Lead' }}
+                        </button>
+                        <button
+                          v-else
+                          class="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-105 active:scale-95 text-white rounded-xl text-[11px] font-black uppercase tracking-wide transition-all ml-auto"
+                          @click="createLead({ user: 'Commenter', comment: post.caption || post.message })"
+                        >
+                          <UserPlus class="w-3.5 h-3.5" /> Create Lead
+                        </button>
+                      </div>
+                      <!-- Live comments (expandable, convertible) -->
+                      <div v-if="post.live && commentsByPost[post.id]?.length" class="mt-3 space-y-2 border-t border-gray-100 dark:border-zinc-800 pt-3">
+                        <div v-for="c in commentsByPost[post.id]" :key="c.id" class="flex items-start gap-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-800/60 p-3">
+                          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-violet-700 flex items-center justify-center text-[11px] font-black text-white shrink-0">
+                            {{ (c.user || '?').charAt(0).toUpperCase() }}
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <p class="text-xs font-black text-slate-900 dark:text-white">{{ c.user }}</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-3">{{ c.comment }}</p>
+                          </div>
+                          <button
+                            @click="convertComment(c, post.id)"
+                            :disabled="converting === `comment-${c.id}` || isConverted(c.id)"
+                            class="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 disabled:opacity-60"
+                            :class="isConverted(c.id) ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'">
+                            {{ isConverted(c.id) ? 'Lead ✓' : converting === `comment-${c.id}` ? '…' : '+ Lead' }}
+                          </button>
+                        </div>
+                      </div>
+                      <p v-if="post.live && commentsError[post.id]" class="mt-2 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                        Comments unavailable: {{ commentsError[post.id] }} — the post itself can still convert.
+                      </p>
                   </div>
                 </TransitionGroup>
 
@@ -483,7 +613,7 @@ const switchPlatform = (platform) => {
                   </div>
                 </div>
                 <!-- For FB/IG, show interactions -->
-                <div v-else>
+                <div v-else-if="!(activePlatform === 'facebook' && fbAccount.connected)">
                   <TransitionGroup v-if="currentData.interactions && currentData.interactions.length > 0" name="card" tag="div" class="divide-y divide-gray-100 dark:divide-zinc-800">
                     <div v-for="(interaction, i) in currentData.interactions" :key="interaction.id" :style="{ transitionDelay: `${Math.min(i * 40, 300)}ms` }" class="group p-4 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
                       <div class="flex items-start gap-3">
@@ -513,6 +643,11 @@ const switchPlatform = (platform) => {
                     <div class="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-indigo-900/30 rounded-full mb-3 animate-bounce-soft"><Users class="h-7 w-7 text-indigo-400" /></div>
                     <p class="text-sm font-bold text-slate-400">No recent interactions.</p>
                   </div>
+                </div>
+                <div v-else class="flex flex-col items-center py-12 text-center px-6">
+                  <div class="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 rounded-full mb-3"><CheckCircle class="h-7 w-7 text-emerald-500" /></div>
+                  <p class="text-sm font-black text-slate-700 dark:text-gray-200">Live page connected</p>
+                  <p class="text-xs text-slate-400 mt-1 max-w-[220px]">Convert leads straight from each post's comments — open a post and tap View Comments.</p>
                 </div>
               </div>
             </div>

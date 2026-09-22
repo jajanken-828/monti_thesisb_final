@@ -117,11 +117,7 @@ onUnmounted(() => clearInterval(timer));
 
                         <button @click="handleClockToggle"
                             :disabled="(isOutOfRange && !isClockedIn) || !page.props.auth.location || today_log?.clock_out"
-                            :class="[
-                                'w-full md:w-auto px-12 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] transition-all duration-300',
-                                isClockedIn ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : 
-                                ((isOutOfRange || !page.props.auth.location) && !isClockedIn ? 'bg-slate-100 dark:bg-zinc-800 text-slate-300 dark:text-zinc-500 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-lg shadow-emerald-100 hover:scale-[1.02]')
-                            ]">
+                            :class="[ 'w-full md:w-auto px-12 py-5 rounded-[2rem] font-black uppercase text-xs tracking-[0.2em] transition-all duration-300', isClockedIn ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : ((isOutOfRange || !page.props.auth.location) && !isClockedIn ? 'bg-slate-100 dark:bg-zinc-800 text-slate-300 dark:text-zinc-500 cursor-not-allowed' : 'bg-emerald-500 text-white shadow-lg shadow-emerald-100 hover:scale-[1.02]') ]">
                             <Power class="size-4 inline mr-2 mb-1" />
                             {{ clockButtonText }}
                         </button>
@@ -147,7 +143,7 @@ onUnmounted(() => clearInterval(timer));
                                             {{ log.clock_in }} <span class="mx-2 opacity-30">|</span> {{ log.clock_out || 'Active' }}
                                         </td>
                                         <td class="p-6 text-right">
-                                            <span :class="log.status === 'On-Time' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 border-amber-100'" 
+                                            <span :class="log.status === 'On-Time' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'" 
                                                   class="px-4 py-2 rounded-xl text-[9px] font-black uppercase border tracking-tighter">
                                                 {{ log.status }}
                                             </span>
@@ -178,11 +174,7 @@ onUnmounted(() => clearInterval(timer));
                             <div v-for="e in firstDayOfMonth" :key="'e'+e"></div>
                             
                             <div v-for="day in daysInMonth" :key="day" class="relative py-1">
-                                <div :class="[
-                                    'size-8 mx-auto flex items-center justify-center rounded-xl text-[10px] font-black transition-all',
-                                    day === now.getDate() && currentMonth === now.getMonth() ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 
-                                    (hasLog(day) ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'text-slate-600')
-                                ]">
+                                <div :class="[ 'size-8 mx-auto flex items-center justify-center rounded-xl text-[10px] font-black transition-all', day === now.getDate() && currentMonth === now.getMonth() ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : (hasLog(day) ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'text-slate-600') ]">
                                     {{ day }}
                                 </div>
                             </div>

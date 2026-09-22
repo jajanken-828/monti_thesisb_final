@@ -162,7 +162,7 @@ const leaveBalances = computed(() => {
                                     </div>
                                     <div class="md:col-span-2 pt-4">
                                         <button type="submit" :disabled="form.processing"
-                                            class="w-full bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 font-black uppercase py-4 rounded-2xl shadow-lg hover:bg-blue-50 dark:bg-blue-900/30 transition-all text-xs disabled:opacity-50">
+                                            class="w-full bg-white dark:bg-zinc-900 text-blue-600 dark:text-blue-400 font-black uppercase py-4 rounded-2xl shadow-lg hover:bg-blue-50 transition-all text-xs disabled:opacity-50">
                                             {{ form.processing ? 'Submitting...' : 'Submit Request' }}
                                         </button>
                                     </div>

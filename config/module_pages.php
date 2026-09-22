@@ -15,10 +15,16 @@ return [
     'crm' => [
         'dashboard'          => 'Dashboard',
         'leads'              => 'Leads',
+        'customer_profiles'  => 'Accounts',
+        'opportunities'      => 'Opportunities',
         'approvals'          => 'Approvals',
-        'customer_profiles'  => 'Customer Profiles',
-        'investigation'      => 'Investigation',
+        'quotations'         => 'Quotations',
+        'activities'         => 'Activities',
+        'cases'              => 'Cases',
+        'campaigns'          => 'Campaigns',
+        'investigation'      => 'Due Diligence',
         'socials'            => 'Socials',
+        'access'             => 'Access Control',
     ],
 
     'scm' => [

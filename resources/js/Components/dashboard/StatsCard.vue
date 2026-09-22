@@ -56,11 +56,7 @@ const trendIcons = {
             <template v-else>
                 <div class="text-2xl font-bold">{{ value }}</div>
                 <div class="flex items-center text-xs mt-1">
-                    <span :class="cn('flex items-center',
-                        trend === 'up' ? 'text-green-600' :
-                            trend === 'down' ? 'text-red-600' :
-                                'text-gray-600'
-                    )">
+                    <span :class="cn('flex items-center', trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600' )">
                         <svg v-if="trend !== 'neutral'" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

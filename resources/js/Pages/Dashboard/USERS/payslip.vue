@@ -59,7 +59,7 @@ const payHistory = [
 
                             <div class="flex items-center gap-3">
                                 <button
-                                    class="p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-100 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 hover:text-blue-600 dark:text-blue-400 transition-colors">
+                                    class="p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-100 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 hover:text-blue-600 transition-colors">
                                     <Download class="size-5" />
                                 </button>
                                 <PrimaryButton
@@ -120,7 +120,7 @@ const payHistory = [
                                     <div v-for="item in earnings" :key="item.label"
                                         class="flex justify-between items-center group">
                                         <span
-                                            class="text-xs font-bold text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 dark:text-zinc-100 transition-colors uppercase">{{
+                                            class="text-xs font-bold text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 transition-colors uppercase">{{
                                             item.label }}</span>
                                         <span class="text-sm font-black text-slate-800 dark:text-zinc-200 italic">${{
                                             item.amount.toFixed(2) }}</span>
@@ -142,7 +142,7 @@ const payHistory = [
                                     <div v-for="item in deductions" :key="item.label"
                                         class="flex justify-between items-center group">
                                         <span
-                                            class="text-xs font-bold text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 dark:text-zinc-100 transition-colors uppercase">{{
+                                            class="text-xs font-bold text-slate-500 dark:text-zinc-400 group-hover:text-slate-900 transition-colors uppercase">{{
                                             item.label }}</span>
                                         <span class="text-sm font-black text-rose-600 italic">-${{
                                             item.amount.toFixed(2) }}</span>

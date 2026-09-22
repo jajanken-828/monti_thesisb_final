@@ -99,4 +99,24 @@ class Client extends Authenticatable
     {
         return $this->hasOne(CrmLogoPartner::class)->latestOfMany();
     }
+
+    public function contacts()
+    {
+        return $this->hasMany(CrmContact::class);
+    }
+
+    public function opportunities()
+    {
+        return $this->hasMany(CrmOpportunity::class)->latest();
+    }
+
+    public function activities()
+    {
+        return $this->hasMany(CrmActivity::class)->latest();
+    }
+
+    public function cases()
+    {
+        return $this->hasMany(CrmCase::class)->latest();
+    }
 }

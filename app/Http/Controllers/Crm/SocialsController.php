@@ -3,11 +3,18 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\Crm\CrmLead;
+use App\Models\Crm\CrmSocialAccount;
 use App\Traits\HasPagePermissions;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class SocialsController extends Controller
 {
+    protected const GRAPH = 'https://graph.facebook.com/v19.0';
+
     public function index()
     {
         $data = [
@@ -273,10 +280,246 @@ class SocialsController extends Controller
 
         $permissions = collect(['leads' => 'edit']);
 
+        // Live Facebook page feed (replaces demo posts when connected).
+        $fbAccount = CrmSocialAccount::where('platform', 'facebook')->latest()->first();
+        $fbError = null;
+        if ($fbAccount) {
+            try {
+                $data['facebook']['posts'] = $this->fetchPosts($fbAccount);
+                $fbAccount->update(['last_synced_at' => now(), 'last_error' => null]);
+            } catch (\Exception $e) {
+                $fbError = $e->getMessage();
+                $fbAccount->update(['last_error' => $fbError]);
+            }
+        }
+
         return Inertia::render('Dashboard/CRM/Socials', [
             'data' => $data,
             'permissions' => $permissions,
+            'fbAccount' => $fbAccount ? [
+                'page_name' => $fbAccount->page_name,
+                'page_url' => $fbAccount->page_url,
+                'connected' => true,
+                'last_synced_at' => $fbAccount->last_synced_at,
+            ] : ['connected' => false],
+            'fbError' => $fbError,
+            'convertedExternalIds' => CrmLead::where('source', 'facebook')
+                ->whereNotNull('external_id')->pluck('external_id')->all(),
         ]);
+    }
+
+    // ─── Live Facebook Page integration ───────────────────────────────
+    // Meta allows NO unauthenticated page-feed access: a Page access token
+    // (Facebook App → your Page) is required. The token is stored encrypted
+    // and every Graph call runs server-side so it never leaks to browsers.
+
+    protected function graph(string $path, string $token, array $params = []): array
+    {
+        $res = Http::timeout(12)->get(self::GRAPH.'/'.ltrim($path, '/'), [
+            ...$params, 'access_token' => $token,
+        ]);
+
+        if (! $res->successful()) {
+            $msg = $res->json('error.message') ?? 'Facebook request failed (HTTP '.$res->status().')';
+            throw new \RuntimeException($msg);
+        }
+
+        return $res->json();
+    }
+
+    /**
+     * Accept a full page URL (facebook.com/acme, /pages/Acme/123…, profile
+     * .php?id=123) or a bare Page ID / username and return the Graph ref.
+     */
+    protected function extractPageRef(string $input): string
+    {
+        $input = trim($input);
+        if (preg_match('/profile\.php\?id=(\d+)/i', $input, $m)) {
+            return $m[1];
+        }
+        if (preg_match('#/pages/[^/]+/(\d+)#i', $input, $m)) {
+            return $m[1];
+        }
+        if (preg_match('#facebook\.com/([A-Za-z0-9.\-]+)/?(\?.*)?$#i', $input, $m)) {
+            return $m[1];
+        }
+
+        return $input; // bare Page ID or username
+    }
+
+    public function connectFb(Request $request)
+    {
+        $data = $request->validate([
+            'page_input' => 'required|string|max:255',
+            'access_token' => 'required|string|max:2000',
+        ]);
+
+        $ref = $this->extractPageRef($data['page_input']);
+
+        try {
+            $page = $this->graph($ref, $data['access_token'], ['fields' => 'id,name,link']);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Facebook rejected the connection: '.$e->getMessage()]);
+        }
+
+        CrmSocialAccount::updateOrCreate(
+            ['platform' => 'facebook'],
+            [
+                'page_id' => $page['id'],
+                'page_name' => $page['name'] ?? null,
+                'page_url' => $page['link'] ?? $data['page_input'],
+                'access_token' => $data['access_token'],
+                'connected_by' => Auth::id(),
+                'last_error' => null,
+            ]
+        );
+
+        return back()->with('message', 'Facebook page connected: '.($page['name'] ?? $page['id']));
+    }
+
+    public function disconnectFb()
+    {
+        CrmSocialAccount::where('platform', 'facebook')->delete();
+
+        return back()->with('message', 'Facebook page disconnected. The demo feed returns until you reconnect.');
+    }
+
+    protected function fetchPosts(CrmSocialAccount $account): array
+    {
+        $feed = $this->graph($account->page_id.'/posts', $account->access_token, [
+            'fields' => 'id,message,created_time,permalink_url,full_picture,shares,likes.summary(true),comments.summary(true)',
+            'limit' => 15,
+        ]);
+
+        $converted = CrmLead::where('source', 'facebook')->whereNotNull('external_id')->pluck('external_id')->all();
+
+        return collect($feed['data'] ?? [])->map(fn ($p) => [
+            'id' => $p['id'],
+            'caption' => $p['message'] ?? '(no text)',
+            'created_time' => $p['created_at'] ?? $p['created_time'] ?? null,
+            'media_url' => $p['full_picture'] ?? null,
+            'reactions' => ['like' => $p['likes']['summary']['total_count'] ?? 0],
+            'comments_count' => $p['comments']['summary']['total_count'] ?? 0,
+            'shares_count' => isset($p['shares']['count']) ? (int) $p['shares']['count'] : 0,
+            'permalink' => $p['permalink_url'] ?? null,
+            'converted' => in_array($p['id'], $converted, true),
+            'live' => true,
+        ])->values()->all();
+    }
+
+    /**
+     * Best-effort comment fetch per post (needs pages_read_engagement on
+     * the token). Failures return [] — posts still convert without names.
+     */
+    public function fbComments(Request $request)
+    {
+        $data = $request->validate(['post_id' => 'required|string|max:128']);
+        $account = CrmSocialAccount::where('platform', 'facebook')->first();
+        abort_unless($account, 404, 'No Facebook page connected.');
+
+        try {
+            $res = $this->graph($data['post_id'].'/comments', $account->access_token, [
+                'fields' => 'id,from{id,name},message,created_time',
+                'limit' => 25,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['comments' => [], 'error' => $e->getMessage()]);
+        }
+
+        $converted = CrmLead::where('source', 'facebook')->whereNotNull('external_id')->pluck('external_id')->all();
+
+        return response()->json(['comments' => collect($res['data'] ?? [])->map(fn ($c) => [
+            'id' => $c['id'],
+            'user' => $c['from']['name'] ?? 'Facebook user',
+            'comment' => $c['message'] ?? '',
+            'created_at' => $c['created_time'] ?? null,
+            'converted' => in_array($c['id'], $converted, true),
+        ])->values()->all()]);
+    }
+
+    protected function makeLeadFromSocial(array $attrs): CrmLead
+    {
+        if (CrmLead::where('source', 'facebook')->where('external_id', $attrs['external_id'])->exists()) {
+            throw new \RuntimeException('Already converted to a lead.');
+        }
+
+        $lead = CrmLead::create([
+            'company_name' => $attrs['company_name'],
+            'contact_person' => $attrs['contact_person'],
+            'email' => $attrs['email'],
+            'phone' => 'N/A',
+            'need_summary' => $attrs['need_summary'],
+            'source' => 'facebook',
+            'external_id' => $attrs['external_id'],
+            'status' => 'Inquiry',
+            'assigned_staff_id' => Auth::id(),
+        ]);
+
+        $lead->contacts()->create([
+            'name' => $attrs['contact_person'],
+            'email' => $attrs['email'],
+            'is_decision_maker' => true,
+            'is_primary' => true,
+            'notes' => 'From Facebook.',
+        ]);
+
+        return $lead;
+    }
+
+    public function convertPost(Request $request)
+    {
+        $data = $request->validate(['post_id' => 'required|string|max:128']);
+        $account = CrmSocialAccount::where('platform', 'facebook')->first();
+        abort_unless($account, 404, 'No Facebook page connected.');
+
+        try {
+            $post = $this->graph($data['post_id'], $account->access_token, [
+                'fields' => 'id,message,created_time,permalink_url',
+            ]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Could not read that post: '.$e->getMessage()]);
+        }
+
+        $text = trim((string) ($post['message'] ?? ''));
+        $excerpt = mb_substr($text !== '' ? $text : 'Facebook post', 0, 120);
+
+        try {
+            $lead = $this->makeLeadFromSocial([
+                'company_name' => mb_substr('FB · '.($account->page_name ?? 'Page').' · '.$excerpt, 0, 200),
+                'contact_person' => 'Facebook inquiry',
+                'email' => 'fb-'.preg_replace('/[^A-Za-z0-9]/', '', $data['post_id']).'@social.local',
+                'need_summary' => ($text !== '' ? $text : '(no post text)')."\n— {$post['permalink_url']}",
+                'external_id' => $data['post_id'],
+            ]);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return back()->with('message', "Lead #{$lead->id} created from Facebook post. Complete the company details on the lead.");
+    }
+
+    public function convertComment(Request $request)
+    {
+        $data = $request->validate([
+            'comment_id' => 'required|string|max:128',
+            'name' => 'required|string|max:255',
+            'message' => 'nullable|string|max:2000',
+            'post_id' => 'nullable|string|max:128',
+        ]);
+
+        try {
+            $lead = $this->makeLeadFromSocial([
+                'company_name' => mb_substr($data['name']."'s inquiry", 0, 200),
+                'contact_person' => $data['name'],
+                'email' => 'fb-'.preg_replace('/[^A-Za-z0-9]/', '', $data['comment_id']).'@social.local',
+                'need_summary' => ($data['message'] !== '' ? $data['message'] : '(no comment text)').($data['post_id'] ? "\nOn post {$data['post_id']}" : ''),
+                'external_id' => $data['comment_id'],
+            ]);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return back()->with('message', "Lead #{$lead->id} created from {$data['name']}.");
     }
 
     // ─── Legacy Methods (unchanged) ────────────────────────────────────────

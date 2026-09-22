@@ -222,7 +222,7 @@ class HandleInertiaRequests extends Middleware
     {
         $map = [
             'HRM' => ['dashboard', 'employee', 'application', 'interview', 'trainee', 'onboarding', 'payroll', 'analytics'],
-            'CRM' => ['dashboard', 'leads', 'approvals', 'customer_profiles', 'investigation', 'socials'],
+            'CRM' => ['dashboard', 'leads', 'customer_profiles', 'opportunities', 'approvals', 'quotations', 'activities', 'cases', 'campaigns', 'investigation', 'socials'],
             'SCM' => ['dashboard', 'sales', 'procurement', 'planning', 'purchase', 'deliveries', 'vendor', 'analytics'],
             'FIN' => ['dashboard', 'receivables', 'payables', 'expenses', 'payroll', 'reports'],
             'MAN' => ['dashboard', 'production', 'reject', 'inventory'],

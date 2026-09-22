@@ -168,7 +168,7 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                     </p>
                                     <div class="flex items-center justify-between">
                                         <button @click="openEditModal"
-                                            class="bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 dark:bg-blue-900/30 transition-colors shadow-lg">
+                                            class="bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-colors shadow-lg">
                                             Edit Identity
                                         </button>
                                     </div>
@@ -292,7 +292,7 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                     your system credentials</p>
                             </div>
                             <button @click="closeEditModal"
-                                class="p-2 hover:bg-white dark:bg-zinc-900 rounded-xl transition-colors text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:text-zinc-400 border border-transparent hover:border-slate-100 dark:border-zinc-800">
+                                class="p-2 hover:bg-white dark:bg-zinc-900 rounded-xl transition-colors text-slate-400 dark:text-zinc-500 hover:text-slate-600 border border-transparent hover:border-slate-100 dark:border-zinc-800">
                                 <X class="size-5" />
                             </button>
                         </div>
@@ -321,11 +321,11 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                         Name</label>
                                     <div class="relative group">
                                         <div
-                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-600 dark:text-blue-400">
+                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-600">
                                             <UserIcon class="size-4" />
                                         </div>
                                         <input v-model="form.name" type="text"
-                                            class="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-zinc-300 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 dark:text-zinc-500 transition-all"
+                                            class="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-zinc-300 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 transition-all"
                                             placeholder="Enter your name" required />
                                     </div>
                                 </div>
@@ -336,11 +336,11 @@ const attendanceRate = computed(() => props.attendance_history.length > 0 ? 100 
                                         Address</label>
                                     <div class="relative group">
                                         <div
-                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-600 dark:text-blue-400">
+                                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 transition-colors group-focus-within:text-blue-600">
                                             <Mail class="size-4" />
                                         </div>
                                         <input v-model="form.email" type="email"
-                                            class="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-zinc-300 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 dark:text-zinc-500 transition-all"
+                                            class="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-slate-700 dark:text-zinc-300 focus:ring-2 focus:ring-blue-600/10 placeholder:text-slate-300 transition-all"
                                             placeholder="Enter your email" required />
                                     </div>
                                 </div>

@@ -6,13 +6,14 @@ import {
     Building2, User, Mail, Phone, MapPin, CreditCard, Calendar,
     MessageSquare, AlertCircle, Plus,
     FileText, ChevronLeft, Sparkles, CalendarCheck, BadgeCheck,
-    Wallet, Inbox
+    Wallet, Inbox, Users, Star, Pencil, Trash2, KanbanSquare, Package, Activity, Briefcase
 } from 'lucide-vue-next';
 
 const props = defineProps({
     client: { type: Object, required: true },
     meetings: { type: Array, default: () => [] },
     feedback: { type: Array, default: () => [] },
+    openPipeline: { type: Number, default: 0 },
     permissions: { type: Object, default: () => ({}) }
 });
 
@@ -72,6 +73,51 @@ const getMeetingDot = (status) => {
 const getFeedbackIcon = (type) => type === 'complaint' ? AlertCircle : MessageSquare;
 const initials = computed(() => (props.client.company_name ?? '?').charAt(0).toUpperCase());
 const openFeedbackCount = computed(() => props.feedback.filter(f => f.status === 'open').length);
+const openDeals = computed(() => (props.client.opportunities || []).filter((o) => !['won', 'lost'].includes(o.stage)));
+const openCases = computed(() => (props.client.cases || []).filter((c) => ['open', 'in_progress'].includes(c.status)));
+
+// ── Contacts manager ─────────────────────────────────────────────
+const showContactModal = ref(false);
+const editingContact = ref(null);
+const contactForm = useForm({
+    client_id: props.client.id,
+    name: '', title: '', email: '', phone: '',
+    is_decision_maker: false, is_primary: false, notes: '',
+});
+const openContactModal = (c = null) => {
+    if (!canEdit.value) return;
+    editingContact.value = c;
+    contactForm.reset();
+    contactForm.clearErrors();
+    contactForm.client_id = props.client.id;
+    if (c) {
+        contactForm.name = c.name || '';
+        contactForm.title = c.title || '';
+        contactForm.email = c.email || '';
+        contactForm.phone = c.phone || '';
+        contactForm.is_decision_maker = !!c.is_decision_maker;
+        contactForm.is_primary = !!c.is_primary;
+        contactForm.notes = c.notes || '';
+    }
+    showContactModal.value = true;
+};
+const submitContact = () => {
+    if (editingContact.value) {
+        contactForm.patch(route('crm.contacts.update', editingContact.value.id), {
+            preserveScroll: true, onSuccess: () => { showContactModal.value = false; },
+        });
+    } else {
+        contactForm.post(route('crm.contacts.store'), {
+            preserveScroll: true, onSuccess: () => { showContactModal.value = false; },
+        });
+    }
+};
+const removeContact = (c) => {
+    router.delete(route('crm.contacts.destroy', c.id), { preserveScroll: true });
+};
+const primaryContact = (c) => {
+    router.post(route('crm.contacts.primary', c.id), {}, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -137,11 +183,12 @@ const openFeedbackCount = computed(() => props.feedback.filter(f => f.status ===
                         </div>
                     </div>
                     <!-- tabs -->
-                    <div class="relative flex gap-2 px-6 sm:px-8 pb-5">
-                        <button v-for="t in [['overview','Overview'],['meetings','Meetings'],['feedback','Feedback']]" :key="t[0]" @click="activeTab = t[0]"
+                    <div class="relative flex gap-2 px-6 sm:px-8 pb-5 overflow-x-auto">
+                        <button v-for="t in [['overview','Overview'],['contacts','Contacts'],['deals','Deals'],['orders','Orders'],['activities','Activities'],['cases','Cases'],['meetings','Meetings'],['feedback','Feedback']]" :key="t[0]" @click="activeTab = t[0]"
                             :class="activeTab === t[0] ? 'bg-white text-indigo-700 shadow-lg' : 'bg-white/15 text-white hover:bg-white/25'"
-                            class="rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wide backdrop-blur transition-all active:scale-95">
-                            {{ t[1] }} <span v-if="t[0]==='meetings'" class="opacity-70">· {{ meetings.length }}</span><span v-if="t[0]==='feedback'" class="opacity-70">· {{ feedback.length }}</span>
+                            class="rounded-xl px-4 py-2 text-xs font-black uppercase tracking-wide backdrop-blur transition-all active:scale-95 whitespace-nowrap">
+                            {{ t[1] }}
+                            <span v-if="t[0]==='contacts'" class="opacity-70">· {{ client.contacts?.length ?? 0 }}</span><span v-if="t[0]==='deals'" class="opacity-70">· {{ openDeals.length }}</span><span v-if="t[0]==='meetings'" class="opacity-70">· {{ meetings.length }}</span><span v-if="t[0]==='feedback'" class="opacity-70">· {{ feedback.length }}</span><span v-if="t[0]==='cases'" class="opacity-70">· {{ openCases.length }}</span>
                         </button>
                     </div>
                 </div>
@@ -195,6 +242,121 @@ const openFeedbackCount = computed(() => props.feedback.filter(f => f.status ===
                                 <p v-if="meetings.length===0" class="text-xs text-gray-400 italic">No meetings yet.</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Contacts -->
+                <div v-show="activeTab === 'contacts'" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/10">
+                        <h2 class="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <Users class="w-5 h-5 text-blue-600" /> People at this account
+                        </h2>
+                        <button v-if="canEdit" @click="openContactModal()" class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-xs font-black uppercase tracking-wide hover:shadow-lg hover:scale-105 active:scale-95 transition-all">
+                            <Plus class="w-4 h-4" /> Add
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <div v-if="client.contacts?.length" class="grid gap-3 md:grid-cols-2">
+                            <div v-for="c in client.contacts" :key="c.id"
+                                class="rounded-2xl border p-4 transition-all hover:shadow-lg"
+                                :class="c.is_primary ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/10' : 'border-gray-100 dark:border-zinc-800'">
+                                <div class="flex items-start gap-2">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-black text-sm flex items-center gap-1.5 flex-wrap">
+                                            {{ c.name }}
+                                            <Star v-if="c.is_decision_maker" class="h-3.5 w-3.5 text-amber-500" />
+                                        </p>
+                                        <p class="text-[11px] font-bold text-gray-400">{{ c.title || 'No title' }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ c.email || '—' }} · {{ c.phone || '—' }}</p>
+                                    </div>
+                                    <span v-if="c.is_primary" class="shrink-0 rounded-full bg-indigo-600 text-white px-2.5 py-0.5 text-[9px] font-black uppercase">Primary</span>
+                                </div>
+                                <div v-if="canEdit" class="mt-3 flex flex-wrap gap-1.5">
+                                    <button @click="openContactModal(c)" class="inline-flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black uppercase text-gray-500 hover:text-indigo-600"><Pencil class="h-3 w-3" /> Edit</button>
+                                    <button v-if="!c.is_primary" @click="primaryContact(c)" class="rounded-lg bg-gray-100 dark:bg-zinc-800 px-2.5 py-1 text-[10px] font-black uppercase text-gray-500 hover:text-indigo-600">Set primary</button>
+                                    <button @click="removeContact(c)" class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase text-gray-300 hover:text-rose-500"><Trash2 class="h-3 w-3" /></button>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-else class="text-center text-sm font-bold text-gray-400 py-8">No contacts yet — add the people you deal with.</p>
+                    </div>
+                </div>
+
+                <!-- Deals -->
+                <div v-show="activeTab === 'deals'" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gradient-to-r from-emerald-50 to-transparent dark:from-emerald-900/10">
+                        <h2 class="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <KanbanSquare class="w-5 h-5 text-emerald-600" /> Open deals · {{ formatCurrency(openPipeline) }}
+                        </h2>
+                        <Link :href="route('crm.opportunities')" class="text-[11px] font-black uppercase text-indigo-600 hover:underline">Pipeline →</Link>
+                    </div>
+                    <div class="p-6 space-y-2.5">
+                        <Link v-for="o in client.opportunities" :key="o.id" :href="route('crm.opportunities.show', o.id)"
+                            class="flex items-center gap-3 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4 hover:shadow-lg hover:-translate-y-0.5 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all">
+                            <span class="min-w-0 flex-1">
+                                <span class="block font-black text-sm truncate">{{ o.title }}</span>
+                                <span class="block text-[11px] text-gray-400">{{ o.owner?.name }} · {{ o.expected_close || 'no close date' }}</span>
+                            </span>
+                            <span class="rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 text-[10px] font-black uppercase">{{ o.stage }}</span>
+                            <span class="font-black text-sm">{{ formatCurrency(o.value) }}</span>
+                        </Link>
+                        <p v-if="!client.opportunities?.length" class="text-center text-sm font-bold text-gray-400 py-8">No deals for this account yet.</p>
+                    </div>
+                </div>
+
+                <!-- Orders -->
+                <div v-show="activeTab === 'orders'" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-2 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-900/10">
+                        <Package class="w-5 h-5 text-amber-600" />
+                        <h2 class="text-sm font-black uppercase tracking-widest">Order history</h2>
+                    </div>
+                    <div class="p-6 space-y-2.5">
+                        <div v-for="o in client.purchase_orders" :key="o.id"
+                            class="flex items-center gap-3 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4">
+                            <span class="min-w-0 flex-1">
+                                <span class="block font-mono font-black text-sm">{{ o.po_number }}</span>
+                                <span class="block text-[11px] text-gray-400">{{ o.status }} · {{ formatDate(o.created_at) }}</span>
+                            </span>
+                            <span class="font-black text-sm">{{ formatCurrency(o.total_amount) }}</span>
+                        </div>
+                        <p v-if="!client.purchase_orders?.length" class="text-center text-sm font-bold text-gray-400 py-8">No orders yet.</p>
+                    </div>
+                </div>
+
+                <!-- Activities -->
+                <div v-show="activeTab === 'activities'" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gradient-to-r from-cyan-50 to-transparent dark:from-cyan-900/10">
+                        <h2 class="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <Activity class="w-5 h-5 text-cyan-600" /> Activity timeline
+                        </h2>
+                        <Link :href="route('crm.activities')" class="text-[11px] font-black uppercase text-indigo-600 hover:underline">All activities →</Link>
+                    </div>
+                    <div class="p-6 space-y-2.5">
+                        <div v-for="a in client.activities" :key="a.id" class="rounded-2xl bg-slate-50 dark:bg-zinc-800 px-4 py-3 text-xs">
+                            <p class="font-black">{{ a.subject }} <span class="ml-1 rounded-full bg-gray-200 dark:bg-zinc-700 px-2 py-0.5 text-[10px] uppercase">{{ a.type }}</span></p>
+                            <p class="text-gray-400 mt-0.5">{{ a.owner?.name }} · {{ formatDateTime(a.created_at) }}{{ a.done_at ? ' · done' : '' }}</p>
+                        </div>
+                        <p v-if="!client.activities?.length" class="text-center text-sm font-bold text-gray-400 py-8">No activities logged.</p>
+                    </div>
+                </div>
+
+                <!-- Cases -->
+                <div v-show="activeTab === 'cases'" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-zinc-800 flex justify-between items-center bg-gradient-to-r from-rose-50 to-transparent dark:from-rose-900/10">
+                        <h2 class="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                            <Briefcase class="w-5 h-5 text-rose-600" /> Cases
+                        </h2>
+                        <Link :href="route('crm.cases')" class="text-[11px] font-black uppercase text-indigo-600 hover:underline">All cases →</Link>
+                    </div>
+                    <div class="p-6 space-y-2.5">
+                        <div v-for="c in client.cases" :key="c.id" class="flex items-center gap-3 rounded-2xl border border-gray-100 dark:border-zinc-800 p-4">
+                            <span class="min-w-0 flex-1">
+                                <span class="block font-black text-sm truncate">{{ c.subject }}</span>
+                                <span class="block text-[11px] text-gray-400">{{ c.category }} · {{ c.severity }} · {{ c.owner?.name || 'unassigned' }}</span>
+                            </span>
+                            <span class="rounded-full bg-gray-100 dark:bg-zinc-800 px-3 py-1 text-[10px] font-black uppercase text-gray-500">{{ c.status.replace('_',' ') }}</span>
+                        </div>
+                        <p v-if="!client.cases?.length" class="text-center text-sm font-bold text-gray-400 py-8">No cases for this account.</p>
                     </div>
                 </div>
 
@@ -275,6 +437,59 @@ const openFeedbackCount = computed(() => props.feedback.filter(f => f.status ===
                     </div>
                 </div>
             </div>
+
+            <!-- Contact modal -->
+            <Transition name="modal">
+                <div v-if="showContactModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="showContactModal = false">
+                    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-violet-600 p-5 flex items-center justify-between">
+                            <h2 class="text-white font-black">{{ editingContact ? 'Edit Contact' : 'Add Contact' }}</h2>
+                            <button @click="showContactModal = false" class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35">&times;</button>
+                        </div>
+                        <form @submit.prevent="submitContact" class="p-6 space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Full name *</label>
+                                <input v-model="contactForm.name" required placeholder="e.g. Maria Santos"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent focus:border-indigo-400 outline-none text-sm dark:text-white" />
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Title / role</label>
+                                    <input v-model="contactForm.title" placeholder="e.g. Purchasing head"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent outline-none text-sm dark:text-white" />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Phone</label>
+                                    <input v-model="contactForm.phone" placeholder="+63…"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent outline-none text-sm dark:text-white" />
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Email</label>
+                                <input v-model="contactForm.email" type="email" placeholder="name@company.com"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent outline-none text-sm dark:text-white" />
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">Notes</label>
+                                <textarea v-model="contactForm.notes" rows="2" placeholder="Preferences, best time to call…"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-zinc-800 border border-transparent outline-none text-sm resize-none dark:text-white"></textarea>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                <input type="checkbox" v-model="contactForm.is_decision_maker" class="rounded border-gray-300 text-indigo-600" /> Decision maker
+                            </label>
+                            <label class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                <input type="checkbox" v-model="contactForm.is_primary" class="rounded border-gray-300 text-indigo-600" /> Primary contact
+                            </label>
+                            <div class="flex gap-3 pt-1">
+                                <button type="button" @click="showContactModal = false" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 font-bold text-sm hover:bg-gray-200 active:scale-95 transition">Cancel</button>
+                                <button type="submit" :disabled="contactForm.processing" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm shadow-lg disabled:opacity-60 hover:scale-[1.02] active:scale-95 transition-all">
+                                    {{ contactForm.processing ? 'Saving…' : 'Save' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </Transition>
 
             <!-- Feedback modal -->
             <Transition name="modal">

@@ -47,7 +47,7 @@ class LeadController extends Controller
     }
 
     /**
-     * Store a new lead.
+     * Store a new lead (with duplicate-company guard).
      */
     public function store(Request $request)
     {
@@ -56,20 +56,38 @@ class LeadController extends Controller
             'contact_person' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
-            'interest_fabric' => 'required|string',
-            'estimated_value' => 'required|numeric|min:0',
+            'interest_fabric' => 'nullable|string',
+            'estimated_value' => 'nullable|numeric|min:0',
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
+
+        $dupe = CrmLead::whereNotIn('status', ['Converted', 'Archived', 'Lost'])
+            ->where(fn ($q) => $q
+                ->where('company_name', $validated['company_name'])
+                ->orWhere('email', $validated['email']))
+            ->first(['id', 'company_name', 'status']);
+        if ($dupe) {
+            return back()->withErrors(['error' => "Possible duplicate: {$dupe->company_name} is already an open lead ({$dupe->status})."]);
+        }
 
         $lead = CrmLead::create([
             'company_name' => $validated['company_name'],
             'contact_person' => $validated['contact_person'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
-            'interest_fabric' => $validated['interest_fabric'],
-            'estimated_value' => $validated['estimated_value'],
+            'interest_fabric' => $validated['interest_fabric'] ?? null,
+            'estimated_value' => $validated['estimated_value'] ?? 0,
             'status' => 'Inquiry',
             'assigned_staff_id' => Auth::id(),
+        ]);
+
+        // Seed the prospect's primary contact from the intake details.
+        $lead->contacts()->create([
+            'name' => $lead->contact_person ?: $lead->email,
+            'email' => $lead->email,
+            'phone' => $lead->phone,
+            'is_decision_maker' => true,
+            'is_primary' => true,
         ]);
 
         if ($request->hasFile('logo')) {
@@ -83,6 +101,25 @@ class LeadController extends Controller
         }
 
         return back()->with('message', 'New lead created.');
+    }
+
+    /**
+     * BANT-lite qualification + next step (drives follow-up discipline).
+     */
+    public function qualify(Request $request, $id)
+    {
+        $data = $request->validate([
+            'budget' => 'nullable|string|max:255',
+            'authority' => 'nullable|string|max:255',
+            'need_summary' => 'nullable|string|max:2000',
+            'timeline' => 'nullable|string|max:255',
+            'next_step' => 'nullable|string|max:255',
+            'next_step_due' => 'nullable|date',
+        ]);
+
+        CrmLead::findOrFail($id)->update($data);
+
+        return back()->with('message', 'Lead qualification saved.');
     }
 
     /**
@@ -151,6 +188,19 @@ class LeadController extends Controller
 
             $lead = CrmLead::find($validated['lead_id']);
             $lead->update(['status' => 'Converted']);
+
+            // Carry the prospect's primary contact onto the new account.
+            $primary = $lead->contacts()->where('is_primary', true)->first()
+                ?? $lead->contacts()->first();
+            $client->contacts()->create([
+                'name' => $primary?->name ?? $client->contact_person ?: $client->email,
+                'title' => $primary?->title,
+                'email' => $primary?->email ?? $client->email,
+                'phone' => $primary?->phone ?? $client->phone,
+                'is_decision_maker' => (bool) ($primary?->is_decision_maker ?? true),
+                'is_primary' => true,
+                'notes' => 'Carried over from lead conversion.',
+            ]);
 
             DB::commit();
             return back()->with('message', 'Lead converted to client successfully.');

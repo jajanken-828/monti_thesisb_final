@@ -11,6 +11,7 @@ use App\Models\Eco\EcoQuotationItem;
 use App\Models\Man\BomRecord;
 use App\Models\Ord\SalesOrder;
 use App\Models\Inv\Material;
+use App\Support\ConversationRealtime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -220,6 +221,8 @@ class EcoInquiryController extends Controller
 
     /**
      * Handle sending a standard chat message with optional file attachments.
+     * Returns JSON when called via axios (real-time mode), otherwise
+     * falls back to the classic Inertia redirect for backwards compat.
      */
     public function sendMessage(Request $request, Inquiry $inquiry)
     {
@@ -247,7 +250,43 @@ class EcoInquiryController extends Controller
         }
 
         $inquiry->update(['last_message_at' => now()]);
+
+        // ECO just sent something → they are no longer "typing".
+        ConversationRealtime::clearTyping($inquiry->id, 'eco');
+
+        $message->load('attachments');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['message' => $message], 201);
+        }
+
         return back();
+    }
+
+    /**
+     * Real-time polling feed for the ECO side.
+     * GET ?after=<lastMessageId> → only newer messages are returned.
+     * Also reports whether the CLIENT is currently typing.
+     */
+    public function feed(Request $request, Inquiry $inquiry)
+    {
+        $after = (int) $request->query('after', 0);
+        $messages = ConversationRealtime::feed($inquiry->id, $after);
+
+        return response()->json([
+            'messages' => $messages,
+            'typing'   => ConversationRealtime::isTyping($inquiry->id, 'client'),
+        ]);
+    }
+
+    /**
+     * Typing heartbeat for the ECO side. Called (debounced) while staff type.
+     */
+    public function typing(Request $request, Inquiry $inquiry)
+    {
+        ConversationRealtime::markTyping($inquiry->id, 'eco');
+
+        return response()->json(['ok' => true]);
     }
 
     /**

@@ -43,6 +43,9 @@ Route::middleware('auth:client')->prefix('partner')->name('client.')->group(func
     Route::get('/conversations', [ClientConversationController::class, 'index'])->name('conversations');
     Route::get('/conversations/{inquiry}', [ClientConversationController::class, 'show'])->name('conversation.show');
     Route::post('/conversations/{inquiry}/message', [ClientConversationController::class, 'sendMessage'])->name('conversation.message');
+    // Real-time: polling feed + typing heartbeat (no page reload needed)
+    Route::get('/conversations/{inquiry}/feed', [ClientConversationController::class, 'feed'])->name('conversation.feed');
+    Route::post('/conversations/{inquiry}/typing', [ClientConversationController::class, 'typing'])->name('conversation.typing');
     Route::post('/quotations/{quotation}/accept', [ClientConversationController::class, 'acceptQuotation'])->name('client.quotation.accept');
     Route::post('/quotations/{quotation}/reject', [ClientConversationController::class, 'rejectQuotation'])->name('client.quotation.reject');
     Route::get('quotations/{quotation}/download', [ClientConversationController::class, 'downloadQuotation'])

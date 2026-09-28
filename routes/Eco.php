@@ -31,6 +31,11 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
         ->middleware('page.permission:inquiry,view')->name('inquiry.show');
     Route::post('/inquiries/{inquiry}/message', [EcoInquiryController::class, 'sendMessage'])
         ->middleware('page.permission:inquiry,edit')->name('inquiry.message');
+    // Real-time: polling feed + typing heartbeat (no page reload needed)
+    Route::get('/inquiries/{inquiry}/feed', [EcoInquiryController::class, 'feed'])
+        ->middleware('page.permission:inquiry,view')->name('inquiry.feed');
+    Route::post('/inquiries/{inquiry}/typing', [EcoInquiryController::class, 'typing'])
+        ->middleware('page.permission:inquiry,edit')->name('inquiry.typing');
     Route::post('/inquiries/{inquiry}/meeting', [EcoInquiryController::class, 'setMeeting'])
         ->middleware('page.permission:inquiry,edit')->name('inquiry.meeting');
     Route::post('/inquiries/{inquiry}/quotation', [EcoInquiryController::class, 'issueQuotation'])

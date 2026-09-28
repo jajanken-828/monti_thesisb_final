@@ -67,7 +67,7 @@
                         <div ref="messagesContainer"
                             class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
                             <TransitionGroup name="card" tag="div" class="space-y-3">
-                                <div v-for="msg in inquiry.messages" :key="msg.id"
+                                <div v-for="msg in liveMessages" :key="msg.id"
                                     class="flex flex-col"
                                     :class="msg.sender_type === 'client' ? 'items-end' : 'items-start'">
 
@@ -146,6 +146,17 @@
                                     </div>
                                 </div>
                             </TransitionGroup>
+                            <!-- Typing indicator (real-time, no reload) -->
+                            <div v-if="otherTyping" class="flex items-start mt-2 animate-fade-up">
+                                <div class="bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-3xl rounded-tl-lg shadow-sm px-4 py-3 flex items-center gap-2">
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ inquiry.client?.company_name ?? 'Client' }} is typing</span>
+                                    <span class="flex gap-1">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay:0ms" />
+                                        <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay:150ms" />
+                                        <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay:300ms" />
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Reply box -->
@@ -170,6 +181,7 @@
                                 <input v-model="newMessage" type="text"
                                     placeholder="Reply to client…"
                                     class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400"
+                                    @input="notifyTyping"
                                     @keydown.enter.prevent="sendMessage" />
                                 <button type="button" @click="$refs.fileInput.click()"
                                     class="p-1.5 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl transition text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -917,6 +929,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
+import { useRealtimeConversation } from '@/composables/useRealtimeConversation';
 import {
     ArrowLeft, Send, Loader2, FileText, X, Package, Trash2,
     Plus, Paperclip, ClipboardList, XCircle, Calendar, ChevronDown
@@ -1067,8 +1080,11 @@ const submitQuotation = () => {
 
 const messagesContainer = ref(null);
 const newMessage        = ref('');
-const sending           = ref(false);
 const selectedFiles     = ref([]);
+
+// ── Real-time conversation (no reload) ──────────────────────────
+// Local copy so polling can append without mutating the Inertia prop.
+const liveMessages = ref([...(props.inquiry?.messages ?? [])]);
 
 const scrollToBottom = () =>
     nextTick(() => {
@@ -1076,17 +1092,54 @@ const scrollToBottom = () =>
             messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     });
 
-const sendMessage = () => {
+const mergeMessages = (incoming) => {
+    const known = new Set(liveMessages.value.map((m) => Number(m.id)));
+    let added = false;
+    for (const m of incoming) {
+        if (!known.has(Number(m.id))) {
+            liveMessages.value.push(m);
+            known.add(Number(m.id));
+            added = true;
+        }
+    }
+    if (added) {
+        liveMessages.value.sort((a, b) => Number(a.id) - Number(b.id));
+        scrollToBottom();
+    }
+};
+
+// Keep in sync if Inertia reloads (e.g. after quotation / meeting / recipe).
+watch(() => props.inquiry?.messages, (msgs) => {
+    if (Array.isArray(msgs)) mergeMessages(msgs);
+}, { deep: true });
+
+const {
+    otherTyping,
+    sending: rtSending,
+    notifyTyping,
+    sendMessage: sendRealtime,
+} = useRealtimeConversation({
+    getMessages: () => liveMessages.value,
+    appendMessages: mergeMessages,
+    feedUrl: route('eco.inquiry.feed', props.inquiry.id),
+    typingUrl: route('eco.inquiry.typing', props.inquiry.id),
+    sendUrl: route('eco.inquiry.message', props.inquiry.id),
+    onNewMessages: () => scrollToBottom(),
+});
+const sending = rtSending;
+
+const sendMessage = async () => {
     if (!newMessage.value.trim() && !selectedFiles.value.length) return;
-    sending.value = true;
-    const fd = new FormData();
-    fd.append('message', newMessage.value || '');
-    selectedFiles.value.forEach((f, i) => fd.append(`files[${i}]`, f));
-    router.post(route('eco.inquiry.message', props.inquiry.id), fd, {
-        forceFormData: true,
-        onSuccess: () => { newMessage.value = ''; selectedFiles.value = []; scrollToBottom(); },
-        onFinish:  () => { sending.value = false; },
-    });
+    const text = newMessage.value;
+    const files = [...selectedFiles.value];
+    newMessage.value = '';
+    selectedFiles.value = [];
+    const created = await sendRealtime({ text, files });
+    if (!created) {
+        // Restore on failure so the user doesn't lose their draft.
+        newMessage.value = text;
+        selectedFiles.value = files;
+    }
 };
 
 const showMeetingModal = ref(false);

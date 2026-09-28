@@ -7,6 +7,7 @@ use App\Models\Eco\ConversationAttachment;
 use App\Models\Eco\ConversationMessage;
 use App\Models\Eco\Inquiry;
 use App\Models\Eco\EcoQuotation;
+use App\Support\ConversationRealtime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -72,7 +73,46 @@ class ClientConversationController extends Controller
 
         $inquiry->update(['last_message_at' => now()]);
 
+        // Client just sent something → no longer "typing".
+        ConversationRealtime::clearTyping($inquiry->id, 'client');
+
+        $message->load('attachments');
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['message' => $message], 201);
+        }
+
         return back()->with('success', 'Message sent.');
+    }
+
+    /**
+     * Real-time polling feed for the client side.
+     * GET ?after=<lastMessageId> → only newer messages are returned.
+     * Also reports whether the ECO team is currently typing.
+     */
+    public function feed(Request $request, Inquiry $inquiry)
+    {
+        $this->authorizeClient($inquiry);
+
+        $after = (int) $request->query('after', 0);
+        $messages = ConversationRealtime::feed($inquiry->id, $after);
+
+        return response()->json([
+            'messages' => $messages,
+            'typing'   => ConversationRealtime::isTyping($inquiry->id, 'eco'),
+        ]);
+    }
+
+    /**
+     * Typing heartbeat for the client side. Called (debounced) while typing.
+     */
+    public function typing(Request $request, Inquiry $inquiry)
+    {
+        $this->authorizeClient($inquiry);
+
+        ConversationRealtime::markTyping($inquiry->id, 'client');
+
+        return response()->json(['ok' => true]);
     }
 
     /**

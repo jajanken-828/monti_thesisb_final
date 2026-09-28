@@ -64,7 +64,7 @@
                     <!-- Messages area -->
                     <div ref="messagesContainer"
                         class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-gradient-to-b from-indigo-50/40 via-transparent to-transparent dark:from-indigo-950/20">
-                        <div v-for="msg in inquiry.messages" :key="msg.id"
+                        <div v-for="msg in liveMessages" :key="msg.id"
                             class="animate-fade-up flex flex-col"
                             :class="msg.sender_type === 'client' ? 'items-end' : 'items-start'">
 
@@ -129,6 +129,17 @@
                                 <p class="text-[9px] opacity-50 mt-1.5 text-right">{{ formatTime(msg.created_at) }}</p>
                             </div>
                         </div>
+                        <!-- Typing indicator (real-time, no reload) -->
+                        <div v-if="otherTyping" class="animate-fade-up flex flex-col items-start mt-1">
+                            <div class="bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-zinc-700 rounded-3xl rounded-tl-xl shadow-sm px-4 py-3 flex items-center gap-2">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">ECO Team is typing</span>
+                                <span class="flex gap-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay:0ms" />
+                                    <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay:150ms" />
+                                    <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce" style="animation-delay:300ms" />
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Reply box -->
@@ -153,6 +164,7 @@
                             <input v-model="newMessage" type="text"
                                 placeholder="Type a message…"
                                 class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400"
+                                @input="notifyTyping"
                                 @keydown.enter.prevent="handleSend" />
                             <button type="button" @click="triggerFileUpload"
                                 class="p-1.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-xl transition text-gray-400 hover:text-indigo-600">
@@ -683,14 +695,54 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { useRealtimeConversation } from '@/composables/useRealtimeConversation';
 import { ArrowLeft, Paperclip, Send, Loader2, FileText, X, Eye, Trash2, Layers, Package, Download, Sparkles } from 'lucide-vue-next';
 
 const props = defineProps({ inquiry: Object, quotations: Array });
 const messagesContainer = ref(null);
 const newMessage = ref('');
-const sending = ref(false);
 const fileInput = ref(null);
 const selectedFiles = ref([]);
+
+// ── Real-time conversation (no reload) ──────────────────────────
+const liveMessages = ref([...(props.inquiry?.messages ?? [])]);
+
+const scrollToBottom = () => { nextTick(() => { if (messagesContainer.value) messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight; }); };
+
+const mergeMessages = (incoming) => {
+    const list = Array.isArray(incoming) ? incoming : [incoming];
+    const known = new Set(liveMessages.value.map((m) => Number(m.id)));
+    let added = false;
+    for (const m of list) {
+        if (m && !known.has(Number(m.id))) {
+            liveMessages.value.push(m);
+            known.add(Number(m.id));
+            added = true;
+        }
+    }
+    if (added) {
+        liveMessages.value.sort((a, b) => Number(a.id) - Number(b.id));
+        scrollToBottom();
+    }
+};
+
+watch(() => props.inquiry?.messages, (msgs) => {
+    if (Array.isArray(msgs)) mergeMessages(msgs);
+}, { deep: true });
+
+const {
+    otherTyping,
+    sending,
+    notifyTyping,
+    sendMessage: sendRealtime,
+} = useRealtimeConversation({
+    getMessages: () => liveMessages.value,
+    appendMessages: mergeMessages,
+    feedUrl: route('client.conversation.feed', props.inquiry.id),
+    typingUrl: route('client.conversation.typing', props.inquiry.id),
+    sendUrl: route('client.conversation.message', props.inquiry.id),
+    onNewMessages: () => scrollToBottom(),
+});
 
 // Mobile panel toggle
 const mobilePanel = ref('chat');
@@ -717,10 +769,8 @@ const hasAcceptedQuotation = computed(() => {
     return props.quotations.some(q => q.status === 'accepted');
 });
 
-const scrollToBottom = () => { nextTick(() => { if (messagesContainer.value) messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight; }); };
-
 const viewQuotationAttachments = (q) => {
-    const acceptedMsg = props.inquiry.messages.find(m => m.is_system_event && m.message.includes(q.quotation_number) && m.message.includes('ACCEPTED') && m.attachments?.length > 0);
+    const acceptedMsg = liveMessages.value.find(m => m.is_system_event && m.message.includes(q.quotation_number) && m.message.includes('ACCEPTED') && m.attachments?.length > 0);
     if (acceptedMsg) { previewModal.value = { show: true, title: q.quotation_number, files: acceptedMsg.attachments, activeFile: acceptedMsg.attachments[0] }; }
     else { showDialog('error', 'No Files', 'Could not find attachments for this quotation.'); }
 };
@@ -813,15 +863,15 @@ const confirmRemoveFile = (index) => {
 
 const handleSend = async () => {
     if (!newMessage.value.trim() && !selectedFiles.value.length) return;
-    sending.value = true;
-    const formData = new FormData();
-    formData.append('message', newMessage.value || '');
-    selectedFiles.value.forEach((file, index) => formData.append(`files[${index}]`, file));
-    router.post(route('client.conversation.message', props.inquiry.id), formData, {
-        forceFormData: true,
-        onSuccess: () => { newMessage.value = ''; selectedFiles.value = []; scrollToBottom(); },
-        onFinish: () => sending.value = false
-    });
+    const text = newMessage.value;
+    const files = [...selectedFiles.value];
+    newMessage.value = '';
+    selectedFiles.value = [];
+    const created = await sendRealtime({ text, files });
+    if (!created) {
+        newMessage.value = text;
+        selectedFiles.value = files;
+    }
 };
 
 const openAcceptModal = (quotation) => { acceptModal.value = { show: true, quotation, notes: '', files: [], submitting: false }; };

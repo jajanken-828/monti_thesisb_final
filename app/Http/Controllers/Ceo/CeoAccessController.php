@@ -65,6 +65,7 @@ class CeoAccessController extends Controller
             'dashboard' => 'Dashboard',
             'leads' => 'Leads',
             'customer_profiles' => 'Customers',
+            'inquiry' => 'Inquiries',
             'interviews' => 'Interviews',
             'trainees' => 'Trainees',
             'approvals' => 'Approvals',
@@ -73,7 +74,6 @@ class CeoAccessController extends Controller
         ],
         'ECO' => [
             'store' => 'Store',
-            'inquiry' => 'Inquiries',
             'push' => 'Push Notifications',
             'credit' => 'Credit',
             'supplier' => 'Suppliers',
@@ -794,11 +794,6 @@ class CeoAccessController extends Controller
             $employmentRecords = $applicant->employment_records ? json_decode($applicant->employment_records, true) : null;
             $relatedEmployees = $applicant->related_employees ? json_decode($applicant->related_employees, true) : null;
 
-            // Asset URLs for uploaded ID files
-            $sssFileUrl = $applicant->sss_file ? asset('storage/'.$applicant->sss_file) : null;
-            $philhealthFileUrl = $applicant->philhealth_file ? asset('storage/'.$applicant->philhealth_file) : null;
-            $pagibigFileUrl = $applicant->pagibig_file ? asset('storage/'.$applicant->pagibig_file) : null;
-
             $applicantData = [
                 // ── Personal ────────────────────────────────────────────────
                 'first_name' => $applicant->first_name,
@@ -824,13 +819,10 @@ class CeoAccessController extends Controller
                 'state_province' => $applicant->state_province,
                 'postal_zip_code' => $applicant->postal_zip_code,
 
-                // ── Government IDs (with file URLs) ─────────────────────────
+                // ── Government IDs (file URLs removed for security — served via authorized routes only) ──
                 'sss_number' => $applicant->sss_number,
-                'sss_file_url' => $sssFileUrl,
                 'philhealth_number' => $applicant->philhealth_number,
-                'philhealth_file_url' => $philhealthFileUrl,
                 'pagibig_number' => $applicant->pagibig_number,
-                'pagibig_file_url' => $pagibigFileUrl,
 
                 // ── Family ──────────────────────────────────────────────────
                 'spouse_name' => $applicant->spouse_name,

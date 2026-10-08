@@ -160,7 +160,7 @@
                         </p>
                         <div class="flex gap-2">
                             <component v-for="link in orders.links" :key="link.label" :is="link.url ? 'a' : 'span'"
-                                :href="link.url ?? undefined" v-html="link.label" :class="[
+                                :href="link.url ?? undefined" v-text="link.label.replace('&laquo;', '«').replace('&raquo;', '»')" :class="[
                                     'px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
                                     link.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : link.url ? 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20' : 'text-gray-200 dark:text-zinc-700 cursor-default'
                                 ]" />

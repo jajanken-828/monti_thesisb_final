@@ -277,13 +277,13 @@ class DashboardController extends Controller
                 'leads' => 'crm.lead',
                 'customer_profiles' => 'crm.customerprofile.index',
                 'opportunities' => 'crm.opportunities',
+                'inquiry' => 'crm.inquiries',
                 'approvals' => 'crm.approval.index',
                 'quotations' => 'crm.quotations',
                 'activities' => 'crm.activities',
                 'cases' => 'crm.cases',
                 'campaigns' => 'crm.campaigns',
                 'investigation' => 'crm.investigation.index',
-                'socials' => 'crm.socials.index',
             ],
             'MAN' => [
                 'dashboard' => $isStaff ? 'man.employee.dashboard' : 'man.manager.dashboard',
@@ -304,7 +304,6 @@ class DashboardController extends Controller
             'ECO' => [
                 'dashboard' => 'eco.dashboard',
                 'store' => 'eco.store',
-                'inquiry' => 'eco.inquiries',
                 'supplier' => 'eco.suppliers',
                 'credit' => 'eco.credit',
                 'push' => 'eco.push',

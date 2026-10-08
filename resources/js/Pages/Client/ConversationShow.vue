@@ -86,22 +86,30 @@
 
                                 <p class="text-xs leading-relaxed whitespace-pre-wrap">{{ msg.message }}</p>
 
+                                <!-- Lab sample under review: photo + decision (formula stays internal) -->
+                                <div v-if="msg.sample_request" class="mt-2 rounded-xl bg-black/10 dark:bg-white/10 p-2.5">
+                                    <p class="text-[10px] font-black uppercase tracking-widest opacity-70">
+                                        🧬 Lab sample · {{ msg.sample_request.fabric_name }}
+                                    </p>
+                                    <p class="text-[9px] font-bold opacity-50 mt-0.5">{{ msg.sample_request.code }}</p>
+                                </div>
+
                                 <!-- Attachments -->
                                 <div v-if="msg.attachments && msg.attachments.length" class="mt-2 space-y-2">
                                     <div v-for="file in msg.attachments" :key="file.id">
                                         <!-- Image -->
-                                        <div v-if="file.file_type.startsWith('image/')"
+                                        <div v-if="file.file_type?.startsWith('image/')"
                                             class="rounded-xl overflow-hidden border border-black/10 relative">
                                             <img :src="getFullUrl(file.file_path)"
                                                 class="max-w-full h-auto cursor-pointer"
                                                 @click="openPreview(file)" />
                                             <div class="absolute bottom-2 right-2">
-                                                <button v-if="!file.approved_by_client"
+                                                <button v-if="!file.approved_by_client && !msg.sample_request"
                                                     @click.stop="approveAttachment(file)"
                                                     class="px-2.5 py-1 bg-amber-400 text-amber-900 rounded-lg text-[9px] font-bold uppercase shadow-sm hover:bg-amber-500 transition">
                                                     Approve
                                                 </button>
-                                                <span v-else
+                                                <span v-else-if="file.approved_by_client"
                                                     class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-bold uppercase">
                                                     Approved ✓
                                                 </span>
@@ -113,12 +121,12 @@
                                             <FileText class="h-3.5 w-3.5 flex-shrink-0" />
                                             <a :href="getFullUrl(file.file_path)" target="_blank"
                                                 class="truncate hover:underline flex-1">{{ file.file_name }}</a>
-                                            <button v-if="!file.approved_by_client"
+                                            <button v-if="!file.approved_by_client && !msg.sample_request"
                                                 @click.stop="approveAttachment(file)"
                                                 class="ml-1 px-2 py-1 bg-amber-400 text-amber-900 rounded-lg text-[8px] font-bold uppercase hover:bg-amber-500 transition flex-shrink-0">
                                                 Approve
                                             </button>
-                                            <span v-else
+                                            <span v-else-if="file.approved_by_client"
                                                 class="ml-1 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[8px] font-bold uppercase flex-shrink-0">
                                                 Approved ✓
                                             </span>
@@ -127,6 +135,31 @@
                                 </div>
 
                                 <p class="text-[9px] opacity-50 mt-1.5 text-right">{{ formatTime(msg.created_at) }}</p>
+
+                                <!-- Fabric sample decision (forwarded lab result) -->
+                                <div v-if="msg.sample_request" class="mt-2">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-black/10 dark:bg-white/10">
+                                            {{ msg.sample_request.code }} · {{ sampleStatusLabel(msg.sample_request.status) }}
+                                        </span>
+                                    </div>
+                                    <div v-if="msg.sample_request.status === 'forwarded'" class="mt-1.5 flex flex-wrap gap-1.5">
+                                        <button @click="approveSample(msg.sample_request.id)"
+                                            class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-emerald-600 hover:scale-105 active:scale-95 transition">
+                                            Approve Sample
+                                        </button>
+                                        <button @click="openAdjustModal(msg.sample_request)"
+                                            class="px-3 py-1.5 bg-amber-400 text-amber-900 rounded-lg text-[9px] font-black uppercase shadow-sm hover:bg-amber-500 hover:scale-105 active:scale-95 transition">
+                                            Request Adjustment
+                                        </button>
+                                    </div>
+                                    <p v-else-if="msg.sample_request.status === 'approved'" class="mt-1.5 text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400">
+                                        ✓ Sample approved — you may now send your P.O.
+                                    </p>
+                                    <p v-else-if="msg.sample_request.status === 'adjustment_requested'" class="mt-1.5 text-[9px] font-black uppercase text-amber-600 dark:text-amber-400">
+                                        Adjustment requested — CRM is preparing a new round.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         <!-- Typing indicator (real-time, no reload) -->
@@ -190,7 +223,21 @@
                         <span class="ml-auto rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-[11px] font-black px-2.5 py-0.5">{{ quotations.length }}</span>
                     </p>
 
-                    <div v-for="(quotation, qi) in quotations" :key="quotation.id"
+                    <!-- Active / Trash tabs -->
+                    <div class="flex gap-1.5 px-1">
+                        <button @click="quotationTab = 'active'"
+                            :class="quotationTab === 'active' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:text-indigo-600'"
+                            class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition active:scale-95">
+                            Active ({{ activeQuotations.length }})
+                        </button>
+                        <button @click="quotationTab = 'trash'"
+                            :class="quotationTab === 'trash' ? 'bg-slate-600 text-white shadow-md' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:text-slate-600'"
+                            class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition active:scale-95">
+                            Trash ({{ trashedQuotations.length }})
+                        </button>
+                    </div>
+
+                    <div v-for="(quotation, qi) in visibleQuotations" :key="quotation.id"
                         :style="{ animationDelay: `${Math.min(qi * 70, 350)}ms` }"
                         class="group animate-fade-up relative bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-300">
                         <div class="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -199,6 +246,7 @@
                         <div class="relative flex items-center justify-between px-4 py-2.5"
                             :class="quotation.status === 'accepted' ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
                                 : quotation.status === 'rejected' ? 'bg-gradient-to-r from-rose-500 to-red-600'
+                                : quotation.status === 'trashed' ? 'bg-gradient-to-r from-slate-500 to-gray-600'
                                 : 'bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700'">
                             <span class="font-mono text-[10px] font-bold text-white">
                                 {{ quotation.quotation_number }}
@@ -262,12 +310,22 @@
                                 </button>
                             </div>
 
-                            <!-- Accepted: Preview / Download -->
-                            <div v-if="quotation.status === 'accepted'" class="relative pt-1">
+                            <!-- Accepted: Preview / Download + Trash -->
+                            <div v-if="quotation.status === 'accepted'" class="relative pt-1 space-y-2">
                                 <button @click="openQuotationPreview(quotation)"
                                     class="w-full py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:scale-[1.01] active:scale-95 transition-all">
                                     <Download class="h-3 w-3" /> Preview & Download
                                 </button>
+                                <button @click="openTrashModal(quotation)"
+                                    class="w-full py-2 bg-gray-50 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-zinc-700 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-200 active:scale-95 transition-all">
+                                    <Trash2 class="h-3 w-3" /> Trash & Request New
+                                </button>
+                            </div>
+                            <!-- Trashed: terminal, waiting on a fresh quotation -->
+                            <div v-if="quotation.status === 'trashed'" class="relative pt-1">
+                                <p class="text-center text-[9px] font-bold uppercase text-gray-400">
+                                    Trashed — CRM will issue a new quotation.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -558,6 +616,88 @@
         </Teleport>
 
         <!-- ════════════════════════════════════════════
+             SAMPLE COLOR ADJUSTMENT MODAL
+             ════════════════════════════════════════════ -->
+        <Teleport to="body">
+            <Transition name="modal">
+            <div v-if="adjustModal.show"
+                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                @click.self="adjustModal.show = false">
+                <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-5 py-4 flex items-center justify-between relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl animate-float" />
+                        <div class="relative">
+                            <h3 class="text-sm font-black text-white tracking-tight">Request Color Adjustment</h3>
+                            <p class="text-xs text-amber-100/90 mt-0.5">{{ adjustModal.sample?.fabric_name }} · describe the change</p>
+                        </div>
+                        <button @click="adjustModal.show = false"
+                            class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
+                            <X class="h-4 w-4" />
+                        </button>
+                    </div>
+                    <form @submit.prevent="submitAdjust" class="p-5 space-y-4">
+                        <textarea v-model="adjustModal.notes" rows="3" required
+                            class="w-full rounded-xl border border-transparent bg-gray-50 dark:bg-zinc-800 p-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition resize-none"
+                            placeholder="e.g. Make the blue deeper with less red…"></textarea>
+                        <div class="flex gap-3">
+                            <button type="button" @click="adjustModal.show = false"
+                                class="flex-1 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 rounded-xl text-xs font-bold uppercase hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-95 transition">
+                                Cancel
+                            </button>
+                            <button type="submit" :disabled="adjustModal.submitting"
+                                class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-xs font-black uppercase shadow-lg shadow-orange-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all">
+                                Send Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            </Transition>
+        </Teleport>
+
+        <!-- ════════════════════════════════════════════
+             TRASH ACCEPTED QUOTATION MODAL
+             ════════════════════════════════════════════ -->
+        <Teleport to="body">
+            <Transition name="modal">
+            <div v-if="trashModal.show"
+                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                @click.self="trashModal.show = false">
+                <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-slate-600 via-gray-700 to-zinc-800 px-5 py-4 flex items-center justify-between relative overflow-hidden">
+                        <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl animate-float" />
+                        <div class="relative">
+                            <h3 class="text-sm font-black text-white tracking-tight">Trash Quotation</h3>
+                            <p class="text-xs text-gray-200/90 mt-0.5">{{ trashModal.quotation?.quotation_number }} · CRM will issue a new one</p>
+                        </div>
+                        <button @click="trashModal.show = false"
+                            class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
+                            <X class="h-4 w-4" />
+                        </button>
+                    </div>
+                    <form @submit.prevent="submitTrash" class="p-5 space-y-4">
+                        <textarea v-model="trashModal.notes" rows="3"
+                            class="w-full rounded-xl border border-transparent bg-gray-50 dark:bg-zinc-800 p-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-gray-400 transition resize-none"
+                            placeholder="Optional note for CRM (e.g. price changed my mind)…"></textarea>
+                        <div class="flex gap-3">
+                            <button type="button" @click="trashModal.show = false"
+                                class="flex-1 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 rounded-xl text-xs font-bold uppercase hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-95 transition">
+                                Cancel
+                            </button>
+                            <button type="submit" :disabled="trashModal.submitting"
+                                class="flex-1 py-2.5 bg-gradient-to-r from-slate-600 to-gray-700 text-white rounded-xl text-xs font-black uppercase shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all">
+                                Confirm Trash
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            </Transition>
+        </Teleport>
+
+        <!-- ════════════════════════════════════════════
              QUOTATION PREVIEW & DOWNLOAD MODAL
              ════════════════════════════════════════════ -->
         <Teleport to="body">
@@ -738,9 +878,9 @@ const {
 } = useRealtimeConversation({
     getMessages: () => liveMessages.value,
     appendMessages: mergeMessages,
-    feedUrl: route('client.conversation.feed', props.inquiry.id),
-    typingUrl: route('client.conversation.typing', props.inquiry.id),
-    sendUrl: route('client.conversation.message', props.inquiry.id),
+    feedUrl: route('client.conversation.feed', props.inquiry.hash_key),
+    typingUrl: route('client.conversation.typing', props.inquiry.hash_key),
+    sendUrl: route('client.conversation.message', props.inquiry.hash_key),
     onNewMessages: () => scrollToBottom(),
 });
 
@@ -753,6 +893,7 @@ const poFileInput = ref(null);
 
 const rejectModal = ref({ show: false, quotation: null, reason: '', requestNew: false, submitting: false });
 const acceptModal = ref({ show: false, quotation: null, notes: '', files: [], submitting: false });
+const trashModal = ref({ show: false, quotation: null, notes: '', submitting: false });
 const acceptFileInput = ref(null);
 const previewModal = ref({ show: false, title: '', files: [], activeFile: null });
 
@@ -768,6 +909,38 @@ const handleDialogAction = () => { if (dialog.value.onConfirm) dialog.value.onCo
 const hasAcceptedQuotation = computed(() => {
     return props.quotations.some(q => q.status === 'accepted');
 });
+
+// Active vs trash tabs (trash = rejected + trashed)
+const quotationTab = ref('active');
+const activeQuotations = computed(() =>
+    (props.quotations ?? []).filter(q => !['rejected', 'trashed'].includes(q.status))
+);
+const trashedQuotations = computed(() =>
+    (props.quotations ?? []).filter(q => ['rejected', 'trashed'].includes(q.status))
+);
+const visibleQuotations = computed(() =>
+    quotationTab.value === 'trash' ? trashedQuotations.value : activeQuotations.value
+);
+
+// Trash an accepted quotation the client changed their mind on (asks CRM for a new one)
+const openTrashModal = (quotation) => {
+    trashModal.value = { show: true, quotation, notes: '', submitting: false };
+};
+const submitTrash = () => {
+    trashModal.value.submitting = true;
+    router.post(route('client.quotation.trash', trashModal.value.quotation.id), { notes: trashModal.value.notes }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            trashModal.value = { show: false, quotation: null, notes: '', submitting: false };
+            router.reload({ only: ['inquiry', 'quotations'] });
+            showDialog('success', 'Trashed', 'Quotation trashed. The CRM team will issue a new one.');
+        },
+        onError: (errors) => {
+            trashModal.value.submitting = false;
+            showDialog('error', 'Error', errors.message || 'Failed to trash quotation.');
+        }
+    });
+};
 
 const viewQuotationAttachments = (q) => {
     const acceptedMsg = liveMessages.value.find(m => m.is_system_event && m.message.includes(q.quotation_number) && m.message.includes('ACCEPTED') && m.attachments?.length > 0);
@@ -810,6 +983,45 @@ const approveAttachment = (file) => {
     });
 };
 
+// Fabric sample decisions (lab result forwarded by CRM)
+const adjustModal = ref({ show: false, sample: null, notes: '', submitting: false });
+
+const sampleStatusLabel = (s) => (s ? String(s).replace(/_/g, ' ') : '');
+
+const approveSample = (sampleId) => {
+    router.post(route('client.sample.approve', sampleId), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            router.reload({ only: ['inquiry'] });
+            showDialog('success', 'Sample Approved', 'You may now send your P.O.');
+        },
+        onError: (errors) => {
+            showDialog('error', 'Error', errors.message || 'Failed to approve sample.');
+        }
+    });
+};
+
+const openAdjustModal = (sample) => {
+    adjustModal.value = { show: true, sample, notes: '', submitting: false };
+};
+
+const submitAdjust = () => {
+    if (!adjustModal.value.notes.trim()) return;
+    adjustModal.value.submitting = true;
+    router.post(route('client.sample.adjust', adjustModal.value.sample.id), { notes: adjustModal.value.notes }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            adjustModal.value = { show: false, sample: null, notes: '', submitting: false };
+            router.reload({ only: ['inquiry'] });
+            showDialog('success', 'Sent', 'Adjustment requested. CRM will prepare a new sample round.');
+        },
+        onError: (errors) => {
+            adjustModal.value.submitting = false;
+            showDialog('error', 'Error', errors.message || 'Failed to send adjustment request.');
+        }
+    });
+};
+
 // PO Modal functions (multiple files)
 const openPoModal = () => {
     if (!hasAcceptedQuotation.value) return;
@@ -840,7 +1052,7 @@ const submitPo = async () => {
     });
     formData.append('notes', poModal.value.notes || '');
 
-    router.post(route('client.conversation.send-po', props.inquiry.id), formData, {
+    router.post(route('client.conversation.send-po', props.inquiry.hash_key), formData, {
         forceFormData: true,
         onSuccess: () => {
             poModal.value.show = false;

@@ -127,7 +127,7 @@ const canEdit = computed(() => props.permissions?.customer_profiles === 'edit');
                     <Link
                         v-for="(client, i) in filteredClients"
                         :key="client.id"
-                        :href="route('crm.customerprofile.show', client.id)"
+                        :href="route('crm.customerprofile.show', client.hash_key)"
                         :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
                         class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden"
                     >

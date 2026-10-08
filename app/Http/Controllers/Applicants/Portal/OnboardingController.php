@@ -94,7 +94,7 @@ class OnboardingController extends Controller
     {
         $this->owned($request, $item);
         $data = $request->validate([
-            'file' => 'nullable|file|max:10240',
+            'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
             'value' => 'nullable|string|max:2000',
             'notes' => 'nullable|string|max:1000',
         ]);

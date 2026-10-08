@@ -61,7 +61,7 @@ const fmtDate = (v) => v ? new Date(v).toLocaleString() : '—';
                         </tbody>
                     </table></div>
                     <div v-if="logs?.links?.length > 3" class="flex flex-wrap gap-2 px-6 py-4 border-t border-gray-100 dark:border-zinc-800">
-                        <Link v-for="link in logs.links" :key="link.label" :href="link.url ?? '#'" v-html="link.label" :class="['px-3 py-1.5 rounded-xl text-xs font-bold ring-1 transition', link.active ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 ring-gray-200 dark:ring-zinc-700']" preserve-scroll />
+                        <Link v-for="link in logs.links" :key="link.label" :href="link.url ?? '#'" v-text="link.label.replace('&laquo;', '«').replace('&raquo;', '»')" :class="['px-3 py-1.5 rounded-xl text-xs font-bold ring-1 transition', link.active ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 ring-gray-200 dark:ring-zinc-700']" preserve-scroll />
                     </div>
                 </div>
 

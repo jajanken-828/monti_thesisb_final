@@ -57,6 +57,12 @@ Route::middleware('auth:client')->prefix('partner')->name('client.')->group(func
     Route::post('/conversation/attachment/{attachment}/approve', [ClientConversationController::class, 'approveAttachment'])
         ->name('conversation.attachment.approve');
 
+    // Fabric sample loop: approve the forwarded sample or request a color adjustment.
+    Route::post('/sample-requests/{sampleRequest}/approve', [ClientConversationController::class, 'approveSample'])
+        ->name('sample.approve');
+    Route::post('/sample-requests/{sampleRequest}/adjust', [ClientConversationController::class, 'adjustSample'])
+        ->name('sample.adjust');
+
     // Orders & Invoices (legacy support)
     Route::get('/orders', [OrdersController::class, 'orders'])->name('orders');
     Route::post('/orders/{order}/accept', [OrdersController::class, 'acceptPurchaseOrder'])->name('orders.accept');
@@ -81,4 +87,5 @@ Route::middleware('auth:client')->prefix('partner')->name('client.')->group(func
     Route::post('/purchase-order', [ClientDashboardController::class, 'placeOrder'])->name('purchase-order.store');
     Route::post('/quotations/{quotation}/accept', [ClientConversationController::class, 'acceptQuotation'])->name('quotation.accept');
     Route::post('/quotations/{quotation}/reject', [ClientConversationController::class, 'rejectQuotation'])->name('quotation.reject');
+    Route::post('/quotations/{quotation}/trash', [ClientConversationController::class, 'trashQuotation'])->name('quotation.trash');
 });

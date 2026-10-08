@@ -164,13 +164,10 @@ class InterviewController extends Controller
             'state_province' => $applicant->state_province,
             'postal_zip_code' => $applicant->postal_zip_code,
 
-            // Government IDs
+            // Government IDs (file URLs removed for security — access via authorized controllers only)
             'sss_number' => $applicant->sss_number,
-            'sss_file_url' => $applicant->sss_file ? Storage::url($applicant->sss_file) : null,
             'philhealth_number' => $applicant->philhealth_number,
-            'philhealth_file_url' => $applicant->philhealth_file ? Storage::url($applicant->philhealth_file) : null,
             'pagibig_number' => $applicant->pagibig_number,
-            'pagibig_file_url' => $applicant->pagibig_file ? Storage::url($applicant->pagibig_file) : null,
 
             // Family
             'spouse_name' => $applicant->spouse_name,

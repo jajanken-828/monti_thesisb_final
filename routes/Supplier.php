@@ -31,4 +31,9 @@ Route::middleware('auth:supplier')->prefix('supplier')->name('supplier.')->group
     Route::get('/orders', [SupplierDashboardController::class, 'purchaseOrders'])->name('orders');
     Route::post('/orders/{id}/status', [SupplierDashboardController::class, 'updateOrderStatus'])->name('orders.update_status');
     Route::post('/orders/{id}/invoice', [SupplierDashboardController::class, 'createInvoice'])->name('orders.invoice');
+    // Product catalog: raw materials this supplier carries.
+    Route::get('/products', [SupplierDashboardController::class, 'products'])->name('products');
+    Route::post('/products', [SupplierDashboardController::class, 'storeProduct'])->name('products.store');
+    Route::patch('/products/{product}/toggle', [SupplierDashboardController::class, 'toggleProduct'])->name('products.toggle');
+    Route::delete('/products/{product}', [SupplierDashboardController::class, 'destroyProduct'])->name('products.destroy');
 });

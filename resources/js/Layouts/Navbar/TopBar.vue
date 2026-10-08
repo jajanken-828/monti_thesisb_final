@@ -3,11 +3,14 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import axios from 'axios';
+import { useTheme, initTheme, THEMES } from '@/composables/useTheme';
 import {
     MessageSquare, Megaphone, Bell, Settings, X, Send, Search,
-    User, LogOut, Moon, Sun, ChevronLeft, Plus, CheckCheck,
+    User, LogOut, Palette, Check, ChevronLeft, Plus, CheckCheck,
     Users, Paperclip, ImagePlus, LogOut as LeaveIcon, Trash2, Pencil,
+    PanelLeft, ChevronRight, LifeBuoy, Info,
 } from 'lucide-vue-next';
+import { useSidebarToggle } from '@/Layouts/composables/useSidebarToggle';
 
 const page = usePage();
 const user = computed(() => page.props.auth.user);
@@ -36,7 +39,6 @@ const displaySub = computed(() => {
     const bits = [user.value?.role, user.value?.position].filter(Boolean);
     return bits.join(' · ') || user.value?.email || '';
 });
-const displayInitial = computed(() => (displayName.value || '?').charAt(0).toUpperCase());
 const profileHref = computed(() => {
     if (isClient.value) return route('client.profile.edit');
     if (isApplicant.value) return route('applicant.profile.index');
@@ -50,14 +52,22 @@ const logoutHref = computed(() => {
     return route('logout');
 });
 
-// ─── Dark mode (class strategy; persisted) ──────────────────────────
-const isDark = ref(false);
-const applyTheme = () => document.documentElement.classList.toggle('dark', isDark.value);
-const toggleTheme = () => {
-    isDark.value = !isDark.value;
-    try { localStorage.setItem('monti-theme', isDark.value ? 'dark' : 'light'); } catch { /* noop */ }
-    applyTheme();
+// ─── Themes (class + data-theme strategy; persisted) ───────────────
+// light/dark = fully working defaults; blue = Ice-Blue & Navy,
+// red = Rose & Wine, green = Soft Sage & Eucalyptus — all ERP-wide,
+// crafted from the IT-module base via data-theme CSS.
+const { currentTheme, setTheme } = useTheme();
+
+// Module marker: kept for potential per-module tweaks. The rich themes now
+// apply ERP-wide (no longer gated on this), driven via html[data-theme].
+const isITModule = computed(() => currentUrl.value.startsWith('/dashboard/it'));
+const syncModuleScope = () => {
+    try {
+        if (isITModule.value) document.documentElement.dataset.module = 'it';
+        else delete document.documentElement.dataset.module;
+    } catch { /* noop */ }
 };
+watch(currentUrl, syncModuleScope);
 
 // ─── Logout confirmation ────────────────────────────────────────
 const showLogoutConfirm = ref(false);
@@ -464,8 +474,8 @@ let msgTimer = null;
 const csrfToken = ref('');
 onMounted(() => {
     csrfToken.value = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-    try { isDark.value = localStorage.getItem('monti-theme') === 'dark'; } catch { /* noop */ }
-    applyTheme();
+    initTheme();
+    syncModuleScope();
     if (isInternal.value) {
         fetchSummary();
         pollTimer = setInterval(fetchSummary, 30000);
@@ -494,7 +504,37 @@ watch(openPanel, (panel) => {
 
 const fmtTime = (d) => d ? new Date(d).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 
-const ownPhoto = computed(() => user.value?.profile_photo_path ? `/storage/${String(user.value.profile_photo_path).replace(/^\//, '')}` : null);
+// ─── Sidebar toggle + breadcrumbs (replaces the old avatar tile) ─────────
+const { toggleSidebar } = useSidebarToggle();
+
+const CRUMB_LABELS = {
+    dashboard: 'Dashboard', crm: 'CRM', eco: 'ECO', inquiries: 'Inquiries',
+    it: 'IT & Systems', tickets: 'Service Desk',
+    assets: 'Assets', monitoring: 'Monitoring', knowledge: 'Knowledge Base',
+    location: 'Geolocation', changes: 'Changes', 'access-control': 'Access Control',
+    'access-logs': 'Access Logs', access: 'Access', hrm: 'HRM', crm: 'CRM',
+    scm: 'SCM', fin: 'Finance', eco: 'Ecology', ord: 'Orders', log: 'Logistics',
+    logistics: 'Logistics', man: 'Manufacturing', pro: 'Production', inv: 'Inventory',
+    inventory: 'Inventory', war: 'Warehouse', warehouse: 'Warehouse', wrf: 'Workforce',
+    workforce: 'Workforce', apl: 'Applicants', applicants: 'Applicants',
+    'employee-ui': 'Employee', employee: 'Employee', ceo: 'CEO', coo: 'COO',
+    vp: 'VP', secretary: 'Secretary', supplier: 'Supplier', client: 'Client',
+    applicant: 'Applicant', profile: 'Profile', edit: 'Edit', create: 'Create',
+    show: 'Details',
+};
+const humanizeSeg = (s) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const breadcrumbs = computed(() => {
+    const path = (currentUrl.value || '/').split('?')[0].split('#')[0];
+    const crumbs = [];
+    let href = '';
+    for (const seg of path.split('/').filter(Boolean)) {
+        href += `/${seg}`;
+        if (/^\d+$/.test(seg)) continue; // skip bare IDs, keep path for links
+        crumbs.push({ label: CRUMB_LABELS[seg.toLowerCase()] || humanizeSeg(seg), href });
+    }
+    return crumbs;
+});
+
 // Personal chats show the other employee's photo; groups show the group photo.
 const threadAvatar = (t) => {
     if (!t) return null;
@@ -519,12 +559,28 @@ onMounted(() => {
 
 <template>
     <header class="sticky top-0 z-40 border-b border-gray-200/70 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90">
-        <div class="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
-            <div class="flex min-w-0 flex-1 items-center gap-3">
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-blue-700 to-violet-800 text-sm font-black text-white" :title="displayName">
-                    <img v-if="ownPhoto" :src="ownPhoto" alt="" class="h-full w-full object-cover" />
-                    <span v-else>{{ displayInitial }}</span>
-                </div>
+        <div class="topbar-row mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
+            <div class="flex min-w-0 flex-1 items-center gap-2">
+                <!-- Sidebar toggle (drawer on mobile, collapse on desktop) -->
+                <button @click="toggleSidebar" title="Toggle sidebar"
+                    class="shrink-0 rounded-xl p-2.5 text-gray-500 transition hover:bg-gray-100 hover:text-indigo-600 active:scale-95 dark:text-gray-400 dark:hover:bg-zinc-800">
+                    <PanelLeft class="h-5 w-5" />
+                </button>
+                <!-- Breadcrumbs -->
+                <nav class="flex min-w-0 flex-1 items-center gap-1 text-sm" aria-label="Breadcrumb">
+                    <template v-for="(c, i) in breadcrumbs" :key="c.href + i">
+                        <span :class="['flex min-w-0 items-center gap-1', i < breadcrumbs.length - 1 ? 'hidden md:flex' : 'flex']">
+                            <ChevronRight class="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-zinc-600" />
+                            <Link v-if="i < breadcrumbs.length - 1" :href="c.href"
+                                class="truncate whitespace-nowrap text-[13px] font-semibold text-gray-500 transition hover:text-indigo-600 dark:text-gray-400">
+                                {{ c.label }}
+                            </Link>
+                            <span v-else class="truncate text-[13px] font-bold text-gray-900 dark:text-white">
+                                {{ c.label }}
+                            </span>
+                        </span>
+                    </template>
+                </nav>
                 <!-- Live date & time -->
                 <div class="hidden min-w-0 flex-1 items-center justify-center sm:flex" title="Server time">
                     <div class="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 dark:border-zinc-700 dark:bg-zinc-800">
@@ -565,8 +621,8 @@ onMounted(() => {
         </div>
 
         <!-- ═══ Dropdown panels ═══ -->
-        <div v-if="openPanel" class="absolute inset-x-0 top-16 flex justify-end px-4 sm:px-6 lg:px-8">
-            <div class="w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div v-if="openPanel" class="topbar-panels absolute inset-x-0 top-16 flex justify-end px-4 sm:px-6 lg:px-8">
+            <div class="topbar-panel w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
 
                 <!-- SETTINGS -->
                 <div v-if="openPanel === 'settings'">
@@ -579,11 +635,34 @@ onMounted(() => {
                             class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800">
                             <User class="h-4 w-4 text-indigo-500" /> My Profile
                         </Link>
-                        <button @click="toggleTheme" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800">
-                            <Moon v-if="!isDark" class="h-4 w-4 text-indigo-500" />
-                            <Sun v-else class="h-4 w-4 text-amber-500" />
-                            {{ isDark ? 'Light mode' : 'Dark mode' }}
-                        </button>
+                        <!-- Help Center + About (internal accounts; portal users keep Profile/Theme/Logout) -->
+                        <Link v-if="isInternal" :href="route('help.index')" @click="closePanels"
+                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800">
+                            <LifeBuoy class="h-4 w-4 text-indigo-500" /> Help Center
+                        </Link>
+                        <Link v-if="isInternal" :href="route('about.index')" @click="closePanels"
+                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-zinc-800">
+                            <Info class="h-4 w-4 text-indigo-500" /> About
+                        </Link>
+                        <!-- THEME picker: Light / Dark (fully working) + Blue / Red / Green -->
+                        <div class="rounded-xl px-3 py-2.5">
+                            <p class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                <Palette class="h-3.5 w-3.5" /> Theme
+                            </p>
+                            <div class="mt-2 space-y-1">
+                                <button v-for="t in THEMES" :key="t.key" @click="setTheme(t.key)"
+                                    class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold transition hover:bg-gray-100 dark:hover:bg-zinc-800"
+                                    :class="currentTheme === t.key ? 'text-gray-900 dark:text-white ring-1 ring-inset ring-indigo-500/40 bg-indigo-50/60 dark:bg-indigo-900/20' : 'text-gray-700 dark:text-gray-200'">
+                                    <span class="h-4 w-4 shrink-0 rounded-full ring-1 ring-inset ring-black/10" :style="{ backgroundColor: t.dot }" />
+                                    <span class="min-w-0 flex-1 text-left">
+                                        <span class="block leading-tight">{{ t.label }} theme</span>
+                                        <span class="block text-[10px] font-semibold text-gray-400">{{ t.desc }}</span>
+                                    </span>
+                                    <Check v-if="currentTheme === t.key" class="h-4 w-4 shrink-0 text-indigo-600" />
+                                </button>
+                            </div>
+                            <p class="mt-2 text-[10px] font-semibold text-gray-400">Applies across the whole ERP system.</p>
+                        </div>
                         <button @click="showLogoutConfirm = true"
                             class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20">
                             <LogOut class="h-4 w-4" /> Log Out

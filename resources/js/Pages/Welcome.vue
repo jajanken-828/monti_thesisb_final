@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { initTheme } from '@/composables/useTheme';
 
 const props = defineProps<{
     canLogin?: boolean;
@@ -79,6 +80,8 @@ const currentTime = ref(new Date());
 let timeInterval: number | null = null;
 
 onMounted(() => {
+    // Stored user theme wins; otherwise fall back to the OS/browser theme.
+    initTheme();
     // Initial load
     if (props.careerJobs) {
         jobs.value = props.careerJobs;
@@ -312,7 +315,7 @@ const coreValues = [
 <template>
     <Head title="Monti ERP | Industrial Textile Management" />
 
-    <div class="relative min-h-screen w-full flex flex-col font-sans overflow-y-auto"
+    <div class="welcome-scope relative min-h-screen w-full flex flex-col font-sans overflow-y-auto"
         style="background-image: url('/images/landingTheme.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-color: #2a2a3e;">
 
         <div class="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>

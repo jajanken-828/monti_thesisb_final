@@ -45,6 +45,102 @@ class FinAccessRegressionTest extends TestCase
             $table->string('module');
             $table->timestamps();
         });
+        // Finance ledger tables (FIN pages read live data, never dummies).
+        Schema::create('fin_invoices', function (Blueprint $table) {
+            $table->id();
+            $table->string('invoice_no')->unique();
+            $table->foreignId('sales_order_id')->nullable();
+            $table->foreignId('client_id')->nullable();
+            $table->string('client_name')->default('N/A');
+            $table->decimal('amount', 15, 2)->default(0);
+            $table->date('due_date')->nullable();
+            $table->string('status')->default('unpaid');
+            $table->text('notes')->nullable();
+            $table->foreignId('created_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('fin_invoice_payments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('fin_invoice_id');
+            $table->decimal('amount', 15, 2);
+            $table->date('paid_at');
+            $table->string('method')->nullable();
+            $table->string('reference')->nullable();
+            $table->foreignId('recorded_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('fin_bills', function (Blueprint $table) {
+            $table->id();
+            $table->string('bill_no')->unique();
+            $table->foreignId('supplier_id')->nullable();
+            $table->string('supplier_name')->default('N/A');
+            $table->string('category')->default('Materials');
+            $table->decimal('amount', 15, 2)->default(0);
+            $table->date('due_date')->nullable();
+            $table->string('status')->default('unpaid');
+            $table->text('notes')->nullable();
+            $table->foreignId('created_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('fin_bill_payments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('fin_bill_id');
+            $table->decimal('amount', 15, 2);
+            $table->date('paid_at');
+            $table->string('method')->nullable();
+            $table->string('reference')->nullable();
+            $table->foreignId('recorded_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('fin_expenses', function (Blueprint $table) {
+            $table->id();
+            $table->date('expense_date');
+            $table->string('category');
+            $table->string('description');
+            $table->decimal('amount', 15, 2)->default(0);
+            $table->string('department')->nullable();
+            $table->foreignId('recorded_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('fin_budgets', function (Blueprint $table) {
+            $table->id();
+            $table->string('department');
+            $table->string('period', 7);
+            $table->decimal('allocated', 15, 2)->default(0);
+            $table->foreignId('created_by')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('payrolls', function (Blueprint $table) {
+            $table->id();
+            $table->string('employee_id');
+            $table->decimal('gross_pay', 15, 2)->default(0);
+            $table->decimal('net_pay', 15, 2)->default(0);
+            $table->decimal('sss_deduction', 15, 2)->default(0);
+            $table->decimal('philhealth_deduction', 15, 2)->default(0);
+            $table->decimal('pagibig_deduction', 15, 2)->default(0);
+            $table->decimal('tax_withheld', 15, 2)->default(0);
+            $table->decimal('sss_loan', 15, 2)->default(0);
+            $table->decimal('pf_loan', 15, 2)->default(0);
+            $table->decimal('late_total_deduction', 15, 2)->default(0);
+            $table->string('status')->default('pending');
+            $table->timestamps();
+        });
+        // Order sources for receivable auto-sync (empty here — sync is a no-op).
+        Schema::create('clients', function (Blueprint $table) {
+            $table->id();
+            $table->string('company_name')->default('N/A');
+            $table->timestamps();
+        });
+        Schema::create('sales_orders', function (Blueprint $table) {
+            $table->id();
+            $table->string('jo_number')->nullable();
+            $table->foreignId('client_id')->nullable();
+            $table->decimal('total_amount', 15, 2)->default(0);
+            $table->string('payment_status')->default('unpaid');
+            $table->foreignId('recipe_id')->nullable();
+            $table->date('expected_ship_date')->nullable();
+            $table->timestamps();
+        });
     }
 
     private function makeFinStaff(): User

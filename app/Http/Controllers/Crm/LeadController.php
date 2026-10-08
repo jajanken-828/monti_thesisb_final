@@ -8,6 +8,9 @@ use App\Models\Eco\CreditAccount;
 use App\Models\Crm\CrmApproval;
 use App\Models\Crm\CrmLead;
 use App\Models\Crm\CrmLogoPartner;
+use App\Models\Crm\CrmOpportunity;
+use App\Models\Crm\CrmOpportunityHistory;
+use App\Models\Crm\CrmStage;
 use App\Models\Crm\LeadNote;
 use App\Models\Crm\LeadInterview;
 use App\Models\Crm\LeadApprovalFile;
@@ -23,17 +26,19 @@ class LeadController extends Controller
     use HasPagePermissions;
 
     /**
-     * Display the lead pipeline.
+     * Slim intake inbox: leads are qualified here, then worked as
+     * opportunities in the pipeline. Each lead carries its pipeline link
+     * (if any) so the page never duplicates the deal board.
      */
     public function index()
     {
         $leads = CrmLead::with([
-            'notes.user',
-            'interviews.user',
-            'approvalFiles.user',
-            'assignedStaff',
-            'logo'
+            'assignedStaff:id,name',
+            'logo',
+            'contacts' => fn ($q) => $q->where('is_primary', true)->limit(1),
+            'opportunities' => fn ($q) => $q->select('id', 'lead_id', 'title', 'stage_id')->latest('id')->limit(1),
         ])
+            ->withCount('opportunities')
             ->whereNotIn('status', ['Converted', 'Archived'])
             ->orderBy('created_at', 'asc')
             ->get();
@@ -120,6 +125,56 @@ class LeadController extends Controller
         CrmLead::findOrFail($id)->update($data);
 
         return back()->with('message', 'Lead qualification saved.');
+    }
+
+    /**
+     * Intake → pipeline: spin a qualified lead into an opportunity in the
+     * first pipeline stage. The lead stays linked (lead_id) and the inbox
+     * shows it as "In pipeline" instead of duplicating deal work here.
+     */
+    public function sendToPipeline(Request $request, $id)
+    {
+        $lead = CrmLead::with(['contacts', 'opportunities'])->findOrFail($id);
+
+        if ($lead->opportunities->isNotEmpty()) {
+            return back()->withErrors(['error' => 'This lead is already in the pipeline.']);
+        }
+
+        $data = $request->validate([
+            'title' => 'nullable|string|max:255',
+            'value' => 'nullable|numeric|min:0',
+        ]);
+
+        $stage = CrmStage::orderBy('sequence')->first();
+        if (! $stage) {
+            return back()->withErrors(['error' => 'No pipeline stages exist yet. Create one first.'])->withInput();
+        }
+
+        $primary = $lead->contacts->where('is_primary', true)->first() ?? $lead->contacts->first();
+
+        $opp = CrmOpportunity::create([
+            'title' => $data['title'] ?: trim(($lead->company_name ?? 'Untitled') . ($lead->interest_fabric ? " — {$lead->interest_fabric}" : '')),
+            'stage_id' => $stage->id,
+            'stage' => 'qualification',
+            'lead_id' => $lead->id,
+            'contact_id' => $primary?->id,
+            'email' => $lead->email,
+            'phone' => $lead->phone,
+            'value' => $data['value'] ?? $lead->estimated_value ?? 0,
+            'probability' => $stage->default_probability,
+            'source' => $lead->source ?? 'lead',
+            'owner_id' => $lead->assigned_staff_id ?? Auth::id(),
+        ]);
+
+        CrmOpportunityHistory::create([
+            'opportunity_id' => $opp->id,
+            'from_stage' => null,
+            'to_stage' => $stage->name,
+            'changed_by' => Auth::id(),
+            'notes' => "Qualified from lead: {$lead->company_name}.",
+        ]);
+
+        return back()->with('message', "“{$opp->title}” sent to {$stage->name}.");
     }
 
     /**
@@ -222,7 +277,7 @@ class LeadController extends Controller
 
         $lead = CrmLead::findOrFail($id);
 
-        if ($user->position === 'manager') {
+        if (in_array($user->position, ['manager', 'vice_president'], true) || in_array($user->role, ['CEO', 'COO'], true)) {
             $lead->notes()->create([
                 'user_id' => $user->id,
                 'note' => $validated['note'],
@@ -258,7 +313,7 @@ class LeadController extends Controller
 
         $lead = CrmLead::findOrFail($id);
 
-        if ($user->position === 'manager') {
+        if (in_array($user->position, ['manager', 'vice_president'], true) || in_array($user->role, ['CEO', 'COO'], true)) {
             $lead->interviews()->create([
                 'user_id' => $user->id,
                 'scheduled_at' => $validated['scheduled_at'],
@@ -290,7 +345,7 @@ class LeadController extends Controller
 
         $lead = CrmLead::findOrFail($id);
 
-        if ($user->position === 'manager') {
+        if (in_array($user->position, ['manager', 'vice_president'], true) || in_array($user->role, ['CEO', 'COO'], true)) {
             $path = $request->file('file')->store('lead_approval_files', 'public');
             $lead->approvalFiles()->create([
                 'file_path' => $path,
@@ -324,7 +379,7 @@ class LeadController extends Controller
         $user = Auth::user();
         $lead = CrmLead::findOrFail($id);
 
-        if ($user->position === 'manager') {
+        if (in_array($user->position, ['manager', 'vice_president'], true) || in_array($user->role, ['CEO', 'COO'], true)) {
             $lead->update(['status' => 'Closed-Won']);
             return back()->with('message', 'Lead accepted and moved to Closed-Won.');
         }
@@ -351,7 +406,7 @@ class LeadController extends Controller
 
         $lead = CrmLead::findOrFail($id);
 
-        if ($user->position === 'manager') {
+        if (in_array($user->position, ['manager', 'vice_president'], true) || in_array($user->role, ['CEO', 'COO'], true)) {
             $lead->update(['status' => 'Lost', 'lost_reason' => $validated['reject_reason']]);
             return back()->with('message', 'Lead rejected and marked as Lost.');
         }

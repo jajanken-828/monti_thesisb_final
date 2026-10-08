@@ -42,8 +42,14 @@ class OrdOrdersController extends Controller
             $soQuery->where('status', $status);
         }
         if ($search !== '') {
-            $poQuery->where(fn ($q) => $q->where('po_number', 'like', "%{$search}%")->orWhere('control_number', 'like', "%{$search}%"));
-            $soQuery->where(fn ($q) => $q->where('jo_number', 'like', "%{$search}%")->orWhere('control_number', 'like', "%{$search}%"));
+            $poQuery->where(function ($q) use ($search) {
+                $q->whereRaw('po_number LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('control_number LIKE ?', ["%{$search}%"]);
+            });
+            $soQuery->where(function ($q) use ($search) {
+                $q->whereRaw('jo_number LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('control_number LIKE ?', ["%{$search}%"]);
+            });
         }
 
         $pos = $poQuery->limit(300)->get()->map(fn ($po) => $this->poRow($po));

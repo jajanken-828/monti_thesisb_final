@@ -47,6 +47,11 @@ class StockSustainabilityService
      * Material requirements for one order: [material_id => required_qty].
      * Derived from the attached recipe (BOM) × order quantity in kg.
      * Returns [] when the order has no usable recipe (verdict: no_recipe).
+     *
+     * Recipes come in two shapes: ID-keyed ({"1": qty} from CRM/BOM) and
+     * name-keyed ({"Blue Dye": qty} from lab sign-off). Names are resolved
+     * to material IDs; keys matching nothing are skipped instead of
+     * surfacing as "Unknown material".
      */
     public function materialsForOrder(SalesOrder $order): array
     {
@@ -65,10 +70,30 @@ class StockSustainabilityService
             return [];
         }
 
+        $byName = [];
+        $names = [];
+        foreach ($materials as $key => $qtyPerUnit) {
+            if (! is_numeric($key)) {
+                $names[] = (string) $key;
+            }
+        }
+        if ($names) {
+            $byName = Material::whereIn('name', array_unique($names))
+                ->pluck('id', 'name')
+                ->toArray();
+        }
+
         $qty = (float) ($order->quantity ?? 0);
         $needed = [];
-        foreach ($materials as $materialId => $qtyPerUnit) {
-            $needed[(int) $materialId] = ((float) $qtyPerUnit) * $qty;
+        foreach ($materials as $materialKey => $qtyPerUnit) {
+            $matId = is_numeric($materialKey)
+                ? (int) $materialKey
+                : (int) ($byName[(string) $materialKey] ?? 0);
+            if ($matId <= 0) {
+                continue;
+            }
+            $need = ((float) $qtyPerUnit) * $qty;
+            $needed[$matId] = ($needed[$matId] ?? 0) + $need;
         }
 
         return array_filter($needed, fn ($v) => $v > 0);
@@ -125,7 +150,9 @@ class StockSustainabilityService
             return [
                 'verdict' => 'no_recipe',
                 'sufficient' => true,
-                'warning' => 'No recipe (BOM) attached — material needs could not be verified. Attach a recipe for a precise check.',
+                'warning' => $order->recipe
+                    ? 'Recipe has no resolvable materials — none of its entries match a known material. Correct the formulation for a precise check.'
+                    : 'No recipe (BOM) attached — material needs could not be verified. Attach a recipe for a precise check.',
                 'order_id' => $order->id,
                 'jo_number' => $order->jo_number ?? 'JO-'.$order->id,
                 'committed_orders' => 0,
@@ -188,18 +215,55 @@ class StockSustainabilityService
                 continue;
             }
 
-            $existing = MaterialRequest::where('material_id', $row['material_id'])
-                ->where('status', 'pending')
-                ->where('notes', 'like', '%'.$jo.'%')
-                ->first();
+            $created[] = $this->fileShortageRequest($jo, $row, $requestedBy);
+        }
 
-            if ($existing) {
-                $created[] = ['req_number' => $existing->req_number, 'created' => false] + $row;
-                continue;
-            }
+        return $created;
+    }
 
-            $material = Material::find($row['material_id']);
-            $mr = MaterialRequest::create([
+    /**
+     * File a procurement request for ONE specific shortage material
+     * (the Push Center DSS modal "Request" button). Same idempotency as
+     * the bulk suggestions: an existing pending request for the same
+     * material + JO is reused, never duplicated.
+     *
+     * @return array ['requested' => bool, 'reason'?, 'req_number'?, 'created'?, ...row]
+     */
+    public function requestMaterial(SalesOrder $order, int $materialId, ?string $requestedBy = null): array
+    {
+        $evaluation = $this->evaluate($order);
+        $jo = $evaluation['jo_number'] ?? ('JO-'.$order->id);
+
+        $row = collect($evaluation['materials'] ?? [])
+            ->first(fn ($r) => (int) ($r['material_id'] ?? 0) === $materialId);
+
+        if ($row === null) {
+            return ['requested' => false, 'reason' => 'not_required', 'message' => 'This material is not required by the job recipe.'];
+        }
+
+        if (($row['shortage'] ?? 0) <= 0) {
+            return ['requested' => false, 'reason' => 'no_shortage', 'message' => 'Stock covers this material — no request needed.'] + $row;
+        }
+
+        return ['requested' => true] + $this->fileShortageRequest($jo, $row, $requestedBy);
+    }
+
+    /**
+     * Shared single-row filer behind suggestProcurement()/requestMaterial().
+     */
+    protected function fileShortageRequest(string $jo, array $row, ?string $requestedBy): array
+    {
+        $existing = MaterialRequest::where('material_id', $row['material_id'])
+            ->where('status', 'pending')
+            ->where('notes', 'like', '%'.$jo.'%')
+            ->first();
+
+        if ($existing) {
+            return ['req_number' => $existing->req_number, 'created' => false] + $row;
+        }
+
+        $material = Material::find($row['material_id']);
+        $mr = MaterialRequest::create([
                 'req_number' => 'REQ-'.strtoupper(bin2hex(random_bytes(3))),
                 'material_id' => $row['material_id'],
                 'material_name' => $row['material_name'],
@@ -214,9 +278,6 @@ class StockSustainabilityService
                 'status' => 'pending',
             ]);
 
-            $created[] = ['req_number' => $mr->req_number, 'created' => true] + $row;
-        }
-
-        return $created;
+            return ['req_number' => $mr->req_number, 'created' => true] + $row;
     }
 }

@@ -47,7 +47,7 @@ const priorityClass = (p) => ({
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Your queue, quick ticket filing, and self-help guides.</p>
             </div>
             <button v-if="canEditTickets" @click="showCreate = true"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 <Plus class="w-4 h-4" /> File Ticket
             </button>
             <span v-else class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
@@ -55,7 +55,7 @@ const priorityClass = (p) => ({
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 inline-flex items-center gap-2">
                         <LifeBuoy class="w-4 h-4" /> My Open Tickets ({{ myTickets.length }})
                     </h2>
@@ -63,7 +63,7 @@ const priorityClass = (p) => ({
                 </div>
                 <div v-if="myTickets.length === 0" class="p-8 text-center text-sm text-slate-400">Nothing assigned. Queue clear.</div>
                 <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    <li v-for="t in myTickets" :key="t.id" class="px-6 py-3.5 flex items-center gap-3">
+                    <li v-for="t in myTickets" :key="t.id" class="px-4 sm:px-6 py-3 sm:py-3.5 flex items-center gap-3">
                         <span :class="['px-2 py-0.5 rounded-full text-[10px] font-black', priorityClass(t.priority)]">{{ t.priority }}</span>
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ t.ticket_no }} — {{ t.title }}</p>
@@ -74,7 +74,7 @@ const priorityClass = (p) => ({
             </div>
 
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 inline-flex items-center gap-2">
                         <BookOpen class="w-4 h-4" /> Self-Help Guides
                     </h2>
@@ -82,7 +82,7 @@ const priorityClass = (p) => ({
                 </div>
                 <div v-if="knowledge.length === 0" class="p-8 text-center text-sm text-slate-400">No guides published yet.</div>
                 <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    <li v-for="a in knowledge" :key="a.id" class="px-6 py-3.5 flex items-center gap-3">
+                    <li v-for="a in knowledge" :key="a.id" class="px-4 sm:px-6 py-3 sm:py-3.5 flex items-center gap-3">
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ a.title }}</p>
                             <p class="text-[11px] text-slate-400">{{ a.category }} · {{ a.views }} views</p>
@@ -104,7 +104,7 @@ const priorityClass = (p) => ({
                     <input v-model="form.title" required placeholder="Short summary" class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                     <textarea v-model="form.description" required rows="3" placeholder="What happened, where, since when..."
                         class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200"></textarea>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select v-model="form.category" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                             <option value="incident">Incident</option>
                             <option value="service_request">Service Request</option>
@@ -116,7 +116,7 @@ const priorityClass = (p) => ({
                             <option value="P4">P4 — Low</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select v-model="form.system_area" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                             <option value="erp">ERP / MontiERP</option>
                             <option value="network">Network / WiFi</option>

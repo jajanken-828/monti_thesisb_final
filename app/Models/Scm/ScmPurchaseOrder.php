@@ -21,6 +21,7 @@ class ScmPurchaseOrder extends Model
         'po_number', 'supplier_id', 'supplier_name', 'rfq_ref', 'rfq_id',
         'issued_date', 'expected_delivery', 'subtotal', 'tax_rate',
         'tax_amount', 'grand_total', 'notes', 'received', 'status',
+        'finance_status', 'finance_decided_by', 'finance_decided_at', 'finance_remarks',
     ];
 
     protected $casts = [

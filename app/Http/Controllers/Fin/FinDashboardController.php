@@ -3,212 +3,311 @@
 namespace App\Http\Controllers\Fin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Core\Notification;
+use App\Models\Core\User;
+use App\Models\Fin\FinBill;
+use App\Models\Fin\FinBudget;
+use App\Models\Fin\FinExpense;
+use App\Models\Fin\FinInvoice;
+use App\Models\Scm\ScmPurchaseOrder;
+use App\Services\Fin\FinanceService;
+use App\Services\Fin\PayMongoService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class FinDashboardController extends Controller
 {
-    /**
-     * ------------------------------------------------------------------
-     * DUMMY DATA ONLY — no fin_* tables exist yet (no migrations).
-     * Everything below is hardcoded sample data for Monti Textile so the
-     * Finance module is viewable. Replace with Eloquent queries once the
-     * finance migrations/models are created.
-     * ------------------------------------------------------------------
-     */
-    private function dummy(): array
+    public function __construct(protected FinanceService $finance, protected PayMongoService $gateway) {}
+
+    protected function gatewayMode(): array
     {
-        return [
-            'stats' => [
-                'revenueYtd' => 18450000,
-                'revenueMonth' => 1725000,
-                'outstandingAR' => 3250000,
-                'overdueAR' => 640000,
-                'outstandingAP' => 2180000,
-                'overdueAP' => 310000,
-                'cashOnHand' => 5620000,
-                'netProfitMonth' => 386000,
-                'payrollMonth' => 1240000,
-                'expenseMonth' => 1339000,
-            ],
-            'revenueTrend' => [
-                ['month' => 'Mar', 'revenue' => 1350000, 'expenses' => 1020000],
-                ['month' => 'Apr', 'revenue' => 1420000, 'expenses' => 1080000],
-                ['month' => 'May', 'revenue' => 1510000, 'expenses' => 1130000],
-                ['month' => 'Jun', 'revenue' => 1480000, 'expenses' => 1150000],
-                ['month' => 'Jul', 'revenue' => 1630000, 'expenses' => 1210000],
-                ['month' => 'Aug', 'revenue' => 1725000, 'expenses' => 1339000],
-            ],
-            'cashFlow' => [
-                ['label' => 'Client collections', 'inflow' => 1580000, 'outflow' => 0],
-                ['label' => 'Supplier payments', 'inflow' => 0, 'outflow' => 640000],
-                ['label' => 'Payroll payout', 'inflow' => 0, 'outflow' => 1240000],
-                ['label' => 'Utilities & rent', 'inflow' => 0, 'outflow' => 285000],
-                ['label' => 'Dye chemicals', 'inflow' => 0, 'outflow' => 196000],
-                ['label' => 'Other income', 'inflow' => 145000, 'outflow' => 0],
-            ],
-            'arAging' => [
-                ['bucket' => 'Current', 'amount' => 1890000, 'count' => 14],
-                ['bucket' => '1–30 days', 'amount' => 720000, 'count' => 6],
-                ['bucket' => '31–60 days', 'amount' => 410000, 'count' => 4],
-                ['bucket' => '60+ days', 'amount' => 230000, 'count' => 2],
-            ],
-            'apAging' => [
-                ['bucket' => 'Current', 'amount' => 1320000, 'count' => 11],
-                ['bucket' => '1–30 days', 'amount' => 550000, 'count' => 5],
-                ['bucket' => '31–60 days', 'amount' => 220000, 'count' => 2],
-                ['bucket' => '60+ days', 'amount' => 90000, 'count' => 1],
-            ],
-            'receivables' => [
-                ['id' => 1, 'invoice_no' => 'INV-2026-0841', 'client' => 'Glamour Garments Inc.', 'amount' => 485000, 'paid' => 200000, 'due_date' => '2026-09-18', 'status' => 'partial'],
-                ['id' => 2, 'invoice_no' => 'INV-2026-0837', 'client' => 'Metro Retail Group', 'amount' => 720000, 'paid' => 0, 'due_date' => '2026-09-10', 'status' => 'overdue'],
-                ['id' => 3, 'invoice_no' => 'INV-2026-0844', 'client' => 'ExportLine Corp.', 'amount' => 950000, 'paid' => 0, 'due_date' => '2026-09-30', 'status' => 'unpaid'],
-                ['id' => 4, 'invoice_no' => 'INV-2026-0829', 'client' => 'Cebu Apparel Co.', 'amount' => 310000, 'paid' => 310000, 'due_date' => '2026-08-28', 'status' => 'paid'],
-                ['id' => 5, 'invoice_no' => 'INV-2026-0831', 'client' => 'Davao Fashion Hub', 'amount' => 265000, 'paid' => 0, 'due_date' => '2026-09-05', 'status' => 'overdue'],
-                ['id' => 6, 'invoice_no' => 'INV-2026-0847', 'client' => 'Glamour Garments Inc.', 'amount' => 520000, 'paid' => 0, 'due_date' => '2026-10-12', 'status' => 'unpaid'],
-            ],
-            'payables' => [
-                ['id' => 1, 'bill_no' => 'BILL-2026-0512', 'supplier' => 'Prime Yarn Supply', 'category' => 'Raw materials', 'amount' => 640000, 'paid' => 0, 'due_date' => '2026-09-15', 'status' => 'unpaid'],
-                ['id' => 2, 'bill_no' => 'BILL-2026-0498', 'supplier' => 'ColorChem Trading', 'category' => 'Dye chemicals', 'amount' => 196000, 'paid' => 0, 'due_date' => '2026-09-02', 'status' => 'overdue'],
-                ['id' => 3, 'bill_no' => 'BILL-2026-0505', 'supplier' => 'Meralco / Utilities', 'category' => 'Utilities', 'amount' => 285000, 'paid' => 285000, 'due_date' => '2026-08-30', 'status' => 'paid'],
-                ['id' => 4, 'bill_no' => 'BILL-2026-0519', 'supplier' => 'Speed Freight Corp.', 'category' => 'Logistics', 'amount' => 114000, 'paid' => 0, 'due_date' => '2026-09-25', 'status' => 'unpaid'],
-                ['id' => 5, 'bill_no' => 'BILL-2026-0489', 'supplier' => 'Prime Yarn Supply', 'category' => 'Raw materials', 'amount' => 420000, 'paid' => 210000, 'due_date' => '2026-09-08', 'status' => 'partial'],
-            ],
-            'expenses' => [
-                ['id' => 1, 'date' => '2026-08-04', 'category' => 'Raw materials', 'description' => 'Cotton yarn bulk purchase', 'amount' => 640000, 'department' => 'Production'],
-                ['id' => 2, 'date' => '2026-08-09', 'category' => 'Payroll', 'description' => 'Plant workers mid-month payout', 'amount' => 620000, 'department' => 'HR'],
-                ['id' => 3, 'date' => '2026-08-14', 'category' => 'Dye chemicals', 'description' => 'Reactive dyes + softeners', 'amount' => 196000, 'department' => 'Dyeing'],
-                ['id' => 4, 'date' => '2026-08-20', 'category' => 'Utilities', 'description' => 'Electricity + water', 'amount' => 285000, 'department' => 'Facilities'],
-                ['id' => 5, 'date' => '2026-08-22', 'category' => 'Logistics', 'description' => 'Outbound freight', 'amount' => 114000, 'department' => 'Logistics'],
-                ['id' => 6, 'date' => '2026-08-27', 'category' => 'Maintenance', 'description' => 'Squeezer machine parts', 'amount' => 68000, 'department' => 'Maintenance'],
-            ],
-            'expenseCategories' => [
-                ['category' => 'Raw materials', 'amount' => 640000],
-                ['category' => 'Payroll', 'amount' => 620000],
-                ['category' => 'Utilities', 'amount' => 285000],
-                ['category' => 'Dye chemicals', 'amount' => 196000],
-                ['category' => 'Logistics', 'amount' => 114000],
-                ['category' => 'Maintenance', 'amount' => 68000],
-            ],
-            'payroll' => [
-                ['department' => 'Knitting', 'headcount' => 18, 'gross' => 378000, 'deductions' => 42000, 'net' => 336000, 'status' => 'paid'],
-                ['department' => 'Dyeing', 'headcount' => 24, 'gross' => 504000, 'deductions' => 58000, 'net' => 446000, 'status' => 'paid'],
-                ['department' => 'Packaging', 'headcount' => 12, 'gross' => 216000, 'deductions' => 24000, 'net' => 192000, 'status' => 'processing'],
-                ['department' => 'Warehouse', 'headcount' => 9, 'gross' => 171000, 'deductions' => 19000, 'net' => 152000, 'status' => 'processing'],
-                ['department' => 'Office', 'headcount' => 11, 'gross' => 275000, 'deductions' => 33000, 'net' => 242000, 'status' => 'pending'],
-            ],
-            'budgets' => [
-                ['department' => 'Production', 'allocated' => 900000, 'spent' => 836000],
-                ['department' => 'Dyeing', 'allocated' => 350000, 'spent' => 264000],
-                ['department' => 'Logistics', 'allocated' => 200000, 'spent' => 114000],
-                ['department' => 'Facilities', 'allocated' => 320000, 'spent' => 285000],
-            ],
-            'recentTransactions' => [
-                ['id' => 1, 'date' => '2026-09-05', 'description' => 'Collection — Metro Retail (INV-2026-0835)', 'type' => 'inflow', 'amount' => 350000],
-                ['id' => 2, 'date' => '2026-09-04', 'description' => 'Yarn payment — Prime Yarn (BILL-2026-0489)', 'type' => 'outflow', 'amount' => 210000],
-                ['id' => 3, 'date' => '2026-09-03', 'description' => 'Payroll payout — Dyeing dept', 'type' => 'outflow', 'amount' => 446000],
-                ['id' => 4, 'date' => '2026-09-02', 'description' => 'Collection — Cebu Apparel (INV-2026-0829)', 'type' => 'inflow', 'amount' => 310000],
-                ['id' => 5, 'date' => '2026-09-01', 'description' => 'Utilities — Meralco', 'type' => 'outflow', 'amount' => 285000],
-            ],
-            'profitLoss' => [
-                ['line' => 'Sales revenue', 'amount' => 1725000, 'section' => 'income'],
-                ['line' => 'Other income', 'amount' => 145000, 'section' => 'income'],
-                ['line' => 'Raw materials', 'amount' => -640000, 'section' => 'cogs'],
-                ['line' => 'Direct labor', 'amount' => -620000, 'section' => 'cogs'],
-                ['line' => 'Utilities', 'amount' => -285000, 'section' => 'opex'],
-                ['line' => 'Dye chemicals', 'amount' => -196000, 'section' => 'opex'],
-                ['line' => 'Logistics', 'amount' => -114000, 'section' => 'opex'],
-                ['line' => 'Maintenance', 'amount' => -68000, 'section' => 'opex'],
-            ],
-        ];
+        return ['mode' => $this->gateway->mode(), 'methods' => PayMongoService::METHOD_LABELS];
     }
 
     public function managerDashboard()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Manager/index', [
             'user' => auth()->user(),
-            'stats' => $d['stats'],
-            'revenueTrend' => $d['revenueTrend'],
-            'cashFlow' => $d['cashFlow'],
-            'arAging' => $d['arAging'],
-            'apAging' => $d['apAging'],
-            'recentTransactions' => $d['recentTransactions'],
-            'budgets' => $d['budgets'],
-            'isDummy' => true,
+            'stats' => $this->finance->stats(),
+            'revenueTrend' => $this->finance->revenueTrend(),
+            'cashFlow' => $this->finance->cashFlow(),
+            'arAging' => $this->finance->arAging(),
+            'apAging' => $this->finance->apAging(),
+            'recentTransactions' => $this->finance->recentTransactions(),
+            'budgets' => $this->finance->budgets(),
+            'isDummy' => false,
         ]);
     }
 
     public function staffDashboard()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Employee/index', [
             'user' => auth()->user(),
-            'stats' => $d['stats'],
-            'receivables' => $d['receivables'],
-            'payables' => $d['payables'],
-            'recentTransactions' => $d['recentTransactions'],
-            'isDummy' => true,
+            'stats' => $this->finance->stats(),
+            'receivables' => $this->finance->invoiceRows(),
+            'payables' => $this->finance->billRows(),
+            'recentTransactions' => $this->finance->recentTransactions(),
+            'isDummy' => false,
         ]);
     }
 
     public function receivables()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Manager/Receivables', [
-            'receivables' => $d['receivables'],
-            'arAging' => $d['arAging'],
-            'stats' => $d['stats'],
-            'isDummy' => true,
+            'receivables' => $this->finance->invoiceRows(),
+            'arAging' => $this->finance->arAging(),
+            'stats' => $this->finance->stats(),
+            'gateway' => $this->gatewayMode(),
+            'isDummy' => false,
         ]);
     }
 
     public function payables()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Manager/Payables', [
-            'payables' => $d['payables'],
-            'apAging' => $d['apAging'],
-            'stats' => $d['stats'],
-            'isDummy' => true,
+            'payables' => $this->finance->billRows(),
+            'apAging' => $this->finance->apAging(),
+            'stats' => $this->finance->stats(),
+            'gateway' => $this->gatewayMode(),
+            'isDummy' => false,
         ]);
     }
 
     public function expenses()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Manager/Expenses', [
-            'expenses' => $d['expenses'],
-            'expenseCategories' => $d['expenseCategories'],
-            'stats' => $d['stats'],
-            'isDummy' => true,
+            'expenses' => $this->finance->expenseRows(),
+            'expenseCategories' => $this->finance->expenseCategories(),
+            'stats' => $this->finance->stats(),
+            'isDummy' => false,
         ]);
     }
 
     public function payroll()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Manager/Payroll', [
-            'payroll' => $d['payroll'],
-            'stats' => $d['stats'],
-            'isDummy' => true,
+            'payroll' => $this->finance->payrollRows(),
+            'stats' => $this->finance->stats(),
+            'isDummy' => false,
         ]);
     }
 
     public function reports()
     {
-        $d = $this->dummy();
-
         return Inertia::render('Dashboard/FIN/Manager/Reports', [
-            'profitLoss' => $d['profitLoss'],
-            'revenueTrend' => $d['revenueTrend'],
-            'stats' => $d['stats'],
-            'isDummy' => true,
+            'profitLoss' => $this->finance->profitLoss(),
+            'revenueTrend' => $this->finance->revenueTrend(),
+            'stats' => $this->finance->stats(),
+            'isDummy' => false,
         ]);
+    }
+
+    public function recordInvoicePayment(Request $request, FinInvoice $invoice)
+    {
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01|max:' . max(0.01, $invoice->balance()),
+            'paid_at' => 'nullable|date|before_or_equal:today',
+            'method' => 'nullable|string|max:64',
+            'reference' => 'nullable|string|max:128',
+        ]);
+
+        // Online methods (GCash / Maya / Card) go through the payment
+        // gateway first — nothing is written to the ledger on decline.
+        if ($this->gateway->isOnlineMethod($data['method'] ?? null)) {
+            $charge = $this->gateway->charge((float) $data['amount'], $data['method'], [
+                'invoice_no' => $invoice->invoice_no,
+            ]);
+            if (! $charge['success']) {
+                return back()->withErrors(['error' => $charge['message'] ?? 'Online payment failed.']);
+            }
+            $data['reference'] = $data['reference'] ?: $charge['reference'];
+        }
+
+        $this->finance->recordInvoicePayment($invoice, $data, auth()->id());
+
+        return back()->with('success', 'Payment of ₱' . number_format($data['amount'], 2) . ' recorded for ' . $invoice->invoice_no . '.');
+    }
+
+    public function recordBillPayment(Request $request, FinBill $bill)
+    {
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01|max:' . max(0.01, $bill->balance()),
+            'paid_at' => 'nullable|date|before_or_equal:today',
+            'method' => 'nullable|string|max:64',
+            'reference' => 'nullable|string|max:128',
+        ]);
+
+        if ($this->gateway->isOnlineMethod($data['method'] ?? null)) {
+            $charge = $this->gateway->charge((float) $data['amount'], $data['method'], [
+                'bill_no' => $bill->bill_no,
+            ]);
+            if (! $charge['success']) {
+                return back()->withErrors(['error' => $charge['message'] ?? 'Online payment failed.']);
+            }
+            $data['reference'] = $data['reference'] ?: $charge['reference'];
+        }
+
+        $this->finance->recordBillPayment($bill, $data, auth()->id());
+
+        return back()->with('success', 'Payment of ₱' . number_format($data['amount'], 2) . ' recorded for ' . $bill->bill_no . '.');
+    }
+
+    public function storeExpense(Request $request)
+    {
+        $data = $request->validate([
+            'expense_date' => 'required|date|before_or_equal:today',
+            'category' => 'required|string|max:64',
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'department' => 'nullable|string|max:64',
+        ]);
+
+        FinExpense::create([...$data, 'recorded_by' => auth()->id()]);
+
+        return back()->with('success', 'Expense recorded.');
+    }
+
+    public function storeBill(Request $request)
+    {
+        $data = $request->validate([
+            'supplier_name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:64',
+            'amount' => 'required|numeric|min:0.01',
+            'due_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $bill = FinBill::create([
+            ...$data,
+            'bill_no' => 'BILL-' . now()->format('Ymd') . '-' . strtoupper(substr(md5(uniqid((string) mt_rand(), true)), 0, 6)),
+            'category' => $data['category'] ?? 'Materials',
+            'status' => 'unpaid',
+            'created_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Bill ' . $bill->bill_no . ' recorded.');
+    }
+
+    public function storeBudget(Request $request)
+    {
+        $data = $request->validate([
+            'department' => 'required|string|max:64',
+            'period' => 'nullable|date_format:Y-m',
+            'allocated' => 'required|numeric|min:0',
+        ]);
+
+        FinBudget::updateOrCreate(
+            [
+                'department' => $data['department'],
+                'period' => $data['period'] ?? now()->format('Y-m'),
+            ],
+            ['allocated' => $data['allocated'], 'created_by' => auth()->id()]
+        );
+
+        return back()->with('success', 'Budget saved.');
+    }
+
+    /**
+     * Purchase orders awaiting finance approval (accepted PRO quotations).
+     */
+    public function poApprovals()
+    {
+        $pending = ScmPurchaseOrder::with('items')
+            ->where('finance_status', 'pending')
+            ->latest()
+            ->get()
+            ->map(fn ($po) => $this->poApprovalRow($po));
+
+        $decided = ScmPurchaseOrder::with('items')
+            ->whereIn('finance_status', ['approved', 'declined'])
+            ->latest('finance_decided_at')
+            ->take(20)
+            ->get()
+            ->map(fn ($po) => $this->poApprovalRow($po));
+
+        return Inertia::render('Dashboard/FIN/Manager/Approvals', [
+            'pending' => $pending,
+            'decided' => $decided,
+            'isDummy' => false,
+        ]);
+    }
+
+    protected function poApprovalRow(ScmPurchaseOrder $po): array
+    {
+        return [
+            'id' => $po->id,
+            'po_number' => $po->po_number,
+            'supplier_name' => $po->supplier_name,
+            'rfq_ref' => $po->rfq_ref,
+            'status' => $po->status,
+            'finance_status' => $po->finance_status ?? 'pending',
+            'finance_remarks' => $po->finance_remarks,
+            'finance_decided_at' => $po->finance_decided_at,
+            'grand_total' => round((float) $po->grand_total, 2),
+            'issued_date' => $po->issued_date?->format('Y-m-d'),
+            'items' => $po->items->map(fn ($item) => [
+                'material_name' => $item->material_name,
+                'qty' => $item->qty,
+                'unit' => $item->unit,
+                'unit_price' => $item->unit_price,
+                'total' => $item->total,
+            ])->values(),
+        ];
+    }
+
+    public function approvePo(ScmPurchaseOrder $po)
+    {
+        if (($po->finance_status ?? 'pending') !== 'pending') {
+            return back()->withErrors(['error' => 'This PO has already been decided by finance.']);
+        }
+
+        $po->update([
+            'finance_status' => 'approved',
+            'finance_decided_by' => auth()->id(),
+            'finance_decided_at' => now(),
+            'finance_remarks' => null,
+        ]);
+
+        $this->notifyPro($po, true);
+
+        return back()->with('success', "PO {$po->po_number} approved — PRO can now send it.");
+    }
+
+    public function declinePo(Request $request, ScmPurchaseOrder $po)
+    {
+        $data = $request->validate(['remarks' => 'required|string|max:500']);
+
+        if (($po->finance_status ?? 'pending') !== 'pending') {
+            return back()->withErrors(['error' => 'This PO has already been decided by finance.']);
+        }
+
+        $po->update([
+            'finance_status' => 'declined',
+            'finance_decided_by' => auth()->id(),
+            'finance_decided_at' => now(),
+            'finance_remarks' => $data['remarks'],
+        ]);
+
+        $this->notifyPro($po, false);
+
+        return back()->with('success', "PO {$po->po_number} declined — PRO has been notified.");
+    }
+
+    protected function notifyPro(ScmPurchaseOrder $po, bool $approved): void
+    {
+        $decision = $approved ? 'approved' : 'declined';
+        $proUsers = User::where('role', 'PRO')->where('is_active', true)->get(['id']);
+        foreach ($proUsers as $pro) {
+            Notification::notify(
+                (int) $pro->id,
+                'finance',
+                "Finance {$decision} PO {$po->po_number}",
+                $approved
+                    ? "{$po->supplier_name} · ₱" . number_format((float) $po->grand_total, 2) . ' — the Send PO button is now available in Receipts.'
+                    : "{$po->supplier_name} · ₱" . number_format((float) $po->grand_total, 2) . " — reason: {$po->finance_remarks}. Return it to Material Requests for a fresh round.",
+                'pro.manager.receipt',
+                auth()->id()
+            );
+        }
     }
 }

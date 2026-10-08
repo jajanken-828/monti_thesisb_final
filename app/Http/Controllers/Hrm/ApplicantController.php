@@ -289,10 +289,7 @@ class ApplicantController extends Controller
             'philhealth_number' => $applicant->philhealth_number,
             'pagibig_number' => $applicant->pagibig_number,
 
-            // File URLs (using the ternary operator you had, though your model accessors could also do this!)
-            'sss_file_url' => $applicant->sss_file ? Storage::url($applicant->sss_file) : null,
-            'philhealth_file_url' => $applicant->philhealth_file ? Storage::url($applicant->philhealth_file) : null,
-            'pagibig_file_url' => $applicant->pagibig_file ? Storage::url($applicant->pagibig_file) : null,
+            // File URLs removed for security — access via authorized controllers only
 
             // Family
             'spouse_name' => $applicant->spouse_name,

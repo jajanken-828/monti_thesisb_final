@@ -1,12 +1,12 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { route } from 'ziggy-js';
 import {
     Wallet, TrendingUp, Landmark, HandCoins, Banknote, PiggyBank,
     ReceiptText, ArrowDownToLine, ArrowUpFromLine, CalendarClock,
-    FileChartColumn, Sparkles, ChevronRight, CircleAlert
+    FileChartColumn, Sparkles, ChevronRight, CircleAlert, X
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -51,6 +51,22 @@ const budgetPct = (b) => {
     const a = Number(b.allocated ?? 0);
     if (!a) return 0;
     return Math.min(100, Math.round((Number(b.spent ?? 0) / a) * 100));
+};
+
+// --- Set-budget modal (live ledger post, current month by default) ---
+const showBudgetModal = ref(false);
+const budgetForm = useForm({ department: '', period: new Date().toISOString().slice(0, 7), allocated: '' });
+const openBudgetModal = () => {
+    budgetForm.reset();
+    budgetForm.period = new Date().toISOString().slice(0, 7);
+    budgetForm.clearErrors();
+    showBudgetModal.value = true;
+};
+const submitBudget = () => {
+    budgetForm.post(route('fin.manager.budgets.store'), {
+        preserveScroll: true,
+        onSuccess: () => { showBudgetModal.value = false; },
+    });
 };
 </script>
 
@@ -243,8 +259,13 @@ const budgetPct = (b) => {
 
                     <div class="animate-fade-up group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300 p-5 sm:p-6 overflow-hidden" style="animation-delay: 320ms">
                         <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-violet-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <h2 class="text-sm font-black tracking-tight text-gray-900 dark:text-white">Budget Utilization</h2>
-                        <p class="text-[11px] text-gray-400 font-medium mb-4">Spent vs allocated by department</p>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-sm font-black tracking-tight text-gray-900 dark:text-white">Budget Utilization</h2>
+                                <p class="text-[11px] text-gray-400 font-medium mb-4">Spent vs allocated by department</p>
+                            </div>
+                            <button @click="openBudgetModal" class="rounded-xl bg-indigo-600 px-3 py-1.5 text-[11px] font-black text-white hover:bg-indigo-700 transition active:scale-95 whitespace-nowrap">+ Set budget</button>
+                        </div>
                         <ul v-if="budgets.length > 0" class="space-y-3">
                             <li v-for="b in budgets" :key="b.department">
                                 <div class="flex items-center justify-between text-[11px] font-bold text-gray-600 dark:text-gray-300">
@@ -284,6 +305,51 @@ const budgetPct = (b) => {
 
             </div>
         </div>
+
+        <!-- Set-budget modal (live ledger post) -->
+        <Transition name="modal">
+            <div v-if="showBudgetModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm" @click="showBudgetModal = false" />
+                <div class="relative w-full max-w-md overflow-hidden rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl">
+                    <div class="bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100">Monthly budget</p>
+                                <h3 class="text-lg font-black tracking-tight">Set budget</h3>
+                            </div>
+                            <button @click="showBudgetModal = false" class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition active:scale-95">
+                                <X class="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <label class="block">
+                            <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Department *</span>
+                            <input v-model="budgetForm.department" type="text" placeholder="e.g. Dyeing"
+                                class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                            <p v-if="budgetForm.errors.department" class="text-[11px] font-bold text-rose-600 mt-1">{{ budgetForm.errors.department }}</p>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="block">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Period</span>
+                                <input v-model="budgetForm.period" type="month"
+                                    class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                            </label>
+                            <label class="block">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Allocated (₱) *</span>
+                                <input v-model="budgetForm.allocated" type="number" min="0" step="0.01" placeholder="0.00"
+                                    class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                                <p v-if="budgetForm.errors.allocated" class="text-[11px] font-bold text-rose-600 mt-1">{{ budgetForm.errors.allocated }}</p>
+                            </label>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="showBudgetModal = false" class="flex-1 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition active:scale-95">Cancel</button>
+                            <button @click="submitBudget" :disabled="budgetForm.processing" class="flex-1 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 shadow-lg shadow-indigo-500/20 hover:opacity-95 transition active:scale-95 disabled:opacity-50">{{ budgetForm.processing ? 'Saving…' : 'Save budget' }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </AuthenticatedLayout>
 </template>
 

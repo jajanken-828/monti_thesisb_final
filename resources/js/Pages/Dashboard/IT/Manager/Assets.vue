@@ -135,7 +135,7 @@ const warrantyClass = (asset) => {
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Hardware, software licenses, warranties, and assignments.</p>
             </div>
             <button v-if="isManager && canEditAssets" @click="openCreate"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 <Plus class="w-4 h-4" /> Add Asset
             </button>
             <span v-else-if="!canEditAssets" class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
@@ -160,7 +160,7 @@ const warrantyClass = (asset) => {
                         placeholder="Search by code, name, serial, location..."
                         class="w-full pl-9 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-slate-200 placeholder-slate-400" />
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 [&>select]:flex-1 [&>select]:sm:flex-none [&>select]:min-w-[130px]">
                     <select :value="filters.category || ''" @change="applyFilters({ category: $event.target.value })"
                         class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                         <option value="">All categories</option>
@@ -183,20 +183,20 @@ const warrantyClass = (asset) => {
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
+                <table class="w-full text-left min-w-[760px]">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned To</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Warranty</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                            <th v-if="isManager" class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Details</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned To</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Warranty</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                            <th v-if="isManager" class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                         <tr v-for="asset in rows" :key="asset.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
-                            <td class="px-6 py-4">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center border border-slate-200 dark:border-slate-600">
                                         <component :is="getTypeIcon(asset.type)" class="h-5 w-5 text-slate-500 dark:text-slate-400" />
@@ -207,19 +207,19 @@ const warrantyClass = (asset) => {
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm font-bold" :class="asset.assignee ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 italic'">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm font-bold" :class="asset.assignee ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 italic'">
                                 {{ asset.assignee?.name || 'Unassigned' }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{{ asset.location || '—' }}</td>
-                            <td class="px-6 py-4"><span :class="['text-sm font-mono', warrantyClass(asset)]">{{ asset.warranty_end || '—' }}</span></td>
-                            <td class="px-6 py-4"><span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase', getStatusClass(asset.status)]">{{ asset.status.replace('_', ' ') }}</span></td>
-                            <td v-if="isManager" class="px-6 py-4 text-right whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm text-slate-600 dark:text-slate-300">{{ asset.location || '—' }}</td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4"><span :class="['text-sm font-mono', warrantyClass(asset)]">{{ asset.warranty_end || '—' }}</span></td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4"><span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase', getStatusClass(asset.status)]">{{ asset.status.replace('_', ' ') }}</span></td>
+                            <td v-if="isManager" class="px-4 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">
                                 <button v-if="asset.status !== 'in_use' && asset.status !== 'retired' && canEditAssets" @click="assigning = asset" title="Assign"
-                                    class="p-1.5 text-slate-400 hover:text-emerald-600"><UserPlus class="w-4 h-4" /></button>
+                                    class="p-2.5 sm:p-1.5 text-slate-400 hover:text-emerald-600"><UserPlus class="w-4 h-4" /></button>
                                 <button v-if="asset.status === 'in_use' && canEditAssets" @click="doReturn(asset)" title="Return to pool"
-                                    class="p-1.5 text-slate-400 hover:text-amber-600"><Undo2 class="w-4 h-4" /></button>
-                                <button v-if="canEditAssets" @click="openEdit(asset)" title="Edit" class="p-1.5 text-slate-400 hover:text-blue-600"><Pencil class="w-4 h-4" /></button>
-                                <button v-if="canEditAssets" @click="doDelete(asset)" title="Delete" class="p-1.5 text-slate-400 hover:text-red-500"><Trash2 class="w-4 h-4" /></button>
+                                    class="p-2.5 sm:p-1.5 text-slate-400 hover:text-amber-600"><Undo2 class="w-4 h-4" /></button>
+                                <button v-if="canEditAssets" @click="openEdit(asset)" title="Edit" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-blue-600"><Pencil class="w-4 h-4" /></button>
+                                <button v-if="canEditAssets" @click="doDelete(asset)" title="Delete" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-red-500"><Trash2 class="w-4 h-4" /></button>
                             </td>
                         </tr>
                     </tbody>
@@ -237,7 +237,7 @@ const warrantyClass = (asset) => {
                 </div>
                 <form @submit.prevent="submitForm" class="space-y-3">
                     <input v-model="form.name" required placeholder="Asset name" class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select v-model="form.category" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                             <option value="hardware">Hardware</option><option value="software">Software</option>
                             <option value="network">Network</option><option value="peripheral">Peripheral</option>
@@ -249,17 +249,17 @@ const warrantyClass = (asset) => {
                             <option value="license">Software License</option><option value="other">Other</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <input v-model="form.serial_number" placeholder="Serial number" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                         <input v-model="form.location" placeholder="Location" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label class="text-[11px] font-bold text-slate-400 uppercase">Purchased</label>
                             <input v-model="form.purchase_date" type="date" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" /></div>
                         <div><label class="text-[11px] font-bold text-slate-400 uppercase">Warranty End</label>
                             <input v-model="form.warranty_end" type="date" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" /></div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <input v-model="form.vendor" placeholder="Vendor" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                         <input v-model="form.cost" type="number" min="0" step="0.01" placeholder="Cost (₱)" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                     </div>

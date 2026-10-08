@@ -181,14 +181,14 @@ class PayrollController extends Controller
             foreach ($employees as $employee) {
                 // ✅ Skip if employee_id is missing (prevents SQL error)
                 if (empty($employee->employee_id)) {
-                    Log::warning("Payroll generation skipped for user ID {$employee->id} ({$employee->name}) - missing employee_id.");
+                    Log::warning("Payroll generation skipped for user ID {$employee->id} - missing employee_id.");
                     continue;
                 }
 
                 // Get active payroll set for employee type (staff/manager)
                 $payrollSet = PayrollSet::forType($employee->position)->first();
                 if (!$payrollSet) {
-                    Log::warning("Payroll generation skipped for user ID {$employee->id} - no active payroll set for position '{$employee->position}'.");
+                    Log::warning("Payroll generation skipped for user ID {$employee->id} - no active payroll set.");
                     continue;
                 }
 

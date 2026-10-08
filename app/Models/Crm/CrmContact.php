@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CrmContact extends Model
 {
     protected $fillable = [
-        'client_id', 'lead_id', 'name', 'title', 'email', 'phone',
+        'client_id', 'lead_id', 'name', 'organization', 'title', 'email', 'phone',
         'is_decision_maker', 'is_primary', 'notes',
     ];
 

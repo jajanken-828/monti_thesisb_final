@@ -269,7 +269,7 @@ function withdrawApplication(app: any) {
     showModalDialog({
         type: 'withdraw',
         title: 'Withdraw Application?',
-        message: `Are you sure you want to withdraw your application for "<strong>${app.job_title}</strong>"? This action cannot be undone.`,
+        message: `Are you sure you want to withdraw your application for "${app.job_title}"? This action cannot be undone.`,
         confirmText: 'Yes, Withdraw',
         cancelText: 'Cancel',
         onConfirm: confirmWithdraw
@@ -291,7 +291,7 @@ function confirmWithdraw() {
             showModalDialog({
                 type: 'success',
                 title: 'Application Withdrawn',
-                message: `Your application for "<strong>${selectedApp.value.job_title}</strong>" has been withdrawn successfully. You can now re-apply if you wish.`,
+                message: `Your application for "${selectedApp.value.job_title}" has been withdrawn successfully. You can now re-apply if you wish.`,
                 confirmText: 'OK',
                 cancelText: '',
                 onConfirm: closeModal
@@ -491,7 +491,7 @@ function confirmWithdraw() {
                     <h2 class="text-lg font-black text-slate-900 dark:text-white">{{ modalTitle }}</h2>
                     <button @click="closeModal" class="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">✕</button>
                 </div>
-                <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" v-html="modalMessage"></p>
+                <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed" v-text="modalMessage"></p>
                 <div v-if="isProcessing" class="mt-4 flex items-center justify-center">
                     <svg class="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

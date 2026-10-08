@@ -1,5 +1,5 @@
 <script>
-import { LayoutDashboard, FileText, Send, ShoppingCart, ClipboardList } from 'lucide-vue-next'
+import { LayoutDashboard, FileText, Send, ShoppingCart, ClipboardList, Navigation } from 'lucide-vue-next'
 
 export const proModule = {
     key: 'PRO',
@@ -17,6 +17,7 @@ export const proModule = {
             { label: 'Material Requests', href: route('pro.manager.material-requests'), icon: ClipboardList, permKey: 'requests' },
             { label: 'Quotations', href: route('pro.manager.supplier-quotations'), icon: FileText, permKey: 'quotations' },
             { label: 'Receipts', href: route('pro.manager.receipt'), icon: Send, permKey: 'receipt' },
+            { label: 'Order Tracking', href: route('pro.manager.tracking'), icon: Navigation, permKey: 'tracking' },
         ]
         if (isCEO) return all
         // Explicit rows (even all-'disabled') are the exact access set and

@@ -143,7 +143,7 @@ class MessengerController extends Controller
 
         $data = $request->validate([
             'body' => 'nullable|string|max:2000|required_without:file',
-            'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt|max:10240',
+            'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,pdf|max:10240',
         ]);
 
         $filePath = $fileName = $fileType = null;

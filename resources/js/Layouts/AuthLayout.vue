@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import { useTheme, initTheme } from '@/composables/useTheme';
 
 const props = withDefaults(
     defineProps<{
@@ -8,7 +9,7 @@ const props = withDefaults(
         highlight?: string;
         subtitle?: string;
         badge?: string;
-        accent?: 'blue' | 'sky' | 'emerald';
+        accent?: 'blue' | 'sky' | 'emerald' | 'red';
         wide?: boolean;
     }>(),
     {
@@ -19,6 +20,22 @@ const props = withDefaults(
         wide: false,
     },
 );
+
+// Logged-out pages honor the stored user theme; with no stored choice they
+// fall back to the OS/browser theme (see useTheme.initTheme).
+const { currentTheme } = useTheme();
+onMounted(() => {
+    initTheme();
+});
+
+// The auth accent follows the user's color theme when one is set
+// (blue/red/green); otherwise it keeps the page's own accent prop.
+const THEME_ACCENT: Record<string, 'blue' | 'sky' | 'emerald' | 'red'> = {
+    blue: 'blue',
+    red: 'red',
+    green: 'emerald',
+};
+const effectiveAccent = computed(() => THEME_ACCENT[currentTheme.value] ?? props.accent);
 
 const goHome = () => router.visit('/');
 
@@ -34,7 +51,7 @@ const titleParts = computed(() => {
 <template>
     <div
         class="auth-scope relative flex min-h-screen w-full flex-col overflow-y-auto font-sans"
-        :data-accent="accent"
+        :data-accent="effectiveAccent"
         style="background-image: url('/images/landingTheme.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-color: #2a2a3e;"
     >
         <div class="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>

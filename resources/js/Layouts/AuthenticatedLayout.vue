@@ -6,8 +6,10 @@ import { usePage } from '@inertiajs/vue3'
 import { computed, onMounted, ref, watch, onErrorCaptured } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import { useSidebarToggle } from './composables/useSidebarToggle'
 
 const page = usePage()
+const { sidebarCollapsed } = useSidebarToggle()
 const user = computed(() => page.props.auth.user)
 const isLocating = ref(true)
 const locationReady = ref(false)
@@ -101,7 +103,9 @@ const reloadPage = () => {
 
         <!-- Normal Layout -->
         <Sidebar v-if="!hasError" />
-        <div class="md:pl-64 flex flex-col flex-1 min-h-screen">
+        <MobileSidebar v-if="!hasError" />
+        <div :class="sidebarCollapsed ? 'md:pl-0' : 'md:pl-64'"
+            class="pt-16 md:pt-0 flex flex-col flex-1 min-h-screen transition-all duration-300">
             <TopBar v-if="!hasError" />
             <main class="py-8 flex-1 bg-gray-50 dark:bg-zinc-900">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

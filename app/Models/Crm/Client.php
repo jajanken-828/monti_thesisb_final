@@ -62,6 +62,39 @@ class Client extends Authenticatable
         'longitude' => 'float',  // ← ADDED
     ];
 
+    protected $appends = ['hash_key'];
+
+    /**
+     * Opaque URL key (see App\Support\RouteHash) so customer-profile links
+     * never expose the sequential numeric ID.
+     */
+    public function getHashKeyAttribute(): string
+    {
+        return \App\Support\RouteHash::encode((int) $this->getKey(), 'client');
+    }
+
+    /**
+     * route('…', $client) emits the hashed key instead of the raw ID.
+     */
+    public function getRouteKey()
+    {
+        return $this->hash_key;
+    }
+
+    /**
+     * Implicit binding ({client} params) resolves hashed keys only —
+     * raw numeric IDs 404 so nothing leaks.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $id = \App\Support\RouteHash::decode((string) $value, 'client');
+        if ($id === null) {
+            return null;
+        }
+
+        return $this->where('id', $id)->first();
+    }
+
     /**
      * Scope a query to only include active clients.
      */

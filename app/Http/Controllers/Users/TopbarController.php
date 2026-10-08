@@ -137,6 +137,7 @@ class TopbarController extends Controller
             ['HRM Dashboard', 'hrm.dashboard', 'HRM', 'dashboard'],
             ['Employees', 'hrm.employees.index', 'HRM', 'employee'],
             ['Applications', 'hrm.applications.index', 'HRM', 'application'],
+            ['Applicant Queue', 'applicants.index', 'HRM', 'application'],
             ['Interviews', 'hrm.interview.index', 'HRM', 'interview'],
             ['Trainees', 'hrm.trainee.index', 'HRM', 'trainee'],
             ['Onboarding', 'hrm.onboarding.index', 'HRM', 'onboarding'],
@@ -146,8 +147,8 @@ class TopbarController extends Controller
             ['Leads', 'crm.lead', 'CRM', 'leads'],
             ['Approvals', 'crm.approval.index', 'CRM', 'approvals'],
             ['Customer Profiles', 'crm.customerprofile.index', 'CRM', 'customer_profiles'],
+            ['Inquiries', 'crm.inquiries', 'CRM', 'inquiry'],
             ['Investigations', 'crm.investigation.index', 'CRM', 'investigation'],
-            ['Socials', 'crm.socials.index', 'CRM', 'socials'],
             ['SCM Dashboard', 'scm.dashboard', 'SCM', 'dashboard'],
             ['Sales Orders', 'scm.sales-orders', 'SCM', 'sales'],
             ['Procurement Orders', 'scm.procurement-orders', 'SCM', 'procurement'],
@@ -170,7 +171,6 @@ class TopbarController extends Controller
             ['Logistics Reports', 'logistics.reports.index', 'LOG', 'reports'],
             ['ECO Dashboard', 'eco.dashboard', 'ECO', 'dashboard'],
             ['Store', 'eco.store', 'ECO', 'store'],
-            ['Inquiries', 'eco.inquiries', 'ECO', 'inquiry'],
             ['ECO Suppliers', 'eco.suppliers', 'ECO', 'supplier'],
             ['Credit', 'eco.credit', 'ECO', 'credit'],
             ['Push Center', 'eco.push', 'ECO', 'push'],
@@ -192,12 +192,14 @@ class TopbarController extends Controller
             ['Material Requests', 'pro.manager.material-requests', 'PRO', 'requests'],
             ['Supplier Quotations', 'pro.manager.supplier-quotations', 'PRO', 'quotations'],
             ['Receipts', 'pro.manager.receipt', 'PRO', 'receipt'],
+            ['Order Tracking', 'pro.manager.tracking', 'PRO', 'tracking'],
             ['Finance Overview', 'fin.manager.dashboard', 'FIN', 'dashboard'],
             ['Receivables', 'fin.manager.receivables', 'FIN', 'receivables'],
             ['Payables', 'fin.manager.payables', 'FIN', 'payables'],
             ['Expenses', 'fin.manager.expenses', 'FIN', 'expenses'],
             ['Finance Payroll', 'fin.manager.payroll', 'FIN', 'payroll'],
             ['Finance Reports', 'fin.manager.reports', 'FIN', 'reports'],
+            ['PO Approvals', 'fin.manager.approvals', 'FIN', 'approvals'],
             ['IT Dashboard', 'it.dashboard', 'IT', 'dashboard'],
             ['Service Desk', 'it.tickets', 'IT', 'tickets'],
             ['IT Assets', 'it.assets', 'IT', 'assets'],
@@ -265,13 +267,35 @@ class TopbarController extends Controller
             return \App\Models\Work\WorkforcePermission::where('user_id', $user->id)->exists()
                 || in_array($user->position, ['secretary', 'special_officer'], true);
         }
+        // Vice President: no HRM pages — the COO role is standalone.
+        if (strtoupper((string) $module) === 'HRM'
+            && (in_array($user->role ?? '', ['COO'], true)
+                || ($user->position ?? '') === 'vice_president')) {
+            return false;
+        }
 
         $record = \App\Models\Core\PagePermission::where('user_id', $user->id)
             ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
             ->get(['page', 'permission_level'])
             ->first(fn ($row) => strtolower((string) $row->page) === strtolower($page));
         if ($record !== null) {
+            // An explicit 'disabled' row always wins — even for executives.
+            if (strtolower($record->permission_level ?? 'edit') === 'disabled') {
+                return false;
+            }
+            // President & Vice President see every CRM page.
+            if (strtoupper((string) $module) === 'CRM'
+                && (in_array($user->role ?? '', ['CEO', 'COO'], true)
+                    || ($user->position ?? '') === 'vice_president')) {
+                return true;
+            }
             return strtolower($record->permission_level ?? 'edit') !== 'disabled';
+        }
+        // President & Vice President see every CRM page (no explicit rows).
+        if (strtoupper((string) $module) === 'CRM'
+            && (in_array($user->role ?? '', ['CEO', 'COO'], true)
+                || ($user->position ?? '') === 'vice_president')) {
+            return true;
         }
         // Native manager/staff auto-access (no explicit rows for the module).
         if (strtoupper($user->role) === $module && in_array($user->position, ['manager', 'staff'])) {
@@ -306,12 +330,24 @@ class TopbarController extends Controller
         if ($module === 'WRF') {
             return $this->canSeePage($user, 'WRF', 'dashboard');
         }
+        // Vice President: no HRM module — the COO role is standalone.
+        if (strtoupper($module) === 'HRM'
+            && (in_array($user->role ?? '', ['COO'], true)
+                || ($user->position ?? '') === 'vice_president')) {
+            return false;
+        }
         $hasUsable = \App\Models\Core\PagePermission::where('user_id', $user->id)
             ->whereIn('module', [$module, strtoupper($module), strtolower($module)])
             ->where(function ($q) {
                 $q->whereIn('permission_level', ['view', 'edit'])->orWhereNull('permission_level');
             })->exists();
         if ($hasUsable) {
+            return true;
+        }
+        // President & Vice President can always see the CRM module.
+        if (strtoupper($module) === 'CRM'
+            && (in_array($user->role ?? '', ['CEO', 'COO'], true)
+                || ($user->position ?? '') === 'vice_president')) {
             return true;
         }
         if (strtoupper($user->role) === $module && in_array($user->position, ['manager', 'staff'])) {

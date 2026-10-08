@@ -118,7 +118,7 @@ const getAvatarGradient = (status) => {
                 <!-- Grid -->
                 <TransitionGroup v-else name="card" tag="div" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <Link v-for="(client, i) in filteredClients" :key="client.id"
-                        :href="route('crm.customerprofile.show', client.id)"
+                        :href="route('crm.customerprofile.show', client.hash_key)"
                         :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
                         class="group relative flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1.5 hover:border-indigo-200 dark:hover:border-indigo-800 hover:scale-[1.01] transition-all duration-300 p-5 overflow-hidden">
                         <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

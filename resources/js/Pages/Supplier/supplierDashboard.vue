@@ -17,6 +17,10 @@ const props = defineProps({
     rfqs: {
         type: Array,
         default: () => []
+    },
+    catalogPrices: {
+        type: Object,
+        default: () => ({})
     }
 });
 
@@ -29,6 +33,7 @@ const supplierData = computed(() => props.auth?.supplier || props.auth?.user || 
 // ─── Quotation Form Modal ──────────────────────────────────────────────────
 const showQuoteModal = ref(false);
 const selectedRfq = ref(null);
+const priceFromCatalog = ref(false);
 
 const quoteForm = useForm({
     unit_price: '',
@@ -40,7 +45,10 @@ const quoteForm = useForm({
 
 const openQuoteModal = (rfq) => {
     selectedRfq.value = rfq;
-    quoteForm.unit_price = '';
+    // Auto-fill from My Products catalog price when listed (still editable).
+    const catalogPrice = props.catalogPrices?.[rfq.material_id];
+    quoteForm.unit_price = catalogPrice != null && catalogPrice !== '' ? catalogPrice : '';
+    priceFromCatalog.value = quoteForm.unit_price !== '';
     quoteForm.lead_time = '';
     quoteForm.validity_date = '';
     quoteForm.payment_terms = rfq.payment_terms; // Default to what SCM requested
@@ -245,8 +253,12 @@ const formatCurrency = (val) => '₱' + Number(val).toLocaleString('en-PH', { mi
                                 <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit
                                     Price (₱) *</label>
                                 <input v-model="quoteForm.unit_price" type="number" min="0.01" step="0.01"
-                                    placeholder="e.g. 50.00"
+                                    placeholder="e.g. 50.00" @input="priceFromCatalog = false"
                                     class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/20 font-bold" />
+                                <p v-if="priceFromCatalog && quoteForm.unit_price"
+                                    class="text-[10px] text-emerald-600 font-bold mt-1 text-right">
+                                    From your Products catalog — editable
+                                </p>
                                 <p v-if="quoteForm.unit_price"
                                     class="text-[10px] text-emerald-600 font-bold mt-1 text-right">
                                     Total: {{ formatCurrency(quoteForm.unit_price * selectedRfq.required_qty) }}

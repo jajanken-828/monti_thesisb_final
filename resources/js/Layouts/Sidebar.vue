@@ -1,15 +1,16 @@
 <script setup>
 import { usePage, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import {
     LayoutDashboard, ShoppingCart, ShoppingBag, MessageSquare,
     Receipt, HelpCircle, User, Truck, Navigation, Clock, CalendarDays,
-    History, HandCoins, LogOut, Building2, UserCog2, ShieldCheck,
+    History, HandCoins, Building2, UserCog2, ShieldCheck,
     FileText, Megaphone, Stamp, Bell, Printer, Target, Wrench, Repeat, ClipboardList, Zap, ScanSearch,
 } from 'lucide-vue-next'
 
 import { useDropdown, useDynamicDropdowns, useSidebarScroll } from './composables/useSidebarPersistence'
+import { useSidebarToggle } from './composables/useSidebarToggle'
 import { usePermissions } from './composables/usePermissions'
 import { useManufacturingSupervisor } from './composables/useManufacturingSupervisor'
 import { buildNavItems } from './navItems/buildNavItems'
@@ -26,10 +27,12 @@ const currentUrl = computed(() => page.url)
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────────
 const { scrollRef: sidebarScrollRef } = useSidebarScroll()
 
+// ─── COLLAPSE (driven by the TopBar sidebar toggle) ─────────────────────────
+const { sidebarCollapsed } = useSidebarToggle()
+
 // One persisted dropdown per top-level module (keys match module.key in navItems/buildNavItems.js)
 const moduleDropdowns = {
     HRM: useDropdown('hrm'),
-    APL: useDropdown('applicants'),
     CRM: useDropdown('crm'),
     MAN: useDropdown('man'),
     LOG: useDropdown('logistics'),
@@ -60,7 +63,6 @@ const {
 } = useManufacturingSupervisor(user)
 
 // ─── AUTH-STATE FLAGS ─────────────────────────────────────────────────────────
-const showLogoutModal = ref(false)
 const isDriver = computed(() => user.value?.driver !== null || user.value?.log_role === 'driver')
 const isConductor = computed(() => user.value?.conductor !== null || user.value?.log_role === 'conductor')
 const isEmployeePortal = computed(() => currentUrl.value.startsWith('/dashboard/employee-ui'))
@@ -74,6 +76,7 @@ const navItems = computed(() => {
         return [
             { label: 'Vendor Hub', href: route('supplier.dashboard'), icon: LayoutDashboard },
             { label: 'Purchase Orders', href: route('supplier.orders'), icon: ShoppingCart },
+            { label: 'My Products', href: route('supplier.products'), icon: ShoppingBag },
         ]
     }
 
@@ -110,6 +113,8 @@ const navItems = computed(() => {
         const isVP = isCOO || user.value?.position === 'vice_president'
         if (isVP) {
             // Vice Presidency: execution arm (operations, directives, workforce).
+            // The full CRM module is appended below via buildNavItems — the
+            // early return was removed so executives keep CRM access.
             items.push({ label: 'VP Dashboard', href: route('vp.operations'), icon: LayoutDashboard })
             items.push({ label: 'Downtime Board', href: route('vp.downtime'), icon: Wrench })
             items.push({ label: 'Shift Handovers', href: route('vp.handovers'), icon: Repeat })
@@ -119,18 +124,18 @@ const navItems = computed(() => {
             items.push({ label: 'Bulletins', href: route('vp.bulletins'), icon: Bell })
             items.push({ label: 'Workforce Overview', href: route('vp.workforce'), icon: User })
             items.push({ label: 'Joint Approvals', href: route('ceo.approvals'), icon: Stamp })
-            return items
+        } else {
+            items.push({ label: 'CEO Dashboard', href: route('dashboard'), icon: LayoutDashboard })
+            items.push({ label: 'Inbox', href: route('ceo.inbox'), icon: Bell, badge: unreadCount.value || undefined })
+            items.push({ label: 'Approvals Center', href: route('ceo.approvals'), icon: Stamp })
+            items.push({ label: 'Executive Reports', href: route('ceo.reports'), icon: FileText })
+            items.push({ label: 'Board Pack', href: route('ceo.board-pack'), icon: Printer })
+            items.push({ label: 'Deliveries', href: route('ceo.deliveries'), icon: Truck })
+            items.push({ label: 'Traceability', href: route('ceo.traceability'), icon: ScanSearch })
+            items.push({ label: 'Goals & Targets', href: route('ceo.goals'), icon: Target })
+            items.push({ label: 'Audit Trail', href: route('ceo.audit'), icon: History })
+            items.push({ label: 'Organization Chart', href: route('ceo.access'), icon: ShieldCheck })
         }
-        items.push({ label: 'CEO Dashboard', href: route('dashboard'), icon: LayoutDashboard })
-        items.push({ label: 'Inbox', href: route('ceo.inbox'), icon: Bell, badge: unreadCount.value || undefined })
-        items.push({ label: 'Approvals Center', href: route('ceo.approvals'), icon: Stamp })
-        items.push({ label: 'Executive Reports', href: route('ceo.reports'), icon: FileText })
-        items.push({ label: 'Board Pack', href: route('ceo.board-pack'), icon: Printer })
-        items.push({ label: 'Deliveries', href: route('ceo.deliveries'), icon: Truck })
-        items.push({ label: 'Traceability', href: route('ceo.traceability'), icon: ScanSearch })
-        items.push({ label: 'Goals & Targets', href: route('ceo.goals'), icon: Target })
-        items.push({ label: 'Audit Trail', href: route('ceo.audit'), icon: History })
-        items.push({ label: 'Organization Chart', href: route('ceo.access'), icon: ShieldCheck })
     }
 
     // ─── SECRETARY WORKSPACE (secretary-exclusive pages + granted modules below) ──
@@ -243,14 +248,11 @@ const sidebarLabel = computed(() => {
     if (isApplicant.value) return 'Applicant'
     return isSupplier.value ? 'Vendor' : (isClient.value ? 'Partner' : (isEmployeePortal.value ? 'Employee' : 'System'))
 })
-const logoutRoute = computed(() => {
-    if (isApplicant.value) return route('applicant.logout')
-    return isClient.value ? route('client.logout') : (isSupplier.value ? route('supplier.logout') : route('logout'))
-})
 </script>
 
 <template>
-    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 transition-all duration-300 h-screen">
+    <aside :class="sidebarCollapsed ? 'md:-ml-64' : ''"
+        class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-40 transition-all duration-300 h-screen">
         <div
             class="relative flex flex-col h-full bg-white dark:bg-zinc-900 border-r border-gray-200/70 dark:border-zinc-800 text-gray-600 dark:text-gray-300 font-sans antialiased shadow-xl select-none overflow-hidden">
             <!-- slim gradient strip tying the sidebar to the module heroes -->
@@ -395,10 +397,6 @@ const logoutRoute = computed(() => {
                             <span class="text-[10px] text-gray-500 dark:text-gray-400 truncate">{{ displayPosition }}</span>
                         </div>
                     </div>
-                    <button @click="showLogoutModal = true"
-                        class="flex-shrink-0 p-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors group" title="Logout">
-                        <LogOut class="w-3.5 h-3.5 text-gray-400 group-hover:text-red-500 transition-colors" />
-                    </button>
                 </div>
 
                 <div v-if="isManufacturingSupervisor && supervisorRoles.length > 0"
@@ -421,31 +419,6 @@ const logoutRoute = computed(() => {
                 </div>
             </div>
         </div>
-
-        <Teleport to="body">
-            <transition name="modal-fade">
-                <div v-if="showLogoutModal"
-                    class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                    @click.self="showLogoutModal = false">
-                    <div
-                        class="bg-white rounded-3xl shadow-2xl border border-indigo-100 w-full max-w-sm p-6 flex flex-col items-center text-center transform transition-all duration-300 scale-100">
-                        <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                            <LogOut class="h-6 w-6 text-red-500" />
-                        </div>
-                        <h3 class="text-xl font-black text-gray-900 mb-2">Sign Out</h3>
-                        <p class="text-sm text-gray-500 mb-6 px-2">Are you sure you want to sign out
-                            of your account?</p>
-                        <div class="flex gap-3 w-full">
-                            <button @click="showLogoutModal = false"
-                                class="flex-1 py-3 text-sm font-bold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-                            <Link :href="logoutRoute" method="post" as="button"
-                                class="flex-1 py-3 text-sm font-bold rounded-xl bg-red-600 text-white hover:bg-red-700 transition shadow-lg shadow-red-500/20">
-                                Confirm Sign Out</Link>
-                        </div>
-                    </div>
-                </div>
-            </transition>
-        </Teleport>
     </aside>
 </template>
 

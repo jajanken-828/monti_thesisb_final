@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\Hrm\ApplicantController as HrmApplicantController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Trainee\TraineeAttendanceController;
@@ -46,6 +47,12 @@ Route::middleware(['auth'])->group(function () {
     })->name('awaiting.access');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // TopBar Settings → Help Center (FAQs + Report a Problem) and About.
+    Route::get('/help', [HelpController::class, 'index'])->name('help.index');
+    Route::post('/help/report', [HelpController::class, 'store'])->name('help.report.store');
+    Route::get('/help/report/{report}', [HelpController::class, 'show'])->name('help.report.show');
+    Route::get('/about', [HelpController::class, 'about'])->name('about.index');
+    Route::post('/profile/application', [ProfileController::class, 'updateApplication'])->name('profile.application.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     /*

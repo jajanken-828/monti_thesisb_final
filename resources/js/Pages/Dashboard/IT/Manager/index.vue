@@ -48,7 +48,7 @@ const cards = [
                 </p>
             </div>
             <Link :href="route('it.tickets')"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 Open Service Desk <ArrowRight class="w-4 h-4" />
             </Link>
         </div>
@@ -68,7 +68,7 @@ const cards = [
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <h2 class="text-sm font-black uppercase tracking-widest text-slate-500">Priority Queue</h2>
                     <Link :href="route('it.tickets')" class="text-xs font-bold text-blue-600 hover:text-blue-500">View all →</Link>
                 </div>
@@ -76,7 +76,7 @@ const cards = [
                     Queue clear. No open tickets.
                 </div>
                 <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    <li v-for="t in recentTickets" :key="t.id" class="px-6 py-3.5 flex items-center gap-3">
+                    <li v-for="t in recentTickets" :key="t.id" class="px-4 sm:px-6 py-3 sm:py-3.5 flex items-center gap-3">
                         <span :class="['px-2 py-0.5 rounded-full text-[10px] font-black', priorityClass(t.priority)]">{{ t.priority }}</span>
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ t.ticket_no }} — {{ t.title }}</p>
@@ -87,7 +87,7 @@ const cards = [
             </div>
 
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <h2 class="text-sm font-black uppercase tracking-widest text-slate-500">Systems Needing Attention</h2>
                     <Link :href="route('it.monitoring')" class="text-xs font-bold text-blue-600 hover:text-blue-500">Monitor →</Link>
                 </div>
@@ -95,7 +95,7 @@ const cards = [
                     All monitored systems operational.
                 </div>
                 <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    <li v-for="s in attentionSystems" :key="s.id" class="px-6 py-3.5 flex items-center gap-3">
+                    <li v-for="s in attentionSystems" :key="s.id" class="px-4 sm:px-6 py-3 sm:py-3.5 flex items-center gap-3">
                         <span :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase', statusClass(s.status)]">{{ s.status }}</span>
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ s.name }}</p>

@@ -80,6 +80,23 @@ class CheckPagePermission
             }
         }
 
+        // Vice President: no HRM pages — the COO role is standalone (own VP
+        // module + full CRM, like the President) and has no job in HRM.
+        if ($module && strtoupper($module) === 'HRM'
+            && (in_array($user->role, ['COO'], true)
+                || ($user->position ?? '') === 'vice_president')) {
+            abort(403, "You do not have permission to access the '{$page}' page in the {$module} module.");
+        }
+
+        // President & Vice President have full (edit) access to every CRM
+        // page. An explicit 'disabled' row (handled above) still wins, so
+        // IT can revoke this per page when needed.
+        if ($module && strtoupper($module) === 'CRM'
+            && (in_array($user->role, ['CEO', 'COO'], true)
+                || ($user->position ?? '') === 'vice_president')) {
+            return $next($request);
+        }
+
         // Fallback: HRM staff can always view the dashboard (legacy)
         if ($page === 'dashboard' && $user->role === 'HRM' && $user->position === 'staff') {
             return $next($request);
@@ -147,9 +164,22 @@ class CheckPagePermission
         if ($routeName) {
             $parts = explode('.', $routeName);
             $firstPart = strtoupper($parts[0] ?? '');
+            // Staff-side applicant master reuses the canonical HRM
+            // `application` page (routes/Applicants.php) — resolve to HRM.
+            // Portal routes are `applicant.*` (singular) and never match.
+            if ($firstPart === 'APPLICANTS') {
+                return 'HRM';
+            }
             if ($this->isValidModule($firstPart)) {
                 return $firstPart;
             }
+        }
+
+        // 1b. Staff-side applicant master by path (dashboard/applicants*,
+        // applicants/* profile alias) — also HRM. The public applicant
+        // portal lives under singular `applicant/*` and never matches.
+        if (preg_match('#^(dashboard/applicants|applicants)(/|$)#i', $path)) {
+            return 'HRM';
         }
 
         // 2. Check for /dashboard/{module} pattern

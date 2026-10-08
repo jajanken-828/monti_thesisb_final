@@ -60,23 +60,59 @@ class ActivityController extends Controller
             'client_id' => 'nullable|exists:clients,id',
             'opportunity_id' => 'nullable|exists:crm_opportunities,id',
             'lead_id' => 'nullable|exists:crm_leads,id',
-            'type' => 'required|in:call,meeting,note,task,email',
-            'subject' => 'required|string|max:255',
+            'type' => 'required|in:call,meeting,reminder,todo,note,task,email',
+            'subject' => 'nullable|string|max:255',
+            'summary' => 'nullable|string|max:255',
             'body' => 'nullable|string|max:4000',
+            'notes' => 'nullable|string|max:4000',
             'due_at' => 'nullable|date',
+            'due_date' => 'nullable|date',
+            'assigned_to' => 'nullable|exists:users,id',
+            'mark_done' => 'nullable|boolean',
         ]);
-        abort_if(empty($data['client_id']) && empty($data['opportunity_id']) && empty($data['lead_id']), 422, 'Attach the activity to an account, deal or lead.');
+        if (empty($data['client_id']) && empty($data['opportunity_id']) && empty($data['lead_id'])) {
+            return back()->withErrors(['error' => 'Attach the activity to an account, deal or lead.'])->withInput();
+        }
+        if (empty($data['subject']) && empty($data['summary'])) {
+            return back()->withErrors(['summary' => 'Give the activity a summary.'])->withInput();
+        }
 
-        CrmActivity::create([...$data, 'owner_id' => Auth::id()]);
+        $summary = $data['summary'] ?? $data['subject'];
+        $due = $data['due_date'] ?? $data['due_at'] ?? null;
+        $done = ! empty($data['mark_done']);
 
-        return back()->with('message', 'Activity logged.');
+        CrmActivity::create([
+            'client_id' => $data['client_id'] ?? null,
+            'opportunity_id' => $data['opportunity_id'] ?? null,
+            'lead_id' => $data['lead_id'] ?? null,
+            'type' => $data['type'],
+            'subject' => $summary,
+            'summary' => $summary,
+            'body' => $data['notes'] ?? $data['body'] ?? null,
+            'notes' => $data['notes'] ?? $data['body'] ?? null,
+            'due_at' => $due,
+            'due_date' => $due,
+            'done_at' => $done ? now() : null,
+            'status' => $done ? 'done' : 'planned',
+            'owner_id' => Auth::id(),
+            'assigned_to' => $data['assigned_to'] ?? Auth::id(),
+        ]);
+
+        return back()->with('message', $done ? 'Activity logged as done.' : 'Activity scheduled.');
     }
 
     public function done(CrmActivity $activity)
     {
-        $activity->update(['done_at' => now()]);
+        $activity->update(['done_at' => now(), 'status' => 'done']);
 
         return back()->with('message', 'Marked done.');
+    }
+
+    public function cancel(CrmActivity $activity)
+    {
+        $activity->update(['status' => 'cancelled']);
+
+        return back()->with('message', 'Activity cancelled.');
     }
 
     public function destroy(CrmActivity $activity)

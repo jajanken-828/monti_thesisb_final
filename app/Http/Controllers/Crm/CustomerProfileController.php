@@ -7,6 +7,7 @@ use App\Models\Crm\Client;
 use App\Models\Crm\CrmClientAssignment;
 use App\Models\Crm\CrmMeeting;
 use App\Models\Crm\CrmFeedback;
+use App\Support\RouteHash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -23,7 +24,7 @@ class CustomerProfileController extends Controller
     {
         $user = Auth::user();
 
-        if (!in_array($user->role, ['CRM'])) {
+        if (!in_array($user->role, ['CRM', 'CEO', 'COO'], true)) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -62,11 +63,13 @@ class CustomerProfileController extends Controller
     /**
      * Account 360: company record + contacts, open deals, order history,
      * activity timeline, cases, meetings/feedback and credit standing.
+     * The route key is hashed (see App\Support\RouteHash).
      */
-    public function show($id)
+    public function show($key)
     {
         $user = Auth::user();
-        $client = Client::with(['feedback.assignee', 'logo'])->findOrFail($id);
+        $client = Client::with(['feedback.assignee', 'logo'])
+            ->findOrFail(RouteHash::decodeOrFail((string) $key, 'client'));
 
         // Restrict staff to only their assigned clients
         if ($user->role === 'CRM' && $user->position === 'staff') {
@@ -76,7 +79,7 @@ class CustomerProfileController extends Controller
             if (!$isAssigned) {
                 abort(403, 'You are not assigned to this client.');
             }
-        } elseif (!in_array($user->role, ['CRM'])) {
+        } elseif (!in_array($user->role, ['CRM', 'CEO', 'COO'], true)) {
             abort(403, 'Unauthorized access.');
         }
 

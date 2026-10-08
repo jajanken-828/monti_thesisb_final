@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\SupplierInvoicePaid;
 use App\Models\Inv\Warehouse;
 use App\Models\Pro\Supplier;
+use App\Models\Pro\SupplierProduct;
 use App\Models\Scm\MaterialRequest;
 use App\Models\Scm\ProcurementPayment;
 use App\Models\Scm\PurchaseInvoice;
@@ -45,6 +46,9 @@ class ProcurementController extends Controller
                 'rating' => $s->rating ?? 5.0,
                 'status' => 'Official Vendor',
                 'categories' => $s->categories ? json_decode($s->categories, true) : ['Fabric', 'Trim', 'Chemicals', 'Packaging'],
+                // Monti inventory material IDs this supplier carries
+                // (available products) — RFQ modal filters on these.
+                'product_material_ids' => self::productMaterialIds($s),
             ]);
 
         $requests = MaterialRequest::with('material')
@@ -55,6 +59,7 @@ class ProcurementController extends Controller
             ->map(fn ($r) => [
                 'id' => $r->id,
                 'req_number' => $r->req_number,
+                'material_id' => $r->material_id,
                 'material_name' => $r->material?->name ?? $r->material_name,
                 'category' => $r->material?->category ?? $r->category,
                 'unit' => $r->material?->unit ?? $r->unit,
@@ -75,6 +80,20 @@ class ProcurementController extends Controller
     }
 
     /**
+     * IDs of Monti inventory materials a supplier carries (available
+     * products only) — lets the RFQ modal show exactly the suppliers
+     * stocking the requested material.
+     */
+    public static function productMaterialIds(Supplier $supplier): array
+    {
+        return $supplier->products()
+            ->where('is_available', true)
+            ->pluck('material_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
      * Store a new RFQ and notify selected suppliers.
      */
     public function createRFQ(Request $request)
@@ -91,6 +110,28 @@ class ProcurementController extends Controller
         DB::beginTransaction();
         try {
             $mr = MaterialRequest::findOrFail($validated['mr_id']);
+
+            // Security: every selected supplier must carry the requested
+            // material in its available product catalog. The UI filters to
+            // matches, but this guards direct POSTs too.
+            $carryingIds = SupplierProduct::whereIn('supplier_id', $validated['selected_suppliers'])
+                ->where('material_id', $mr->material_id)
+                ->where('is_available', true)
+                ->pluck('supplier_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+            $offenders = Supplier::whereIn('id', $validated['selected_suppliers'])
+                ->get(['id', 'business_name'])
+                ->reject(fn ($s) => in_array((int) $s->id, $carryingIds, true));
+            if ($offenders->isNotEmpty()) {
+                DB::rollBack();
+
+                return redirect()->back()->withErrors([
+                    'error' => 'RFQ blocked: ' . $offenders->pluck('business_name')->implode(', ')
+                        . ' do(es) not carry ' . ($mr->material?->name ?? $mr->material_name)
+                        . ' in their product catalog.',
+                ]);
+            }
 
             RequestForQuotation::create([
                 'rfq_number' => $this->generateRFQNumber(),
@@ -184,7 +225,8 @@ class ProcurementController extends Controller
             $taxAmount = $subtotal * ($taxRate / 100);
             $grandTotal = $subtotal + $taxAmount;
 
-            // 4. Create the Purchase Order
+            // 4. Create the Purchase Order (finance-pending: FIN must approve
+            // before PRO can send it — see FinDashboardController).
             $po = ScmPurchaseOrder::create([
                 'po_number' => $this->generatePONumber(),
                 'supplier_id' => $supplier->id,
@@ -194,6 +236,7 @@ class ProcurementController extends Controller
                 'issued_date' => now(),
                 'expected_delivery' => $response->lead_time,
                 'status' => 'draft',
+                'finance_status' => 'pending',
                 'subtotal' => $subtotal,
                 'tax_rate' => $taxRate,
                 'tax_amount' => $taxAmount,
@@ -217,7 +260,7 @@ class ProcurementController extends Controller
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Quotation accepted. Scm PO generated as Draft.');
+            return redirect()->back()->with('success', 'Quotation accepted. PO generated — awaiting finance approval.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Accept quotation failed: '.$e->getMessage());
@@ -260,6 +303,9 @@ class ProcurementController extends Controller
                 'po_number' => $po->po_number,
                 'supplier_name' => $po->supplier_name,
                 'status' => $po->status,
+                'finance_status' => $po->finance_status ?? 'pending',
+                'finance_remarks' => $po->finance_remarks,
+                'has_rfq' => $po->rfq_id !== null,
                 'grand_total' => $po->grand_total,
                 'items' => $po->items->map(fn ($item) => [
                     'material_name' => $item->material_name,
@@ -292,11 +338,18 @@ class ProcurementController extends Controller
 
     /**
      * Send PO to supplier (Change status from Draft to Sent).
+     * Only finance-approved draft POs may be sent.
      */
     public function sendPurchaseOrder($poId)
     {
         try {
             $po = ScmPurchaseOrder::findOrFail($poId);
+            if ($po->status !== 'draft') {
+                return redirect()->back()->withErrors(['error' => 'Only draft POs can be sent.']);
+            }
+            if (($po->finance_status ?? 'pending') !== 'approved') {
+                return redirect()->back()->withErrors(['error' => 'Finance approval is required before sending this PO.']);
+            }
             $po->update(['status' => 'sent']);
 
             return redirect()->back()->with('success', 'Purchase Order sent to supplier.');
@@ -305,6 +358,80 @@ class ProcurementController extends Controller
 
             return redirect()->back()->withErrors(['error' => 'Failed to send PO.']);
         }
+    }
+
+    /**
+     * Return a finance-declined PO's material request to the queue so PRO
+     * can run a fresh RFQ round. The declined PO stays as history.
+     */
+    public function returnToRequests($poId)
+    {
+        try {
+            $po = ScmPurchaseOrder::with('rfq')->findOrFail($poId);
+            if (($po->finance_status ?? 'pending') !== 'declined') {
+                return redirect()->back()->withErrors(['error' => 'Only finance-declined POs can be returned to Material Requests.']);
+            }
+            $mr = $po->rfq?->mr_id ? MaterialRequest::find($po->rfq->mr_id) : null;
+            if (! $mr) {
+                return redirect()->back()->withErrors(['error' => 'No linked material request found for this PO.']);
+            }
+
+            $mr->update(['status' => 'forwarded']);
+
+            return redirect()->back()->with('success', "Material request {$mr->req_number} is back in Material Requests for a fresh RFQ round.");
+        } catch (\Exception $e) {
+            Log::error('Return to requests failed: '.$e->getMessage());
+
+            return redirect()->back()->withErrors(['error' => 'Failed to return to Material Requests.']);
+        }
+    }
+
+    /**
+     * Order tracking: every MontiTextile purchase order to suppliers with
+     * timeline state, items, invoices and payments for the tracking modal.
+     */
+    public function tracking()
+    {
+        $orders = ScmPurchaseOrder::with(['items', 'invoices'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($po) {
+                $invoices = $po->invoices->map(fn ($inv) => [
+                    'invoice_number' => $inv->invoice_number,
+                    'amount' => $inv->amount,
+                    'status' => $inv->status,
+                    'paid' => ProcurementPayment::where('invoice_id', $inv->id)
+                        ->where('status', 'cleared')
+                        ->sum('amount'),
+                ])->values();
+
+                return [
+                    'id' => $po->id,
+                    'po_number' => $po->po_number,
+                    'supplier_name' => $po->supplier_name,
+                    'status' => $po->status,
+                    'finance_status' => $po->finance_status ?? 'pending',
+                    'finance_remarks' => $po->finance_remarks,
+                    'finance_decided_at' => $po->finance_decided_at,
+                    'grand_total' => $po->grand_total,
+                    'issued_date' => $po->issued_date,
+                    'expected_delivery' => $po->expected_delivery,
+                    'created_at' => $po->created_at?->format('Y-m-d H:i'),
+                    'updated_at' => $po->updated_at?->format('Y-m-d H:i'),
+                    'items' => $po->items->map(fn ($item) => [
+                        'material_name' => $item->material_name,
+                        'qty' => $item->qty,
+                        'unit' => $item->unit,
+                        'unit_price' => $item->unit_price,
+                        'total' => $item->total,
+                    ])->values(),
+                    'invoices' => $invoices,
+                ];
+            });
+
+        return Inertia::render('Dashboard/PRO/tracking', [
+            'purchaseOrders' => $orders,
+        ]);
     }
 
     /**

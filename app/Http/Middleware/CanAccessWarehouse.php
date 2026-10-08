@@ -12,6 +12,10 @@ class CanAccessWarehouse
     {
         $user = Auth::user();
 
+        if (! $user) {
+            abort(403, 'Unauthorized.');
+        }
+
         // CEO, secretary, general manager always have access
         if ($user->position === 'secretary' || $user->position === 'special_officer') {
             return $next($request);

@@ -36,4 +36,10 @@ class CrmFeedback extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
+
+    // Files/images sent with this feedback or complaint
+    public function attachments()
+    {
+        return $this->hasMany(CrmFeedbackAttachment::class, 'feedback_id')->oldest();
+    }
 }

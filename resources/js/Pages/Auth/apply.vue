@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { useTheme, initTheme } from '@/composables/useTheme';
 import {
     FileCheck, Upload, Trash2, ShieldCheck, Save, CheckCircle2, Plus, X, User, Briefcase,
     Calendar, MapPin, Users, Heart, Phone, Mail, BookOpen, Award, ChevronDown, ChevronUp
@@ -347,7 +348,12 @@ const fetchActivePositions = async () => {
     }
 };
 
+const { currentTheme } = useTheme();
+const THEME_ACCENT = { blue: 'blue', red: 'red', green: 'emerald' };
+const authAccent = computed(() => THEME_ACCENT[currentTheme.value] ?? 'blue');
+
 onMounted(() => {
+    initTheme();
     isLoaded.value = true;
     fetchActivePositions();
 });
@@ -358,7 +364,7 @@ onMounted(() => {
     <Head title="Join Our Team | Monti Corp Careers" />
 
     <div class="auth-scope relative flex min-h-screen w-full flex-col overflow-y-auto font-sans"
-        data-accent="blue"
+        :data-accent="authAccent"
         style="background-image: url('/images/landingTheme.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-color: #2a2a3e;">
         <div class="absolute inset-0 bg-black/30 backdrop-blur-[1px]"></div>
         <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10 pointer-events-none"></div>

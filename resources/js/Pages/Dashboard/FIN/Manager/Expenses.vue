@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Wallet, Search, Sparkles, ReceiptText, Tags } from 'lucide-vue-next';
+import { Wallet, Search, Sparkles, ReceiptText, Tags, X } from 'lucide-vue-next';
 
 const props = defineProps({
     expenses: { type: Array, default: () => [] },
@@ -13,6 +13,28 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const categoryFilter = ref('all');
+
+// --- Record-expense modal (live ledger post) ---
+const showExpenseModal = ref(false);
+const expenseForm = useForm({
+    expense_date: new Date().toISOString().split('T')[0],
+    category: 'Utilities',
+    description: '',
+    amount: '',
+    department: '',
+});
+const openExpenseModal = () => {
+    expenseForm.reset();
+    expenseForm.expense_date = new Date().toISOString().split('T')[0];
+    expenseForm.clearErrors();
+    showExpenseModal.value = true;
+};
+const submitExpense = () => {
+    expenseForm.post(route('fin.manager.expenses.store'), {
+        preserveScroll: true,
+        onSuccess: () => { showExpenseModal.value = false; },
+    });
+};
 
 const peso = (v) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v ?? 0));
 
@@ -183,12 +205,82 @@ const categoryChip = (category) => {
                     <!-- Month total footer -->
                     <div class="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 dark:border-zinc-800 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 px-5 py-4 text-white">
                         <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">Month total · {{ filteredExpenses.length }} record{{ filteredExpenses.length !== 1 ? 's' : '' }}</p>
-                        <p class="text-xl font-black tracking-tight">{{ peso(filteredTotal) }}</p>
+                        <div class="flex items-center gap-3">
+                            <p class="text-xl font-black tracking-tight">{{ peso(filteredTotal) }}</p>
+                            <button @click="openExpenseModal" class="rounded-xl bg-white px-4 py-2 text-xs font-black text-indigo-700 hover:bg-indigo-50 transition active:scale-95">+ Record expense</button>
+                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
+
+        <!-- Record-expense modal (live ledger post) -->
+        <Transition name="modal">
+            <div v-if="showExpenseModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm" @click="showExpenseModal = false" />
+                <div class="relative w-full max-w-md overflow-hidden rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl">
+                    <div class="bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-5 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100">New expense</p>
+                                <h3 class="text-lg font-black tracking-tight">Record expense</h3>
+                            </div>
+                            <button @click="showExpenseModal = false" class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition active:scale-95">
+                                <X class="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="block">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Date *</span>
+                                <input v-model="expenseForm.expense_date" type="date"
+                                    class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                                <p v-if="expenseForm.errors.expense_date" class="text-[11px] font-bold text-rose-600 mt-1">{{ expenseForm.errors.expense_date }}</p>
+                            </label>
+                            <label class="block">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Amount (₱) *</span>
+                                <input v-model="expenseForm.amount" type="number" min="0.01" step="0.01" placeholder="0.00"
+                                    class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                                <p v-if="expenseForm.errors.amount" class="text-[11px] font-bold text-rose-600 mt-1">{{ expenseForm.errors.amount }}</p>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="block">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Category *</span>
+                                <select v-model="expenseForm.category"
+                                    class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    <option>Raw materials</option>
+                                    <option>Payroll</option>
+                                    <option>Utilities</option>
+                                    <option>Dye chemicals</option>
+                                    <option>Logistics</option>
+                                    <option>Maintenance</option>
+                                    <option>Rent</option>
+                                    <option>Other</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Department</span>
+                                <input v-model="expenseForm.department" type="text" placeholder="e.g. Dyeing"
+                                    class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                            </label>
+                        </div>
+                        <label class="block">
+                            <span class="text-[11px] font-black uppercase tracking-widest text-gray-400">Description *</span>
+                            <input v-model="expenseForm.description" type="text" placeholder="e.g. Electricity — Meralco"
+                                class="mt-1.5 w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-4 py-3 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+                            <p v-if="expenseForm.errors.description" class="text-[11px] font-bold text-rose-600 mt-1">{{ expenseForm.errors.description }}</p>
+                        </label>
+                        <div class="flex gap-2">
+                            <button @click="showExpenseModal = false" class="flex-1 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition active:scale-95">Cancel</button>
+                            <button @click="submitExpense" :disabled="expenseForm.processing" class="flex-1 rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 shadow-lg shadow-indigo-500/20 hover:opacity-95 transition active:scale-95 disabled:opacity-50">{{ expenseForm.processing ? 'Saving…' : 'Save expense' }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </AuthenticatedLayout>
 </template>
 

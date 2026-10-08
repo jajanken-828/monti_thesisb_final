@@ -59,6 +59,13 @@ class GeofenceAccessMiddleware
             return $next($request); // Network Validated
         }
 
+        // Also check against all active safe zone IPs as fallback
+        foreach ($safeZones as $safeZone) {
+            if ($safeZone->ip_address && $userIp === $safeZone->ip_address) {
+                return $next($request);
+            }
+        }
+
         // 4. DENY: BOTH FAILED
         return $this->deny(
             $request,

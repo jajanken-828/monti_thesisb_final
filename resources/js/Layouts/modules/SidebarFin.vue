@@ -1,7 +1,7 @@
 <script>
 import {
     LayoutDashboard, HandCoins, Receipt, Wallet, PieChart,
-    Users, BarChart3,
+    Users, BarChart3, Stamp,
 } from 'lucide-vue-next'
 
 export const finModule = {
@@ -22,6 +22,7 @@ export const finModule = {
             { label: 'Expenses', href: route('fin.manager.expenses'), icon: PieChart, permKey: 'expenses' },
             { label: 'Payroll', href: route('fin.manager.payroll'), icon: Users, permKey: 'payroll' },
             { label: 'Reports', href: route('fin.manager.reports'), icon: BarChart3, permKey: 'reports' },
+            { label: 'PO Approvals', href: route('fin.manager.approvals'), icon: Stamp, permKey: 'approvals' },
         ]
         if (isCEO) return all
         // Explicit rows (even all-'disabled') are the exact access set and

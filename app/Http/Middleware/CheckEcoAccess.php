@@ -10,7 +10,11 @@ class CheckEcoAccess
     public function handle($request, Closure $next)
     {
         $user = $request->user();
-        
+
+        if (! $user) {
+            abort(403, 'Unauthorized.');
+        }
+
         // CEO, secretary, general manager always have access
         if (in_array($user->position, ['secretary', 'special_officer'])) {
             return $next($request);

@@ -64,7 +64,7 @@ class ClientProductsController extends Controller
             'message' => $request->message,
         ]);
 
-        return redirect()->route('client.conversation.show', $inquiry->id)
+        return redirect()->route('client.conversation.show', $inquiry)
             ->with('success', 'Inquiry sent. You can now continue the conversation.');
     }
 
@@ -151,7 +151,7 @@ class ClientProductsController extends Controller
             'message'     => $initialMessage,
         ]);
 
-        return redirect()->route('client.conversation.show', $inquiry->id)
+        return redirect()->route('client.conversation.show', $inquiry)
             ->with('success', 'Bulk inquiry sent. Our team will contact you shortly.');
     }
 }

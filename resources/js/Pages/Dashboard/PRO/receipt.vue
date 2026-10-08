@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
-import { Package, Receipt, Send, Eye, Printer, Wallet, X, Sparkles, ArrowUpRight } from 'lucide-vue-next';
+import { Package, Receipt, Send, Eye, Printer, Wallet, X, Sparkles, ArrowUpRight, RotateCcw } from 'lucide-vue-next';
 
 const { canEdit } = usePageAccess();
 const canEditReceipt = computed(() => canEdit('PRO', 'receipt'));
@@ -18,6 +18,22 @@ const sendPO = (id) => {
         preserveScroll: true,
     });
 };
+
+const returnToRequests = (id) => {
+    if (!confirm('Return this declined PO\'s material request to Material Requests for a fresh RFQ round?')) return;
+    router.post(route('pro.manager.purchase-orders.return', id), {}, {
+        preserveScroll: true,
+    });
+};
+
+const finBadge = (s) => {
+    switch (s) {
+        case 'approved': return 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30';
+        case 'declined': return 'bg-rose-100 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30';
+        default: return 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30';
+    }
+};
+const finLabel = (s) => s === 'approved' ? 'Finance approved' : s === 'declined' ? 'Finance declined' : 'Awaiting finance';
 
 // --- Pay Invoice modal state ---
 const showPayModal = ref(false);
@@ -144,14 +160,19 @@ const canPay = (invoice) => !['paid', 'cancelled'].includes(invoice.status);
                                         <div class="flex gap-2 items-center flex-wrap">
                                             <span class="font-mono text-sm font-black text-gray-900 dark:text-white">{{ po.po_number }}</span>
                                             <span :class="statusBadge(po.status)" class="text-[10px] font-black uppercase px-2.5 py-1 rounded-full ring-1 flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ po.status }}</span>
+                                            <span :class="finBadge(po.finance_status)" class="text-[10px] font-black uppercase px-2.5 py-1 rounded-full ring-1 flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ finLabel(po.finance_status) }}</span>
                                         </div>
                                         <p class="font-black text-gray-900 dark:text-white mt-1 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">{{ po.supplier_name }}</p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Issued: {{ po.issued_date }} | Expected: {{ po.expected_delivery }}</p>
+                                        <p v-if="po.finance_status === 'declined' && po.finance_remarks" class="text-xs text-rose-600 dark:text-rose-400 mt-1 font-bold">Declined: {{ po.finance_remarks }}</p>
                                     </div>
                                     <div class="text-left sm:text-right flex-shrink-0">
                                         <p class="font-black text-emerald-600 dark:text-emerald-400 text-lg">{{ formatCurrency(po.grand_total) }}</p>
-                                        <button v-if="po.status === 'draft' && canEditReceipt" @click="sendPO(po.id)"
+                                        <button v-if="po.status === 'draft' && po.finance_status === 'approved' && canEditReceipt" @click="sendPO(po.id)"
                                             class="mt-2 px-5 py-2.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:opacity-95 active:scale-95 transition inline-flex items-center gap-1.5"><Send class="w-3.5 h-3.5" /> Send PO</button>
+                                        <p v-else-if="po.status === 'draft' && (po.finance_status ?? 'pending') === 'pending'" class="mt-2 text-[11px] font-bold text-amber-600 dark:text-amber-400">Awaiting finance approval</p>
+                                        <button v-if="po.finance_status === 'declined' && po.has_rfq && canEditReceipt" @click="returnToRequests(po.id)"
+                                            class="mt-2 px-5 py-2.5 bg-white dark:bg-zinc-800 border-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 rounded-2xl text-xs font-black uppercase tracking-widest hover:border-indigo-400 active:scale-95 transition inline-flex items-center gap-1.5"><RotateCcw class="w-3.5 h-3.5" /> Back to Material Requests</button>
                                     </div>
                                 </div>
                                 <div class="relative mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800 text-xs text-gray-500 dark:text-gray-400 space-y-1">

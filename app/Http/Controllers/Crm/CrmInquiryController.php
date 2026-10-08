@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Eco;
+namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Eco\Inquiry;
+use App\Models\Crm\FabricSampleRequest;
 use App\Models\Eco\ConversationMessage;
 use App\Models\Eco\ConversationAttachment;
 use App\Models\Eco\EcoQuotation;
@@ -12,14 +13,16 @@ use App\Models\Man\BomRecord;
 use App\Models\Ord\SalesOrder;
 use App\Models\Inv\Material;
 use App\Support\ConversationRealtime;
+use App\Support\InquiryHash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
-class EcoInquiryController extends Controller
+class CrmInquiryController extends Controller
 {
     /**
      * Display a listing of the inquiries.
@@ -27,18 +30,19 @@ class EcoInquiryController extends Controller
     public function index()
     {
         $inquiries = Inquiry::with(['client', 'product'])->latest()->get();
-        return Inertia::render('Dashboard/ECO/Inquiry', ['inquiries' => $inquiries]);
+        return Inertia::render('Dashboard/CRM/Inquiry', ['inquiries' => $inquiries]);
     }
 
     /**
      * Display the specific inquiry and conversation page.
      * Passes `parsedProducts`, `recipes`, and `materials` for the UI.
+     * The route key is hashed (see App\Support\InquiryHash).
      */
-    public function show($id)
+    public function show($key)
     {
         $inquiry = Inquiry::with(['client', 'product', 'messages' => function ($query) {
-            $query->with('attachments')->oldest();
-        }])->findOrFail($id);
+            $query->with(['attachments', 'sampleRequest'])->oldest();
+        }, 'sampleRequests.product'])->findOrFail(InquiryHash::decodeOrFail((string) $key));
 
         $quotations = EcoQuotation::with('items')
             ->where('inquiry_id', $inquiry->id)
@@ -65,22 +69,57 @@ class EcoInquiryController extends Controller
             ])
             ->values();
 
-        // Debug: Log the recipes found
-        Log::info('EcoInquiryController@show - Recipes for client', [
+        // Debug: Log only non-sensitive metadata
+        Log::info('CrmInquiryController@show - Recipes for client', [
             'client_id'     => $inquiry->client_id,
             'recipes_count' => $recipes->count(),
-            'recipes'       => $recipes->toArray(),
         ]);
 
         // Get all raw materials for recipe creation
         $materials = Material::select('id', 'mat_id', 'name', 'unit')->get();
 
-        return Inertia::render('Dashboard/ECO/InquiryShow', [
+        // Lab recipes formulated for THIS conversation (dyeing lab chemist via
+        // fabric sample rounds) so the job-order modal can surface and
+        // pre-select them distinctly from older client recipes.
+        $sampleRecipes = FabricSampleRequest::with(['recipe.product', 'product'])
+            ->where('inquiry_id', $inquiry->id)
+            ->whereNotNull('recipe_id')
+            ->whereNotIn('status', [FabricSampleRequest::STATUS_CANCELLED])
+            ->latest()
+            ->get()
+            ->map(fn ($s) => [
+                'sample_id' => $s->id,
+                'sample_code' => $s->code,
+                'sample_status' => $s->status,
+                'fabric_name' => $s->fabric_name,
+                'recipe' => $s->recipe ? [
+                    'id' => $s->recipe->id,
+                    'product_id' => $s->recipe->product_id,
+                    'yarn_type' => $s->recipe->yarn_type,
+                    'dye_color' => $s->recipe->dye_color,
+                    'weave_design' => $s->recipe->weave_design,
+                    'product' => $s->recipe->product
+                        ? ['id' => (int) $s->recipe->product->id, 'name' => $s->recipe->product->name]
+                        : null,
+                ] : null,
+            ])
+            ->filter(fn ($s) => $s['recipe'] !== null)
+            ->values();
+
+        return Inertia::render('Dashboard/CRM/InquiryShow', [
             'inquiry'        => $inquiry,
             'quotations'     => $quotations,
+            // Latest client-accepted quotation: the job-order modal prices
+            // each color tier (White / Light / Dark) from these unit prices.
+            'approvedQuotation' => $quotations->firstWhere('status', 'accepted'),
+            // Every accepted quotation: a conversation may hold more than one
+            // (e.g. revised quotes), so the job-order modal lets CRM pick
+            // exactly which one prices the order. Latest first.
+            'acceptedQuotations' => $quotations->where('status', 'accepted')->values(),
             'parsedProducts' => $this->extractProductsFromInquiry($inquiry),
             'allProducts'    => \App\Models\Inv\Product::select('id', 'name', 'sku')->get(),
             'recipes'        => $recipes,
+            'sampleRecipes'  => $sampleRecipes,
             'materials'      => $materials,
         ]);
     }
@@ -228,7 +267,7 @@ class EcoInquiryController extends Controller
     {
         $request->validate([
             'message'  => 'required_without:files|nullable|string|max:2000',
-            'files.*'  => 'nullable|file|max:10240',
+            'files.*'  => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,zip|max:10240',
         ]);
 
         $message = ConversationMessage::create([
@@ -251,7 +290,7 @@ class EcoInquiryController extends Controller
 
         $inquiry->update(['last_message_at' => now()]);
 
-        // ECO just sent something → they are no longer "typing".
+        // CRM just sent something → they are no longer "typing".
         ConversationRealtime::clearTyping($inquiry->id, 'eco');
 
         $message->load('attachments');
@@ -264,7 +303,7 @@ class EcoInquiryController extends Controller
     }
 
     /**
-     * Real-time polling feed for the ECO side.
+     * Real-time polling feed for the CRM side.
      * GET ?after=<lastMessageId> → only newer messages are returned.
      * Also reports whether the CLIENT is currently typing.
      */
@@ -280,7 +319,7 @@ class EcoInquiryController extends Controller
     }
 
     /**
-     * Typing heartbeat for the ECO side. Called (debounced) while staff type.
+     * Typing heartbeat for the CRM side. Called (debounced) while staff type.
      */
     public function typing(Request $request, Inquiry $inquiry)
     {
@@ -292,15 +331,17 @@ class EcoInquiryController extends Controller
     /**
      * Schedule a meeting for an inquiry.
      */
-    public function setMeeting(Request $request, $inquiryId)
+    public function setMeeting(Request $request, $key)
     {
         $request->validate([
-            'scheduled_at' => 'required|date',
+            // Meetings can only be set for today or a future date —
+            // backdated meetings make no sense and break the timeline.
+            'scheduled_at' => 'required|date|after_or_equal:today',
             'location'     => 'nullable|string|max:255',
             'type'         => 'nullable|string|in:video,phone,onsite',
         ]);
 
-        $inquiry     = Inquiry::findOrFail($inquiryId);
+        $inquiry     = Inquiry::findOrFail(InquiryHash::decodeOrFail((string) $key));
         $meetingData = [
             'scheduled_at' => $request->scheduled_at,
             'location'     => $request->location ?? 'Not specified',
@@ -339,7 +380,7 @@ class EcoInquiryController extends Controller
             ConversationMessage::create([
                 'inquiry_id'      => $inquiry->id,
                 'sender_type'     => 'eco',
-                'message'         => "Inquiry Rejected by ECO Manager." . $reasonText,
+                'message'         => "Inquiry Rejected by CRM Manager." . $reasonText,
                 'is_system_event' => true,
             ]);
 
@@ -349,6 +390,54 @@ class EcoInquiryController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => 'Failed to reject: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Request a fabric sample from the dyeing lab, from inside the
+     * conversation. The lab chemist picks it up on the shade page.
+     */
+    public function requestSample(Request $request, Inquiry $inquiry)
+    {
+        $validated = $request->validate([
+            'product_id'        => 'required|exists:products,id',
+            'color_description' => 'required|string|max:2000',
+            'notes'             => 'nullable|string|max:2000',
+            'urgency'           => 'nullable|in:low,normal,high,urgent',
+        ]);
+
+        $product = \App\Models\Inv\Product::findOrFail($validated['product_id']);
+
+        $round = FabricSampleRequest::where('inquiry_id', $inquiry->id)->count() + 1;
+
+        $sample = FabricSampleRequest::create([
+            'code'              => 'FSR-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5)),
+            'inquiry_id'        => $inquiry->id,
+            'client_id'         => $inquiry->client_id,
+            'product_id'        => $product->id,
+            'fabric_name'       => $product->name,
+            'color_description' => $validated['color_description'],
+            'notes'             => $validated['notes'] ?? null,
+            'urgency'           => $validated['urgency'] ?? 'normal',
+            'status'            => FabricSampleRequest::STATUS_REQUESTED,
+            'requested_by'      => Auth::id(),
+        ]);
+
+        ConversationMessage::create([
+            'inquiry_id'        => $inquiry->id,
+            'sender_type'       => 'eco',
+            'message'           => "🧪 Fabric Sample Requested (Round {$round}): {$product->name}\n"
+                . "Colors: {$validated['color_description']}"
+                . (! empty($validated['notes']) ? "\nNotes: {$validated['notes']}" : ''),
+            'is_system_event'   => true,
+            // Internal Monti process — the client only sees the result once
+            // CRM forwards the formulated sample.
+            'visible_to_client' => false,
+            'sample_request_id' => $sample->id,
+        ]);
+
+        $inquiry->update(['last_message_at' => now()]);
+
+        return back()->with('success', "Sample request {$sample->code} sent to the dyeing lab.");
     }
 
     /**

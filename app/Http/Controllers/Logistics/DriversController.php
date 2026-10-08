@@ -25,14 +25,15 @@ class DriversController extends Controller
             'email' => 'required|email|unique:users',
             'phone' => 'required',
             'license_number' => 'required|unique:drivers',
-            'license_image' => 'nullable|image|max:2048',
-            'medical_certificate' => 'nullable|image|max:2048',
+            'license_image' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:2048',
+            'medical_certificate' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
+        $tempPassword = bin2hex(random_bytes(8));
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make('password123'),
+            'password' => Hash::make($tempPassword),
             'role' => 'LOG',
             'position' => 'staff',
         ]);

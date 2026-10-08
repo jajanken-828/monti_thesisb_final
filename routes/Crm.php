@@ -6,13 +6,14 @@ use App\Http\Controllers\Crm\CampaignController;
 use App\Http\Controllers\Crm\CaseController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CrmDashboardController;
+use App\Http\Controllers\Crm\CrmInquiryController;
 use App\Http\Controllers\Crm\CustomerProfileController;
 
 use App\Http\Controllers\Crm\InvestigationController;
 use App\Http\Controllers\Crm\LeadController;
 use App\Http\Controllers\Crm\OpportunityController;
 use App\Http\Controllers\Crm\QuotationController;
-use App\Http\Controllers\Crm\SocialsController;
+use App\Http\Controllers\Crm\StageController;
 use App\Http\Controllers\Crm\CrmLogoPartnerController;
 
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,9 @@ Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified', 'm
     Route::post('/lead/{id}/qualify', [LeadController::class, 'qualify'])
         ->middleware('page.permission:leads,edit')
         ->name('lead.qualify');
+    Route::post('/lead/{id}/pipeline', [LeadController::class, 'sendToPipeline'])
+        ->middleware('page.permission:leads,edit')
+        ->name('lead.pipeline');
 
 
 
@@ -104,7 +108,47 @@ Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified', 'm
         ->middleware('page.permission:customer_profiles,edit')
         ->name('contacts.primary');
 
-    // Opportunities (deal pipeline; approvals surface as stage gates)
+    // Client inquiries & conversations — moved here from ECO: highly customized
+    // orders go through multiple discussion/agreement rounds, so they belong
+    // with the relationship workflow (leads → inquiries → quotations).
+    Route::get('/inquiries', [CrmInquiryController::class, 'index'])
+        ->middleware('page.permission:inquiry,view')
+        ->name('inquiries');
+    Route::get('/inquiries/{inquiry}', [CrmInquiryController::class, 'show'])
+        ->middleware('page.permission:inquiry,view')
+        ->name('inquiry.show');
+    Route::post('/inquiries/{inquiry}/message', [CrmInquiryController::class, 'sendMessage'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('inquiry.message');
+    // Real-time: polling feed + typing heartbeat (no page reload needed)
+    Route::get('/inquiries/{inquiry}/feed', [CrmInquiryController::class, 'feed'])
+        ->middleware('page.permission:inquiry,view')
+        ->name('inquiry.feed');
+    Route::post('/inquiries/{inquiry}/typing', [CrmInquiryController::class, 'typing'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('inquiry.typing');
+    Route::post('/inquiries/{inquiry}/meeting', [CrmInquiryController::class, 'setMeeting'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('inquiry.meeting');
+    Route::post('/inquiries/{inquiry}/quotation', [CrmInquiryController::class, 'issueQuotation'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('inquiry.quotation');
+    Route::post('/inquiries/{inquiry}/reject', [CrmInquiryController::class, 'reject'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('inquiry.reject');
+    // Fabric sample loop: request from the lab, then forward the result.
+    Route::post('/inquiries/{inquiry}/sample-request', [CrmInquiryController::class, 'requestSample'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('inquiry.sample-request');
+    // Attachment actions (previously eco.attachment.*)
+    Route::post('/attachment/{attachment}/create-recipe', [CrmInquiryController::class, 'createRecipeFromAttachment'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('attachment.create-recipe');
+    Route::post('/attachment/{attachment}/create-job-order', [CrmInquiryController::class, 'createJobOrderFromPO'])
+        ->middleware('page.permission:inquiry,edit')
+        ->name('attachment.create-job-order');
+
+    // Opportunities — Odoo-style pipeline board + detail form
     Route::get('/opportunities', [OpportunityController::class, 'index'])
         ->middleware('page.permission:opportunities,view')
         ->name('opportunities');
@@ -114,9 +158,29 @@ Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified', 'm
     Route::get('/opportunities/{opportunity}', [OpportunityController::class, 'show'])
         ->middleware('page.permission:opportunities,view')
         ->name('opportunities.show');
+    Route::patch('/opportunities/{opportunity}', [OpportunityController::class, 'update'])
+        ->middleware('page.permission:opportunities,edit')
+        ->name('opportunities.update');
     Route::post('/opportunities/{opportunity}/move', [OpportunityController::class, 'move'])
         ->middleware('page.permission:opportunities,edit')
         ->name('opportunities.move');
+    Route::post('/opportunities/{opportunity}/priority', [OpportunityController::class, 'setPriority'])
+        ->middleware('page.permission:opportunities,edit')
+        ->name('opportunities.priority');
+
+    // Pipeline stages (custom columns)
+    Route::post('/stages', [StageController::class, 'store'])
+        ->middleware('page.permission:opportunities,edit')
+        ->name('stages.store');
+    Route::patch('/stages/{stage}', [StageController::class, 'update'])
+        ->middleware('page.permission:opportunities,edit')
+        ->name('stages.update');
+    Route::post('/stages/reorder', [StageController::class, 'reorder'])
+        ->middleware('page.permission:opportunities,edit')
+        ->name('stages.reorder');
+    Route::delete('/stages/{stage}', [StageController::class, 'destroy'])
+        ->middleware('page.permission:opportunities,edit')
+        ->name('stages.destroy');
 
     // Activities (unified timeline)
     Route::get('/activities', [ActivityController::class, 'index'])
@@ -128,6 +192,9 @@ Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified', 'm
     Route::post('/activities/{activity}/done', [ActivityController::class, 'done'])
         ->middleware('page.permission:activities,edit')
         ->name('activities.done');
+    Route::post('/activities/{activity}/cancel', [ActivityController::class, 'cancel'])
+        ->middleware('page.permission:activities,edit')
+        ->name('activities.cancel');
     Route::delete('/activities/{activity}', [ActivityController::class, 'destroy'])
         ->middleware('page.permission:activities,edit')
         ->name('activities.destroy');
@@ -175,26 +242,6 @@ Route::prefix('dashboard/crm')->name('crm.')->middleware(['auth', 'verified', 'm
     Route::patch('/investigation/feedback/{id}/status', [InvestigationController::class, 'updateFeedbackStatus'])
         ->middleware('page.permission:investigation,edit')
         ->name('investigation.feedback.status');
-
-    // Socials
-    Route::get('/socials', [SocialsController::class, 'index'])
-        ->middleware('page.permission:socials,view')
-        ->name('socials.index');
-    Route::post('/socials/facebook/connect', [SocialsController::class, 'connectFb'])
-        ->middleware('page.permission:socials,edit')
-        ->name('socials.facebook.connect');
-    Route::delete('/socials/facebook', [SocialsController::class, 'disconnectFb'])
-        ->middleware('page.permission:socials,edit')
-        ->name('socials.facebook.disconnect');
-    Route::get('/socials/facebook/comments', [SocialsController::class, 'fbComments'])
-        ->middleware('page.permission:socials,view')
-        ->name('socials.facebook.comments');
-    Route::post('/socials/facebook/convert-post', [SocialsController::class, 'convertPost'])
-        ->middleware('page.permission:socials,edit')
-        ->name('socials.facebook.convert-post');
-    Route::post('/socials/facebook/convert-comment', [SocialsController::class, 'convertComment'])
-        ->middleware('page.permission:socials,edit')
-        ->name('socials.facebook.convert-comment');
 
     // Partner logos (company logos uploaded at registration / lead creation)
     Route::post('/logo-partner/upload', [CrmLogoPartnerController::class, 'upload'])

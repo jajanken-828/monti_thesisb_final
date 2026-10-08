@@ -58,13 +58,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
-        'position',
         'profile_photo_path',
         'employee_id',
         'department',
         'join_date',
-        'is_active',
         // Fields for promotion suggestion logic
         'promotion_suggested',
         'suggested_at',
@@ -309,6 +306,25 @@ class User extends Authenticatable
             ->whereIn('module', [$module, strtoupper((string) $module), strtolower((string) $module)])
             ->get(['page', 'permission_level'])
             ->first(fn ($row) => strtolower((string) $row->page) === strtolower((string) $page));
+
+        // An explicit 'disabled' row always wins — even for executives.
+        if ($record !== null && strtolower($record->permission_level ?? 'edit') === 'disabled') {
+            return false;
+        }
+
+        // Vice President: no HRM pages — the COO role is standalone.
+        if (strtoupper((string) $module) === 'HRM'
+            && (in_array($this->role, ['COO'], true)
+                || ($this->position ?? '') === 'vice_president')) {
+            return false;
+        }
+
+        // President & Vice President have full access to every CRM page.
+        if (strtoupper((string) $module) === 'CRM'
+            && (in_array($this->role, ['CEO', 'COO'], true)
+                || ($this->position ?? '') === 'vice_president')) {
+            return true;
+        }
 
         if ($record === null) {
             return false;

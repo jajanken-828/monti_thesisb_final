@@ -46,7 +46,7 @@ const goPage = (url) => {
                 </p>
             </div>
             <Link :href="route('it.access-control')"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 <ScrollText class="w-4 h-4" /> Back to Access Control
             </Link>
         </div>
@@ -67,31 +67,31 @@ const goPage = (url) => {
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
+                <table class="w-full text-left min-w-[720px]">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">When</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Changed By</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">When</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Changed By</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                         <tr v-for="log in rows" :key="log.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
-                            <td class="px-6 py-3.5 text-xs font-mono text-slate-500 whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-xs font-mono text-slate-500 whitespace-nowrap">
                                 {{ new Date(log.created_at).toLocaleString() }}
                             </td>
-                            <td class="px-6 py-3.5 whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 whitespace-nowrap">
                                 <span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase', actionClass(log.action)]">
                                     {{ actionLabel(log.action) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-3.5 text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">
                                 {{ log.target?.name || '—' }}
                             </td>
-                            <td class="px-6 py-3.5 text-xs text-slate-500 max-w-md">{{ log.details }}</td>
-                            <td class="px-6 py-3.5 text-xs text-slate-500 whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-xs text-slate-500 max-w-md">{{ log.details }}</td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-xs text-slate-500 whitespace-nowrap">
                                 {{ log.actor?.name || 'system' }}
                                 <span v-if="log.ip_address" class="block font-mono text-[10px] text-slate-400">{{ log.ip_address }}</span>
                             </td>
@@ -105,13 +105,13 @@ const goPage = (url) => {
             </div>
 
             <div v-if="logs.prev_page_url || logs.next_page_url"
-                class="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between">
+                class="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between">
                 <span class="text-xs text-slate-500">Page {{ logs.current_page }} of {{ logs.last_page }} · {{ logs.total }} entries</span>
                 <div class="flex gap-2">
                     <button @click="goPage(logs.prev_page_url)" :disabled="!logs.prev_page_url"
-                        class="px-3 py-1.5 text-xs font-bold text-slate-500 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">Previous</button>
+                        class="px-3 py-2 sm:py-1.5 text-xs font-bold text-slate-500 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">Previous</button>
                     <button @click="goPage(logs.next_page_url)" :disabled="!logs.next_page_url"
-                        class="px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">Next</button>
+                        class="px-3 py-2 sm:py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-50">Next</button>
                 </div>
             </div>
         </div>

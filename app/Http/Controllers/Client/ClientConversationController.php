@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Models\Crm\FabricSampleRequest;
 use App\Models\Eco\ConversationAttachment;
 use App\Models\Eco\ConversationMessage;
 use App\Models\Eco\Inquiry;
@@ -10,6 +11,7 @@ use App\Models\Eco\EcoQuotation;
 use App\Support\ConversationRealtime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -29,8 +31,9 @@ class ClientConversationController extends Controller
     {
         $this->authorizeClient($inquiry);
 
+        // Lab→CRM handoffs stay hidden until the CRM team forwards them.
         $inquiry->load(['messages' => function ($query) {
-            $query->with('attachments')->oldest();
+            $query->with(['attachments', 'sampleRequest'])->where('visible_to_client', true)->oldest();
         }, 'product']);
 
         $quotations = EcoQuotation::with('items')
@@ -50,7 +53,7 @@ class ClientConversationController extends Controller
 
         $request->validate([
             'message' => 'required_without:files|nullable|string',
-            'files.*' => 'nullable|file|max:10240',
+            'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,zip|max:10240',
         ]);
 
         $message = ConversationMessage::create([
@@ -95,7 +98,7 @@ class ClientConversationController extends Controller
         $this->authorizeClient($inquiry);
 
         $after = (int) $request->query('after', 0);
-        $messages = ConversationRealtime::feed($inquiry->id, $after);
+        $messages = ConversationRealtime::feed($inquiry->id, $after, true);
 
         return response()->json([
             'messages' => $messages,
@@ -174,6 +177,78 @@ class ClientConversationController extends Controller
     }
 
     /**
+     * Approve a forwarded fabric sample. The client may now send a P.O.
+     * through the existing purchase-order flow.
+     */
+    public function approveSample(Request $request, FabricSampleRequest $sampleRequest)
+    {
+        $inquiry = $sampleRequest->inquiry;
+        abort_unless($inquiry, 404);
+        $this->authorizeClient($inquiry);
+
+        if ($sampleRequest->status !== FabricSampleRequest::STATUS_FORWARDED) {
+            return back()->withErrors(['error' => 'This sample is no longer awaiting approval.']);
+        }
+
+        DB::transaction(function () use ($sampleRequest, $inquiry) {
+            $sampleRequest->update(['status' => FabricSampleRequest::STATUS_APPROVED]);
+
+            ConversationMessage::create([
+                'inquiry_id' => $inquiry->id,
+                'sender_type' => 'client',
+                'message' => "✅ Fabric sample approved ({$sampleRequest->code}): {$sampleRequest->fabric_name}. Ready for P.O.",
+                'is_system_event' => true,
+                'sample_request_id' => $sampleRequest->id,
+            ]);
+
+            $inquiry->update(['last_message_at' => now()]);
+        });
+
+        return back()->with('success', 'Fabric sample approved. You may now send your P.O.');
+    }
+
+    /**
+     * Request a color adjustment on a forwarded sample. The CRM team sees
+     * this and loops back with a new sample request round.
+     */
+    public function adjustSample(Request $request, FabricSampleRequest $sampleRequest)
+    {
+        $inquiry = $sampleRequest->inquiry;
+        abort_unless($inquiry, 404);
+        $this->authorizeClient($inquiry);
+
+        $validated = $request->validate([
+            'notes' => 'required|string|max:2000',
+        ]);
+
+        if ($sampleRequest->status !== FabricSampleRequest::STATUS_FORWARDED) {
+            return back()->withErrors(['error' => 'This sample is no longer awaiting approval.']);
+        }
+
+        DB::transaction(function () use ($sampleRequest, $inquiry, $validated) {
+            // Kept on the request itself so the chemist reads it on the
+            // shade page (the thread is invisible to the lab).
+            $sampleRequest->update([
+                'status' => FabricSampleRequest::STATUS_ADJUSTMENT_REQUESTED,
+                'adjustment_notes' => $validated['notes'],
+            ]);
+
+            ConversationMessage::create([
+                'inquiry_id' => $inquiry->id,
+                'sender_type' => 'client',
+                'message' => "🎨 Color adjustment requested ({$sampleRequest->code}): {$sampleRequest->fabric_name}\n"
+                    . "Notes: {$validated['notes']}",
+                'is_system_event' => true,
+                'sample_request_id' => $sampleRequest->id,
+            ]);
+
+            $inquiry->update(['last_message_at' => now()]);
+        });
+
+        return back()->with('success', 'Adjustment requested. The CRM team will prepare a new sample.');
+    }
+
+    /**
      * Accept a quotation (price agreement only, no order created yet).
      */
     public function acceptQuotation(Request $request, EcoQuotation $quotation)
@@ -201,6 +276,9 @@ class ClientConversationController extends Controller
 
         // Handle any attached files (e.g., proof of payment)
         if ($request->hasFile('files')) {
+            $request->validate([
+                'files.*' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,zip|max:10240',
+            ]);
             foreach ($request->file('files') as $file) {
                 $path = $file->store('eco_attachments', 'public');
                 ConversationAttachment::create([
@@ -213,6 +291,43 @@ class ClientConversationController extends Controller
         }
 
         return back()->with('success', 'Quotation accepted successfully.');
+    }
+
+    /**
+     * Trash an accepted quotation the client changed their mind on.
+     * Flags it for a fresh quotation — CRM sees the trash tab entry plus a
+     * thread message and issues a new quotation via the normal flow.
+     */
+    public function trashQuotation(Request $request, EcoQuotation $quotation)
+    {
+        if ($quotation->client_id !== Auth::guard('client')->id() || $quotation->status !== 'accepted') {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        DB::transaction(function () use ($quotation, $validated) {
+            $quotation->update([
+                'status' => 'trashed',
+                'request_new_quote' => true,
+            ]);
+
+            $msg = "Quotation {$quotation->quotation_number} moved to TRASH by the client. A new quotation was requested.";
+            if (! empty($validated['notes'])) {
+                $msg .= "\n\nClient notes: " . $validated['notes'];
+            }
+
+            ConversationMessage::create([
+                'inquiry_id' => $quotation->inquiry_id,
+                'sender_type' => 'client',
+                'message' => $msg,
+                'is_system_event' => true,
+            ]);
+        });
+
+        return back()->with('success', 'Quotation trashed. The CRM team will issue a new one.');
     }
 
     public function rejectQuotation(Request $request, EcoQuotation $quotation)

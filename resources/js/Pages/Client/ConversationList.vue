@@ -130,7 +130,7 @@
                                         {{ formatDate(inquiry.last_message_at) }}
                                     </td>
                                     <td class="px-8 py-6 text-right">
-                                        <Link :href="route('client.conversation.show', inquiry.id)"
+                                        <Link :href="route('client.conversation.show', inquiry.hash_key)"
                                             class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
                                             Open
                                             <ArrowRight class="h-3.5 w-3.5" />

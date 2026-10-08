@@ -36,7 +36,7 @@ class EmployeeLoginController extends Controller
         $this->ensureIsNotRateLimited($request);
 
         // 1. Attempt to authenticate the user using the employee_id and password
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt(['employee_id' => $credentials['employee_id'], 'password' => $credentials['password']], $request->boolean('remember'))) {
 
             $user = Auth::user();
 

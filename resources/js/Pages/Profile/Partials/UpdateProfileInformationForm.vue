@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { Camera, X } from 'lucide-vue-next';
+import { Camera, X, User as UserIcon } from 'lucide-vue-next';
 
 defineProps<{
     mustVerifyEmail?: Boolean;
@@ -63,17 +60,17 @@ const submit = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-lg font-medium text-gray-900 dark:text-zinc-100">
-                Profile Information
+            <h2 class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
+                <UserIcon class="h-4 w-4 text-indigo-500" /> Profile information
             </h2>
 
-            <p class="mt-1 text-sm text-gray-600 dark:text-zinc-400">
+            <p class="mt-1 text-[11px] text-slate-400">
                 Update your photo, name and email address.
             </p>
         </header>
 
-        <form @submit.prevent="submit" class="mt-6 space-y-6">
-            <div class="flex items-center gap-4">
+        <form @submit.prevent="submit" class="mt-4 space-y-4">
+            <div class="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-800/50">
                 <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-xl font-black text-slate-400 ring-1 ring-slate-200 dark:bg-zinc-800 dark:text-zinc-500 dark:ring-zinc-700">
                     <img v-if="displayPhoto" :src="displayPhoto" alt="Profile photo" class="h-full w-full object-cover" />
                     <span v-else>{{ (form.name || '?').charAt(0).toUpperCase() }}</span>
@@ -96,34 +93,34 @@ const submit = () => {
             <InputError :message="form.errors.photo" />
 
             <div>
-                <InputLabel for="name" value="Name" />
+                <label for="name" class="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Name</label>
 
-                <TextInput
+                <input
                     id="name"
                     type="text"
-                    class="mt-1 block w-full"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     v-model="form.name"
                     required
                     autofocus
                     autocomplete="name"
                 />
 
-                <InputError class="mt-2" :message="form.errors.name" />
+                <InputError class="mt-1" :message="form.errors.name" />
             </div>
 
             <div>
-                <InputLabel for="email" value="Email" />
+                <label for="email" class="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">Email</label>
 
-                <TextInput
+                <input
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     v-model="form.email"
                     required
                     autocomplete="username"
                 />
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError class="mt-1" :message="form.errors.email" />
             </div>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">
@@ -147,8 +144,11 @@ const submit = () => {
                 </div>
             </div>
 
-            <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+            <div class="flex items-center gap-3 border-t border-gray-100 pt-4 dark:border-zinc-800">
+                <button type="submit" :disabled="form.processing"
+                    class="flex-1 rounded-xl bg-indigo-600 py-2.5 text-sm font-black text-white shadow hover:bg-indigo-700 disabled:opacity-50 active:scale-95">
+                    {{ form.processing ? 'Saving…' : 'Save changes' }}
+                </button>
 
                 <Transition
                     enter-active-class="transition ease-in-out"
@@ -158,7 +158,7 @@ const submit = () => {
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-sm text-gray-600 dark:text-zinc-400"
+                        class="shrink-0 text-xs font-black uppercase text-emerald-600 dark:text-emerald-400"
                     >
                         Saved.
                     </p>

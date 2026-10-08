@@ -141,6 +141,9 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                     Route::post('/dip', 'storeDip')->name('store-dip');
                     Route::post('/trial', 'storeTrial')->name('store-trial');
                     Route::patch('/dip/{dip}/status', 'updateDipStatus')->name('update-dip-status');
+                    // CRM fabric sample requests (from inquiry conversations)
+                    Route::patch('/sample-requests/{sampleRequest}/start', 'startSample')->name('sample.start');
+                    Route::post('/sample-requests/{sampleRequest}/formulate', 'formulateSample')->name('sample.formulate');
                     Route::post('/test', 'storeTest')->name('store-test');
                     Route::post('/solution', 'storeSolution')->name('store-solution');
                     Route::delete('/solution/{solution}', 'destroySolution')->name('destroy-solution');

@@ -1,5 +1,5 @@
 <template>
-    <Head title="Inquiries - ECO Module" />
+    <Head title="Inquiries - CRM Module" />
     <AuthenticatedLayout>
         <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
             <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 pb-16">
@@ -15,7 +15,7 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">
-                                ECO · Workspace
+                                CRM · Workspace
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Client Inquiries</h1>
                             <p class="text-sm text-blue-100/90">{{ filteredInquiries.length }} of {{ inquiries.length }} inquir{{ inquiries.length !== 1 ? 'ies' : 'y' }} showing</p>
@@ -114,7 +114,8 @@
                                         {{ formatDate(inquiry.last_message_at) }}
                                     </td>
                                     <td class="px-6 py-5 text-right">
-                                        <Link :href="route('eco.inquiry.show', inquiry.id)"
+                                        <Link :href="route('crm.inquiry.show',
+                                            inquiry.hash_key)"
                                             class="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 group-hover:bg-indigo-600 group-hover:text-white group-hover:translate-x-1 transition-all duration-300">
                                             <ArrowRight class="h-4 w-4" />
                                         </Link>
@@ -146,7 +147,7 @@
                                     <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic line-clamp-1">"{{ inquiry.initial_message }}"</p>
                                 </div>
 
-                                <Link :href="route('eco.inquiry.show', inquiry.id)"
+                                <Link :href="route('crm.inquiry.show', inquiry.hash_key)"
                                     class="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all">
                                     Open Inquiry
                                     <ArrowRight class="h-4 w-4" />

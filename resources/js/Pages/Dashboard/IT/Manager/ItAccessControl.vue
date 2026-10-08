@@ -72,6 +72,44 @@ const formatPositionLabel = (pos) => {
 
 const displayPositionLabel = (u) => formatPositionLabel(displayPositionKey(u));
 
+// ── MAN department labels ────────────────────────────────────────────
+// Backend sends `manufacturing_department`; the slug map below is a
+// fallback so stale props still resolve. Mirrors
+// ItAccessControlController::manufacturingDepartmentFor().
+const MAN_ROLE_DEPARTMENT = {
+    knitting_yarn: 'knitting', knitting_mechanic: 'knitting',
+    dyeing_color: 'dyeing', dyeing_fabric_softener: 'dyeing', dyeing_squeezer: 'dyeing',
+    dyeing_ironing: 'dyeing', dyeing_packaging: 'dyeing', dyeing_lab_chemist: 'dyeing',
+    checker_quality: 'finishing',
+    maintenance_checker: 'maintenance', pollution_control_operator: 'maintenance', safety_officer: 'maintenance',
+    boiler_operator: 'boiler',
+};
+const MAN_DEPT_LABELS = {
+    knitting: 'Knitting',
+    dyeing: 'Dyeing',
+    finishing: 'Finishing',
+    maintenance: 'Maintenance',
+    boiler: 'Boiler',
+};
+const manDeptOf = (u) => {
+    if (!u || u.role !== 'MAN') return null;
+    if (u.manufacturing_department) return u.manufacturing_department;
+    if (u.is_manufacturing_supervisor && u.supervisor_department) return u.supervisor_department;
+    return MAN_ROLE_DEPARTMENT[u.manufacturing_role] || null;
+};
+const manDeptLabel = (dept) => (MAN_DEPT_LABELS[dept] ? `${MAN_DEPT_LABELS[dept]} Dept` : dept);
+const formatManRole = (role) => (role ? String(role).replace(/_/g, ' ') : '');
+
+// All modules handled by an employee: explicit grants first, fallback to
+// root_module / role so staff with no rows still show their home module.
+const userModuleList = (u) => {
+    if (!u) return [];
+    const explicit = props.userModules?.[u.id] || [];
+    if (explicit.length) return [...new Set(explicit.map((m) => String(m).toUpperCase()))];
+    const fallback = u.root_module || u.role;
+    return fallback ? [String(fallback).toUpperCase()] : [];
+};
+
 // Executive-command rows store raw current_position ('staff' for supervisors) —
 // resolve to the target's display label so commands never read as Staff.
 const requestCurrentLabel = (req) => {
@@ -182,10 +220,12 @@ const filteredUsers = computed(() => {
         list = list.filter((u) =>
             u.name.toLowerCase().includes(q) ||
             u.email.toLowerCase().includes(q) ||
-            (u.employee_id || '').toLowerCase().includes(q)
+            (u.employee_id || '').toLowerCase().includes(q) ||
+            (u.manufacturing_role || '').toLowerCase().includes(q) ||
+            (manDeptOf(u) || '').toLowerCase().includes(q)
         );
     }
-    if (roleFilter.value) list = list.filter((u) => u.role === roleFilter.value);
+    if (roleFilter.value) list = list.filter((u) => userModuleList(u).includes(String(roleFilter.value).toUpperCase()));
     if (statusFilter.value) list = list.filter((u) => accountStatus(u) === statusFilter.value);
     return list;
 });
@@ -292,8 +332,21 @@ const isRootLocked = (modKey) => {
 const toggleModule = (modKey) => {
     if (isRootLocked(modKey)) return;
     const i = modulesForm.modules.indexOf(modKey);
-    if (i === -1) modulesForm.modules.push(modKey);
-    else modulesForm.modules.splice(i, 1);
+    if (i === -1) {
+        modulesForm.modules.push(modKey);
+    } else {
+        modulesForm.modules.splice(i, 1);
+        // Revoking a module revokes its pages too: reset every page of the
+        // removed module to DISABLED so stale view/edit levels can't linger,
+        // inflate counts, or be resubmitted (and re-provision the module) on
+        // the next Page Access save.
+        const gKey = Object.keys(pageGrants.value).find((k) => String(k).toUpperCase() === String(modKey).toUpperCase());
+        if (gKey && pageGrants.value[gKey]) {
+            Object.keys(pageGrants.value[gKey]).forEach((p) => {
+                pageGrants.value[gKey][p] = 'disabled';
+            });
+        }
+    }
 };
 
 // ── Page Access tab rules ─────────────────────────────────────────
@@ -346,7 +399,7 @@ const setLevel = (page, level) => {
                 </p>
             </div>
             <div class="flex items-center gap-2">
-                <div class="flex gap-2 text-xs font-black">
+                <div class="flex flex-wrap gap-2 text-xs font-black">
                     <span class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{{ counts.total }} total</span>
                     <span class="px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">{{ counts.active }} active</span>
                     <span class="px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">{{ counts.disabled }} disabled</span>
@@ -401,7 +454,7 @@ const setLevel = (page, level) => {
                     <input v-model="search" type="text" placeholder="Search name, email, employee ID..."
                         class="w-full pl-9 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-slate-200 placeholder-slate-400" />
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 [&>select]:flex-1 [&>select]:sm:flex-none [&>select]:min-w-[130px]">
                     <select v-model="roleFilter" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                         <option value="">All modules</option>
                         <option v-for="m in modules" :key="m.key" :value="m.key">{{ m.key }} — {{ m.name }}</option>
@@ -416,19 +469,19 @@ const setLevel = (page, level) => {
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
+                <table class="w-full text-left min-w-[680px]">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Module · Position</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Grants</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Manage</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Module · Position</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Grants</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Manage</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                         <tr v-for="u in filteredUsers" :key="u.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
-                            <td class="px-6 py-3.5">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5">
                                 <p class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                     {{ u.name }}
                                     <span v-if="requestsForUser(u.id).length" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-black">
@@ -437,23 +490,35 @@ const setLevel = (page, level) => {
                                 </p>
                                 <p class="text-[11px] text-slate-400">{{ u.email }}{{ u.employee_id ? ` · ${u.employee_id}` : '' }}</p>
                             </td>
-                            <td class="px-6 py-3.5 whitespace-nowrap">
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black">{{ u.role }}</span>
-                                <span class="ml-1 text-xs text-slate-500 capitalize">{{ displayPositionLabel(u) }}</span>
-                                <span v-if="u.is_manufacturing_supervisor" class="ml-1.5 px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase">Supervisor{{ u.supervisor_department ? ` · ${u.supervisor_department}` : '' }}</span>
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5">
+                                <div class="flex flex-wrap gap-1 max-w-[320px]">
+                                    <span v-for="mod in userModuleList(u)" :key="mod"
+                                        class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black">{{ mod }}</span>
+                                </div>
+                                <div class="mt-1 text-xs text-slate-500 capitalize">{{ displayPositionLabel(u) }}</div>
+                                <span v-if="u.is_manufacturing_supervisor" class="ml-1.5 px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase">Supervisor{{ (u.supervisor_department || manDeptOf(u)) ? ` · ${u.supervisor_department || manDeptOf(u)}` : '' }}</span>
+                                <span v-else-if="u.role === 'MAN' && u.manufacturing_role" class="ml-1.5 text-xs text-slate-500 capitalize">· {{ formatManRole(u.manufacturing_role) }}</span>
+                                <div v-if="u.role === 'MAN'" class="mt-1">
+                                    <span v-if="manDeptOf(u)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-[10px] font-black uppercase tracking-wide">
+                                        {{ manDeptLabel(manDeptOf(u)) }}
+                                    </span>
+                                    <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 text-[10px] font-black uppercase tracking-wide">
+                                        No dept assigned
+                                    </span>
+                                </div>
                             </td>
-                            <td class="px-6 py-3.5">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5">
                                 <span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase', statusPill(u)]">
                                     {{ accountStatus(u) }}
                                 </span>
                                 <p v-if="u.suspended_until" class="text-[10px] text-slate-400 mt-0.5">until {{ new Date(u.suspended_until).toLocaleString() }}</p>
                             </td>
-                            <td class="px-6 py-3.5 text-xs text-slate-500 whitespace-nowrap">
-                                {{ (userModules[u.id] || []).length }} modules · {{ pageCount(u.id) }} pages
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-xs text-slate-500 whitespace-nowrap">
+                                {{ userModuleList(u).length }} modules · {{ pageCount(u.id) }} pages
                             </td>
-                            <td class="px-6 py-3.5 text-right">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-right">
                                 <button @click="openManage(u)"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-95">
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-95">
                                     <Users class="w-3.5 h-3.5" /> Manage
                                 </button>
                             </td>
@@ -467,25 +532,38 @@ const setLevel = (page, level) => {
         <!-- Manage drawer -->
         <div v-if="managing" class="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm" @click.self="managing = null">
             <div class="bg-white dark:bg-slate-800 w-full max-w-2xl h-full overflow-y-auto border-l border-slate-200 dark:border-slate-700 flex flex-col">
-                <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex items-start justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
+                <!-- Sticky header + tabs: the Account / Position / Modules / Page
+                     Access buttons stay visible while the (long) Page Access
+                     list scrolls underneath. -->
+                <div class="sticky top-0 z-10 bg-white dark:bg-slate-800">
+                <div class="p-4 sm:p-6 pb-3 flex items-start justify-between">
                     <div>
-                        <p class="text-[11px] font-mono font-bold text-slate-400">{{ managing.role }} · {{ displayPositionLabel(managing) }}<span v-if="managing.is_manufacturing_supervisor && managing.supervisor_department"> · {{ managing.supervisor_department }} dept</span></p>
+                        <p class="text-[11px] font-mono font-bold text-slate-400">{{ managing.role }} · {{ displayPositionLabel(managing) }}<span v-if="managing.is_manufacturing_supervisor && (managing.supervisor_department || manDeptOf(managing))"> · {{ managing.supervisor_department || manDeptOf(managing) }} dept</span><span v-else-if="managing.role === 'MAN' && managing.manufacturing_role"> · {{ formatManRole(managing.manufacturing_role) }}</span><span v-if="managing.role === 'MAN' && !managing.is_manufacturing_supervisor && manDeptOf(managing)"> · {{ manDeptOf(managing) }} dept</span></p>
                         <h2 class="text-lg font-black text-slate-900 dark:text-white">{{ managing.name }}</h2>
                         <p class="text-xs text-slate-400">{{ managing.email }}</p>
+                        <div v-if="managing.role === 'MAN'" class="mt-1.5">
+                            <span v-if="manDeptOf(managing)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-[10px] font-black uppercase tracking-wide">
+                                {{ manDeptLabel(manDeptOf(managing)) }}
+                            </span>
+                            <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 text-[10px] font-black uppercase tracking-wide">
+                                No dept assigned
+                            </span>
+                        </div>
                     </div>
                     <button @click="managing = null" class="p-1.5 text-slate-400 hover:text-slate-600"><X class="w-5 h-5" /></button>
                 </div>
 
-                <div class="px-6 pt-4 flex gap-2 border-b border-slate-100 dark:border-slate-700">
+                <div class="px-4 sm:px-6 pt-1 flex gap-2 border-b border-slate-100 dark:border-slate-700 overflow-x-auto">
                     <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key"
-                        :class="['px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 -mb-px transition-colors',
+                        :class="['shrink-0 px-4 py-2.5 text-xs font-black uppercase tracking-wider border-b-2 -mb-px transition-colors',
                             activeTab === t.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600']">
                         {{ t.label }}
                         <span v-if="t.key === 'position' && requestsForUser(managing.id).length" class="ml-1 px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px]">{{ requestsForUser(managing.id).length }}</span>
                     </button>
                 </div>
+                </div>
 
-                <div class="p-6 flex-1">
+                <div class="p-4 sm:p-6 flex-1">
                     <!-- ACCOUNT (unchanged) -->
                     <div v-if="activeTab === 'account'" class="space-y-3">
                         <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm">
@@ -494,7 +572,7 @@ const setLevel = (page, level) => {
                             </p>
                             <p v-if="managing.suspended_until" class="text-xs text-slate-400 mt-1">Suspended until {{ new Date(managing.suspended_until).toLocaleString() }}</p>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button @click="setStatus('enable')" :disabled="statusForm.processing"
                                 class="inline-flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 active:scale-95 disabled:opacity-50">
                                 <ShieldCheck class="w-4 h-4" /> Enable
@@ -510,7 +588,7 @@ const setLevel = (page, level) => {
                             </p>
                             <input v-model="suspendUntil" type="datetime-local"
                                 class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <button @click="setStatus('suspend')" :disabled="statusForm.processing || !suspendUntil"
                                     class="py-2.5 text-sm font-bold text-white bg-amber-600 rounded-xl hover:bg-amber-700 active:scale-95 disabled:opacity-50">
                                     Suspend Until Date
@@ -544,7 +622,7 @@ const setLevel = (page, level) => {
                                 <span class="block text-[11px] text-slate-400 mt-1">by {{ req.requested_by_name }} ({{ req.requested_by_position }})<span v-if="req.reason"> — “{{ req.reason }}”</span></span>
                             </button>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="text-xs font-bold text-slate-500 uppercase">Position (from command)</label>
                                 <select v-model="positionForm.position" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
@@ -566,7 +644,7 @@ const setLevel = (page, level) => {
                             </div>
                         </div>
                         <p class="text-[11px] text-slate-400">Position changes REQUIRE a pending executive command and must match it exactly. Demoting to staff clears module + page grants. Promoting to manager clears page grants. Supervisor seats are MAN-only, one per department — grants untouched. One manager per module and one secretary org-wide are enforced.</p>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button @click="askPositionConfirm" :disabled="positionForm.processing || !selectedRequestId"
                                 class="py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">
                                 Apply Command…
@@ -605,7 +683,7 @@ const setLevel = (page, level) => {
                             class="w-full py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">
                             Save Module Grants
                         </button>
-                        <p class="text-[11px] text-slate-400">Saving grants seeds every page of each granted module as DISABLED — enable pages manually in Page Access.</p>
+                        <p class="text-[11px] text-slate-400">Saving grants seeds every page of each granted module as DISABLED — enable pages manually in Page Access. Removing a module also revokes all of its page grants.</p>
                     </div>
 
                     <!-- PAGES (disabled / view / edit) -->
@@ -689,7 +767,7 @@ const setLevel = (page, level) => {
                     <span v-if="positionForm.role && positionForm.position !== 'supervisor'"> ({{ positionForm.role }})</span>?
                 </p>
                 <p v-if="confirmPosition.reason" class="text-xs text-slate-400 mt-2">Reason: “{{ confirmPosition.reason }}”</p>
-                <div class="grid grid-cols-2 gap-3 mt-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
                     <button @click="confirmPosition = null" class="py-2.5 text-sm font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200">Cancel</button>
                     <button @click="savePosition" :disabled="positionForm.processing" class="inline-flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-50">
                         <Ban v-if="false" /> Confirm &amp; Apply

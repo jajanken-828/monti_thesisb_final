@@ -14,11 +14,12 @@ class SecretaryDocumentController extends SecretaryController
         $query = SecretaryDocument::with('creator')->latest();
 
         if ($search = $request->search) {
-            $query->where(fn ($q) => $q
-                ->where('ref_no', 'like', "%{$search}%")
-                ->orWhere('subject', 'like', "%{$search}%")
-                ->orWhere('sender', 'like', "%{$search}%")
-                ->orWhere('recipient', 'like', "%{$search}%"));
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('ref_no LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('subject LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('sender LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('recipient LIKE ?', ["%{$search}%"]);
+            });
         }
         if ($request->direction) {
             $query->where('direction', $request->direction);
@@ -44,7 +45,7 @@ class SecretaryDocumentController extends SecretaryController
             'received_date' => 'required|date',
             'deadline' => 'nullable|date|after_or_equal:received_date',
             'remarks' => 'nullable|string',
-            'attachment' => 'nullable|file|max:10240',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png|max:10240',
         ]);
 
         $path = null;
@@ -77,6 +78,12 @@ class SecretaryDocumentController extends SecretaryController
 
     public function destroy(SecretaryDocument $document)
     {
+        $user = auth()->user();
+        $isOwner = $document->created_by === $user->id;
+        $isManager = in_array($user->position, ['manager', 'general_manager', 'special_officer', 'secretary'], true);
+
+        abort_unless($isOwner || $isManager, 403);
+
         if ($document->file_path) {
             Storage::disk('public')->delete($document->file_path);
         }

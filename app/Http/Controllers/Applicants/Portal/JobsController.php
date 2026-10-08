@@ -36,7 +36,10 @@ class JobsController extends Controller
         $params = $request->only(['q', 'department', 'employment_type', 'work_location', 'work_mode']);
         if (! empty($params['q'])) {
             $s = $params['q'];
-            $q->where(fn ($w) => $w->where('title', 'like', "%{$s}%")->orWhere('department', 'like', "%{$s}%"));
+            $q->where(function ($w) use ($s) {
+                $w->whereRaw('title LIKE ?', ["%{$s}%"])
+                  ->orWhereRaw('department LIKE ?', ["%{$s}%"]);
+            });
         }
         if (! empty($params['department'])) {
             $q->where('department', $params['department']);

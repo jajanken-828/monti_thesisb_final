@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Crm\CrmInquiryController;
 use App\Http\Controllers\Eco\EcoCreditController;
 use App\Http\Controllers\Eco\EcoDashboardController;
-use App\Http\Controllers\Eco\EcoInquiryController;
 use App\Http\Controllers\Eco\EcoPushController;
 use App\Http\Controllers\Eco\EcoStoreController;
 use App\Http\Controllers\Eco\EcoSupplierController;
@@ -24,30 +24,11 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
     // Store (product catalog)
     Route::get('/store', [EcoStoreController::class, 'index'])
         ->middleware('page.permission:store,view')->name('store');
-    // Inquiries & Conversations
-    Route::get('/inquiries', [EcoInquiryController::class, 'index'])
-        ->middleware('page.permission:inquiry,view')->name('inquiries');
-    Route::get('/inquiries/{inquiry}', [EcoInquiryController::class, 'show'])
-        ->middleware('page.permission:inquiry,view')->name('inquiry.show');
-    Route::post('/inquiries/{inquiry}/message', [EcoInquiryController::class, 'sendMessage'])
-        ->middleware('page.permission:inquiry,edit')->name('inquiry.message');
-    // Real-time: polling feed + typing heartbeat (no page reload needed)
-    Route::get('/inquiries/{inquiry}/feed', [EcoInquiryController::class, 'feed'])
-        ->middleware('page.permission:inquiry,view')->name('inquiry.feed');
-    Route::post('/inquiries/{inquiry}/typing', [EcoInquiryController::class, 'typing'])
-        ->middleware('page.permission:inquiry,edit')->name('inquiry.typing');
-    Route::post('/inquiries/{inquiry}/meeting', [EcoInquiryController::class, 'setMeeting'])
-        ->middleware('page.permission:inquiry,edit')->name('inquiry.meeting');
-    Route::post('/inquiries/{inquiry}/quotation', [EcoInquiryController::class, 'issueQuotation'])
-        ->middleware('page.permission:inquiry,edit')->name('inquiry.quotation');
-    Route::get('/clients/{client}/credit-check', [EcoInquiryController::class, 'creditCheck'])
+    // NOTE: client inquiries & conversations moved to the CRM module
+    // (dashboard/crm/inquiries) — highly customized orders belong with the
+    // relationship workflow, not the storefront.
+    Route::get('/clients/{client}/credit-check', [CrmInquiryController::class, 'creditCheck'])
         ->middleware('page.permission:credit,view')->name('credit.check');
-
-    // NEW: Attachment actions for ECO
-    Route::post('/attachment/{attachment}/create-recipe', [EcoInquiryController::class, 'createRecipeFromAttachment'])
-        ->middleware('page.permission:inquiry,edit')->name('attachment.create-recipe');
-    Route::post('/attachment/{attachment}/create-job-order', [EcoInquiryController::class, 'createJobOrderFromPO'])
-        ->middleware('page.permission:inquiry,edit')->name('attachment.create-job-order');
 
     // Credit ledger
     Route::get('/credit', [EcoCreditController::class, 'index'])
@@ -65,6 +46,10 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
     // DSS: sustainability preview BEFORE accepting (quick inventory check)
     Route::get('/push/dss/{order}', [EcoPushController::class, 'dssCheck'])
         ->middleware('page.permission:push,view')->name('push.dss');
+    // DSS modal per-material "Request" button: file procurement for one
+    // shortfall material + notify the PRO module.
+    Route::post('/push/dss/{order}/request', [EcoPushController::class, 'requestProcurement'])
+        ->middleware('page.permission:push,edit')->name('push.dss.request');
     Route::post('/push/scm/{order}', [EcoPushController::class, 'pushToScm'])
         ->middleware('page.permission:push,edit')->name('push.scm');
     Route::post('/push/order-mgmt/{order}', [EcoPushController::class, 'pushToOrderMgmt'])

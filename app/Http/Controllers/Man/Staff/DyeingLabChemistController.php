@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Man\Staff;
 
 use App\Models\Man\BomRecord;
+use App\Models\Crm\FabricSampleRequest;
+use App\Models\Eco\ConversationAttachment;
+use App\Models\Eco\ConversationMessage;
+use App\Models\Inv\Material;
 use App\Models\Man\LabDipRequest;
 use App\Models\Man\LabStockSolution;
 use App\Models\Man\LabTest;
@@ -10,6 +14,8 @@ use App\Models\Man\LabTrial;
 use App\Models\Man\ManufacturingInventoryItem;
 use App\Models\Ord\SalesOrder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class DyeingLabChemistController extends ManufacturingStaffController
@@ -43,7 +49,8 @@ class DyeingLabChemistController extends ManufacturingStaffController
     }
 
     /**
-     * Shade development work page: open dip requests with trial history.
+     * Shade development work page: open dip requests with trial history,
+     * plus CRM fabric sample requests from inquiry conversations.
      */
     public function shades()
     {
@@ -58,10 +65,164 @@ class DyeingLabChemistController extends ManufacturingStaffController
             ->take(30)
             ->get(['id', 'jo_number', 'color', 'design', 'yarn_type']);
 
+        $sampleRequests = FabricSampleRequest::with(['inquiry.client', 'product', 'requester:id,name'])
+            ->whereNotIn('status', [FabricSampleRequest::STATUS_APPROVED, FabricSampleRequest::STATUS_CANCELLED])
+            ->orderByRaw("FIELD(urgency, 'urgent', 'high', 'normal', 'low')")
+            ->orderBy('created_at', 'asc')
+            ->get();
+
         return Inertia::render('Dashboard/MAN/Employee/DyeingLabChemist/Shades', [
             'dips' => $dips,
             'jobOrders' => $jobOrders,
+            'sampleRequests' => $sampleRequests,
+            // Inventory-connected autocomplete source for dyestuff/auxiliary
+            // name inputs — rows must reference these IDs (see storeTrial).
+            'materials' => Material::orderBy('name')->get(['id', 'mat_id', 'name', 'unit', 'category']),
         ]);
+    }
+
+    /**
+     * Pick up a CRM fabric sample request.
+     */
+    public function startSample(FabricSampleRequest $sampleRequest)
+    {
+        if ($sampleRequest->status !== FabricSampleRequest::STATUS_REQUESTED) {
+            return back()->withErrors(['error' => 'This sample request is already being handled.']);
+        }
+
+        $sampleRequest->update([
+            'status' => FabricSampleRequest::STATUS_IN_PROGRESS,
+            'formulated_by' => $this->staff()->id,
+        ]);
+
+        return redirect()->back()->with('message', "Sample {$sampleRequest->code} started.");
+    }
+
+    /**
+     * Formulate the color: record the recipe formula, upload the sample
+     * photo, create the BomRecord, and send everything back to the CRM
+     * team as a thread message (hidden from the client until forwarded).
+     */
+    public function formulateSample(Request $request, FabricSampleRequest $sampleRequest)
+    {
+        if (! in_array($sampleRequest->status, [
+            FabricSampleRequest::STATUS_REQUESTED,
+            FabricSampleRequest::STATUS_IN_PROGRESS,
+            FabricSampleRequest::STATUS_ADJUSTMENT_REQUESTED,
+        ], true)) {
+            return back()->withErrors(['error' => 'This sample request is already closed.']);
+        }
+
+        $validated = $request->validate([
+            'dyestuffs' => 'nullable|array',
+            'dyestuffs.*.material_id' => 'required|exists:materials,id',
+            'dyestuffs.*.name' => 'nullable|string|max:255',
+            'dyestuffs.*.pct' => 'nullable|numeric|min:0',
+            'auxiliaries' => 'nullable|array',
+            'auxiliaries.*.material_id' => 'required|exists:materials,id',
+            'auxiliaries.*.name' => 'nullable|string|max:255',
+            'auxiliaries.*.gpl' => 'nullable|numeric|min:0',
+            'formula_notes' => 'nullable|string|max:2000',
+            // One or more yarns (designs may combine 2+ yarns): each row is
+            // inventory-connected, like dyestuffs/auxiliaries.
+            'yarns' => 'required|array|min:1',
+            'yarns.*.material_id' => ['required', Rule::exists('materials', 'id')->where(fn ($q) => $q->where('category', 'Yarn'))],
+            'yarns.*.name' => 'nullable|string|max:255',
+            'yarns.*.qty' => 'required|numeric|min:0.01|max:1000',
+            'weave_design' => 'required|string|max:255',
+            'sample_photo' => 'required|image|mimes:jpg,jpeg,png,webp|max:10240',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $extension = $request->file('sample_photo')->extension();
+            $photoPath = $request->file('sample_photo')->storeAs(
+                'fabric_samples',
+                'sample_' . $sampleRequest->code . '_' . time() . '.' . $extension,
+                'public'
+            );
+
+            $formula = [
+                'dyestuffs' => $this->resolveFormulaRows($validated['dyestuffs'] ?? [], 'pct'),
+                'auxiliaries' => $this->resolveFormulaRows($validated['auxiliaries'] ?? [], 'gpl'),
+                'notes' => $validated['formula_notes'] ?? null,
+            ];
+
+            // ID-keyed recipe materials so downstream stock checks resolve.
+            $materials = $this->recipeMaterialsFromFormula($formula);
+            // Yarn(s) are part of the recipe too (kg yarn per kg ordered)
+            // so the ECO stock check reads them like recipe #1.
+            $yarnRows = $this->resolveFormulaRows($validated['yarns'] ?? [], 'qty');
+            $yarnNames = [];
+            foreach ($yarnRows as $yr) {
+                $materials[$yr['material_id']] = ($materials[$yr['material_id']] ?? 0) + (float) ($yr['qty'] ?? 0);
+                $yarnNames[] = $yr['name'];
+            }
+            $formula['yarns'] = $yarnRows;
+
+            $inquiry = $sampleRequest->inquiry;
+            $recipe = BomRecord::updateOrCreate(
+                [
+                    'client_id' => $sampleRequest->client_id,
+                    'product_id' => $sampleRequest->product_id,
+                ],
+                [
+                    'yarn_type' => implode(' + ', array_unique($yarnNames)),
+                    'dye_color' => $sampleRequest->color_description,
+                    'weave_design' => $validated['weave_design'],
+                    'materials' => $materials,
+                ]
+            );
+
+            $sampleRequest->update([
+                // Straight to forwarded: the client sees the formulated
+                // sample (formula + photo) at once and decides approve /
+                // adjust. Only the lab request itself stays internal.
+                // A fresh formulation resolves any pending adjustment notes.
+                'status' => FabricSampleRequest::STATUS_FORWARDED,
+                'formula' => $formula,
+                'sample_image_path' => $photoPath,
+                'recipe_id' => $recipe->id,
+                'formulated_by' => $this->staff()->id,
+                'adjustment_notes' => null,
+            ]);
+
+            // NOTE: the formula itself stays off the message text on purpose —
+            // it lives on the sample request record, visible only to the CRM
+            // team and the lab. The client decides from the sample photo.
+            // NOTE: a regular bubble (not a system pill) on purpose — the
+            // photo, the per-image approve/adjust buttons and (CRM-side)
+            // the formulation all render in the message-bubble branch.
+            // The formula itself stays off the message text: it lives on
+            // the sample request record, visible only to CRM and the lab.
+            $message = ConversationMessage::create([
+                'inquiry_id' => $sampleRequest->inquiry_id,
+                'sender_type' => 'eco',
+                'message' => "🧬 Lab sample ready ({$sampleRequest->code}): {$sampleRequest->fabric_name}\n"
+                    . "Please review the sample photo below and approve it or request a color adjustment.",
+                'is_system_event' => false,
+                // Client-facing at once: they decide approve vs adjust.
+                'visible_to_client' => true,
+                'sample_request_id' => $sampleRequest->id,
+            ]);
+
+            ConversationAttachment::create([
+                'conversation_message_id' => $message->id,
+                'file_path' => $photoPath,
+                'file_name' => 'fabric-sample-' . $sampleRequest->code . '.' . $request->file('sample_photo')->getClientOriginalExtension(),
+                'file_type' => $request->file('sample_photo')->getMimeType(),
+            ]);
+
+            $inquiry?->update(['last_message_at' => now()]);
+
+            DB::commit();
+
+            return redirect()->back()->with('message', "Sample {$sampleRequest->code} formulated and sent back to CRM.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->withErrors(['error' => 'Failed to submit formulation: ' . $e->getMessage()]);
+        }
     }
 
     public function storeDip(Request $request)
@@ -89,15 +250,87 @@ class DyeingLabChemistController extends ManufacturingStaffController
         return redirect()->back()->with('message', 'Lab dip request logged successfully.');
     }
 
+    /**
+     * Normalize submitted formula rows to inventory-connected records:
+     * [{material_id, name, pct|gpl}]. Names are re-resolved from the
+     * materials table so stored rows always match real inventory items —
+     * free-typed names can never leak into recipes unconnected.
+     */
+    protected function resolveFormulaRows(array $rows, string $qtyKey): array
+    {
+        $ids = collect($rows)
+            ->map(fn ($row) => (int) ($row['material_id'] ?? 0))
+            ->filter()
+            ->unique()
+            ->values();
+        $names = $ids->isEmpty()
+            ? collect()
+            : Material::whereIn('id', $ids)->pluck('name', 'id');
+
+        $out = [];
+        foreach ($rows as $row) {
+            $mid = (int) ($row['material_id'] ?? 0);
+            if (! $names->has($mid)) {
+                continue;
+            }
+            $out[] = [
+                'material_id' => $mid,
+                'name' => $names[$mid],
+                $qtyKey => (float) ($row[$qtyKey] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Recipe material map (material_id => quantity) from a stored formula.
+     * New rows carry material_id; legacy name-only rows are resolved by
+     * name and unresolvable ones skipped (never stored as ID 0).
+     */
+    protected function recipeMaterialsFromFormula(array $formula): array
+    {
+        $materials = [];
+
+        $legacyNames = [];
+        foreach (['dyestuffs' => 'pct', 'auxiliaries' => 'gpl'] as $group => $qtyKey) {
+            foreach ($formula[$group] ?? [] as $item) {
+                $mid = (int) ($item['material_id'] ?? 0);
+                $qty = (float) ($item[$qtyKey] ?? 0);
+                if ($mid > 0) {
+                    $materials[$mid] = ($materials[$mid] ?? 0) + $qty;
+                } elseif (! empty($item['name'])) {
+                    $legacyNames[(string) $item['name']][] = $qty;
+                }
+            }
+        }
+
+        if ($legacyNames) {
+            $idsByName = Material::whereIn('name', array_keys($legacyNames))
+                ->pluck('id', 'name')
+                ->toArray();
+            foreach ($legacyNames as $name => $qtys) {
+                if (isset($idsByName[$name])) {
+                    $mid = (int) $idsByName[$name];
+                    $materials[$mid] = ($materials[$mid] ?? 0) + array_sum($qtys);
+                }
+            }
+        }
+
+        return array_filter($materials, fn ($v) => $v > 0);
+    }
+
     public function storeTrial(Request $request)
     {
         $validated = $request->validate([
             'dip_request_id' => 'required|exists:lab_dip_requests,id',
             'dyestuffs' => 'nullable|array',
-            'dyestuffs.*.name' => 'required_with:dyestuffs|string|max:255',
+            'dyestuffs.*.material_id' => 'required|exists:materials,id',
+            'dyestuffs.*.name' => 'nullable|string|max:255',
             'dyestuffs.*.pct' => 'nullable|numeric|min:0',
             'auxiliaries' => 'nullable|array',
-            'auxiliaries.*.name' => 'required_with:auxiliaries|string|max:255',
+            'auxiliaries.*.material_id' => 'required|exists:materials,id',
+            'auxiliaries.*.name' => 'nullable|string|max:255',
             'auxiliaries.*.gpl' => 'nullable|numeric|min:0',
             'liquor_ratio' => 'nullable|string|max:32',
             'curve' => 'nullable|array',
@@ -118,8 +351,8 @@ class DyeingLabChemistController extends ManufacturingStaffController
             'dip_request_id' => $dip->id,
             'trial_no' => $trialNo,
             'formula' => [
-                'dyestuffs' => $validated['dyestuffs'] ?? [],
-                'auxiliaries' => $validated['auxiliaries'] ?? [],
+                'dyestuffs' => $this->resolveFormulaRows($validated['dyestuffs'] ?? [], 'pct'),
+                'auxiliaries' => $this->resolveFormulaRows($validated['auxiliaries'] ?? [], 'gpl'),
                 'liquor_ratio' => $validated['liquor_ratio'] ?? null,
                 'curve' => $validated['curve'] ?? [],
             ],
@@ -290,6 +523,28 @@ class DyeingLabChemistController extends ManufacturingStaffController
      * Sign off a passed trial to the dye-house floor: builds the BomRecord
      * recipe the dyeing_color page already reads and links it to the JO.
      */
+    /**
+     * Resolve free-typed yarn text (e.g. a JO's yarn_type) to a Yarn
+     * material ID: exact case-insensitive match first, then a
+     * contains-match inside the Yarn category. Null when nothing matches.
+     */
+    protected function resolveYarnMaterialId(?string $text): ?int
+    {
+        $text = trim((string) $text);
+        if ($text === '') {
+            return null;
+        }
+        $yarns = Material::where('category', 'Yarn')->get(['id', 'name']);
+        $exact = $yarns->first(fn ($m) => strcasecmp((string) $m->name, $text) === 0);
+        if ($exact) {
+            return (int) $exact->id;
+        }
+        $lower = strtolower($text);
+        $hit = $yarns->first(fn ($m) => str_contains(strtolower((string) $m->name), $lower)
+            || str_contains($lower, strtolower((string) $m->name)));
+        return $hit ? (int) $hit->id : null;
+    }
+
     public function signOff(Request $request)
     {
         $validated = $request->validate([
@@ -312,16 +567,17 @@ class DyeingLabChemistController extends ManufacturingStaffController
             ->firstOrFail();
 
         $formula = $trial->formula ?? [];
-        $materials = [];
-        foreach ($formula['dyestuffs'] ?? [] as $dye) {
-            if (! empty($dye['name'])) {
-                $materials[$dye['name']] = (float) ($dye['pct'] ?? 0);
-            }
-        }
-        foreach ($formula['auxiliaries'] ?? [] as $aux) {
-            if (! empty($aux['name'])) {
-                $materials[$aux['name']] = (float) ($aux['gpl'] ?? 0);
-            }
+        // ID-keyed recipe materials so downstream stock checks resolve
+        // (legacy name-only trial rows are resolved by name inside).
+        $materials = $this->recipeMaterialsFromFormula(is_array($formula) ? $formula : []);
+
+        // Yarn belongs in the recipe too: resolve the JO's yarn text to a
+        // Yarn material (1 kg yarn per kg ordered, like recipe #1) so the
+        // ECO stock check reads it. Unmatched text leaves yarn text-only.
+        $yarnText = $dip->salesOrder->yarn_type ?? $dip->salesOrder->recipe?->yarn_type;
+        $yarnMid = $this->resolveYarnMaterialId($yarnText);
+        if ($yarnMid && ! isset($materials[$yarnMid])) {
+            $materials[$yarnMid] = 1;
         }
 
         $recipe = BomRecord::create([
@@ -330,7 +586,8 @@ class DyeingLabChemistController extends ManufacturingStaffController
             'yarn_type' => $dip->salesOrder->yarn_type ?? $dip->salesOrder->recipe?->yarn_type,
             'dye_color' => $dip->pantone_code ?? $dip->salesOrder->color,
             'weave_design' => $dip->salesOrder->design ?? $dip->salesOrder->recipe?->weave_design,
-            // name => quantity pairs, same shape the dyeing page already decodes
+            // ID-keyed recipe materials (material_id => quantity) so stock
+            // checks resolve; the dyeing page reads names from formulas.
             'materials' => $materials,
         ]);
 
@@ -343,15 +600,35 @@ class DyeingLabChemistController extends ManufacturingStaffController
     }
 
     /**
-     * Personal work log — own dip requests only.
+     * Personal work log — own dip requests plus every fabric color the
+     * chemist formulated for CRM conversations (mirrors the shade page's
+     * sample queue, with approval state, full formula, recipe and photo).
      */
     public function history()
     {
+        $samplesQuery = FabricSampleRequest::with(['inquiry.client', 'product', 'recipe', 'formulator:id,name'])
+            ->where('formulated_by', $this->staff()->id);
+
+        if ($search = request('search')) {
+            $samplesQuery->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                    ->orWhere('fabric_name', 'like', "%{$search}%")
+                    ->orWhere('color_description', 'like', "%{$search}%");
+            });
+        }
+        if ($from = request('from')) {
+            $samplesQuery->whereDate('created_at', '>=', $from);
+        }
+        if ($to = request('to')) {
+            $samplesQuery->whereDate('created_at', '<=', $to);
+        }
+
         return Inertia::render('Dashboard/MAN/Employee/Common/History', [
             'roleLabel' => 'Dyeing Lab Chemist',
             'historyRoute' => 'man.staff.dyeing-lab-chemist.history',
             'dateColumn' => 'processed_at',
             'jobs' => $this->staffHistory(LabDipRequest::class, ['salesOrder', 'trials']),
+            'sampleHistory' => $samplesQuery->latest()->paginate(15, ['*'], 'sample_page')->withQueryString(),
         ]);
     }
 

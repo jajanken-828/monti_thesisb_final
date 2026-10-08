@@ -1,5 +1,5 @@
 <template>
-    <Head :title="`Inquiry #${inquiry.id} — ${inquiry.client?.company_name}`" />
+    <Head :title="`Inquiry ${inquiry.hash_key} — ${inquiry.client?.company_name}`" />
     <AuthenticatedLayout>
         <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
             <div class="h-[calc(100vh-64px)] flex flex-col overflow-hidden max-w-7xl mx-auto p-4 sm:p-6 gap-4">
@@ -10,7 +10,7 @@
                     <div class="absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-fuchsia-400/20 blur-3xl animate-float-delayed" />
                     <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
                     <div class="relative flex items-center gap-2 sm:gap-3">
-                        <Link href="/dashboard/eco/inquiries"
+                        <Link :href="route('crm.inquiries')"
                             class="p-2 rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 hover:scale-105 active:scale-95 transition text-white flex-shrink-0">
                             <ArrowLeft class="h-4 w-4" />
                         </Link>
@@ -69,7 +69,7 @@
                             <TransitionGroup name="card" tag="div" class="space-y-3">
                                 <div v-for="msg in liveMessages" :key="msg.id"
                                     class="flex flex-col"
-                                    :class="msg.sender_type === 'client' ? 'items-end' : 'items-start'">
+                                    :class="msg.sender_type === 'eco' ? 'items-end' : 'items-start'">
 
                                     <!-- System event pill -->
                                     <div v-if="msg.is_system_event" class="w-full flex justify-center my-2">
@@ -108,12 +108,12 @@
 
                                     <!-- Regular message -->
                                     <div v-else
-                                        :class="msg.sender_type === 'client'
+                                        :class="msg.sender_type === 'eco'
                                             ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white rounded-3xl rounded-tr-lg shadow-lg shadow-indigo-500/20'
                                             : 'bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-zinc-700 rounded-3xl rounded-tl-lg shadow-sm hover:shadow-lg hover:shadow-indigo-500/15 transition-shadow'"
                                         class="max-w-[80%] sm:max-w-[65%] px-4 py-3">
                                         <p class="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">
-                                            {{ msg.sender_type === 'client' ? inquiry.client?.company_name : 'ECO Team' }}
+                                            {{ msg.sender_type === 'client' ? inquiry.client?.company_name : 'CRM Team' }}
                                         </p>
                                         <p class="text-xs whitespace-pre-wrap leading-relaxed font-medium">{{ msg.message }}</p>
                                         <!-- Attachments -->
@@ -143,6 +143,32 @@
                                             </div>
                                         </div>
                                         <p class="text-[9px] opacity-50 mt-1.5 text-right font-bold">{{ formatTime(msg.created_at) }}</p>
+                                        <!-- Fabric sample round status -->
+                                        <div v-if="msg.sample_request" class="mt-2 flex flex-wrap items-center gap-1.5">
+                                            <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-black/10 dark:bg-white/10">
+                                                {{ msg.sample_request.code }} · {{ sampleStatusLabel(msg.sample_request.status) }}
+                                            </span>
+                                        </div>
+                                        <!-- Lab formulation (CRM + lab eyes only — never sent to the client) -->
+                                        <div v-if="msg.sample_request?.formula" class="mt-2 rounded-xl bg-black/10 dark:bg-white/10 p-2.5 text-left">
+                                            <p class="text-[8px] font-black uppercase tracking-widest opacity-60 mb-1">Lab formulation · internal</p>
+                                        <div v-if="(msg.sample_request?.formula?.yarns ?? []).length" class="mb-1">
+                                                <p v-for="(y, i) in msg.sample_request.formula.yarns" :key="i" class="text-[10px] font-bold leading-relaxed">
+                                                    • 🧶 {{ y.name }}<span v-if="y.qty !== '' && y.qty != null"> — {{ y.qty }} kg/kg</span>
+                                                </p>
+                                            </div>
+                                            <div v-if="(msg.sample_request.formula.dyestuffs ?? []).length" class="mb-1">
+                                                <p v-for="(d, i) in msg.sample_request.formula.dyestuffs" :key="i" class="text-[10px] font-bold leading-relaxed">
+                                                    • {{ d.name }}<span v-if="d.pct !== '' && d.pct != null"> — {{ d.pct }}%</span>
+                                                </p>
+                                            </div>
+                                            <div v-if="(msg.sample_request.formula.auxiliaries ?? []).length" class="mb-1">
+                                                <p v-for="(a, i) in msg.sample_request.formula.auxiliaries" :key="i" class="text-[10px] font-bold leading-relaxed">
+                                                    • {{ a.name }}<span v-if="a.gpl !== '' && a.gpl != null"> — {{ a.gpl }} g/L</span>
+                                                </p>
+                                            </div>
+                                            <p v-if="msg.sample_request.formula.notes" class="text-[10px] italic opacity-70">Notes: {{ msg.sample_request.formula.notes }}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </TransitionGroup>
@@ -221,6 +247,10 @@
                                     class="w-full py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white rounded-2xl text-xs font-black uppercase tracking-wide hover:scale-[1.01] hover:shadow-xl hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
                                     <Calendar class="h-4 w-4" /> Set Meeting
                                 </button>
+                                <button v-if="canEditInquiry" @click="openSampleModal"
+                                    class="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 text-white rounded-2xl text-xs font-black uppercase tracking-wide hover:scale-[1.01] hover:shadow-xl hover:shadow-emerald-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                                    <FlaskConical class="h-4 w-4" /> Request Fabric Sample
+                                </button>
                                 <p v-if="!canEditInquiry" class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-2 rounded-xl text-center">View only — actions disabled.</p>
                             </div>
                         </div>
@@ -246,13 +276,28 @@
                                 <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" /> Quotations ({{ quotations.length }})
                             </p>
 
+                            <!-- Active / Trash tabs -->
+                            <div class="flex gap-1.5 px-1">
+                                <button @click="quoteTab = 'active'" type="button"
+                                    :class="quoteTab === 'active' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:text-indigo-600'"
+                                    class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition active:scale-95">
+                                    Active ({{ activeQuotations.length }})
+                                </button>
+                                <button @click="quoteTab = 'trash'" type="button"
+                                    :class="quoteTab === 'trash' ? 'bg-slate-600 text-white shadow-md' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:text-slate-600'"
+                                    class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition active:scale-95">
+                                    Trash ({{ trashedQuotations.length }})
+                                </button>
+                            </div>
+
                             <TransitionGroup name="card" tag="div" class="space-y-3">
-                                <div v-for="(q, i) in quotations" :key="q.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
+                                <div v-for="(q, i) in visibleQuotations" :key="q.id" :style="{ transitionDelay: `${Math.min(i * 40, 400)}ms` }"
                                     class="group bg-white/80 dark:bg-zinc-900/80 backdrop-blur rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 hover:-translate-y-1 transition-all duration-300">
                                     <!-- Status bar -->
                                     <div class="relative overflow-hidden flex items-center justify-between px-4 py-2.5"
                                         :class="q.status === 'accepted' ? 'bg-gradient-to-r from-emerald-600 to-teal-600'
                                             : q.status === 'rejected' ? 'bg-gradient-to-r from-red-500 to-rose-600'
+                                            : q.status === 'trashed' ? 'bg-gradient-to-r from-slate-500 to-gray-600'
                                             : 'bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800'">
                                         <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 16px 16px;" />
                                         <span class="relative font-mono text-[10px] font-bold text-white">
@@ -544,8 +589,9 @@
                                 <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
                                     Date & Time *
                                 </label>
-                                <input v-model="meetingData.scheduled_at" type="datetime-local" required
+                                <input v-model="meetingData.scheduled_at" type="datetime-local" required :min="meetingMinDateTime"
                                     class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition" />
+                                <p class="text-[10px] text-gray-400 mt-1 font-medium">Today or later — past dates can't be scheduled.</p>
                             </div>
                             <div>
                                 <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
@@ -571,6 +617,82 @@
                                 <Loader2 v-if="scheduling" class="h-4 w-4 animate-spin" />
                                 <Calendar v-else class="h-4 w-4" />
                                 Send Invite
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
+
+        <!-- ════════════════════════════════════════════
+             REQUEST FABRIC SAMPLE MODAL
+             ════════════════════════════════════════════ -->
+        <Teleport to="body">
+            <Transition name="modal">
+                <div v-if="showSampleModal"
+                    class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="showSampleModal = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+                        <!-- Gradient Header -->
+                        <div class="relative overflow-hidden px-5 py-5 bg-gradient-to-br from-teal-600 via-emerald-600 to-green-600 text-white">
+                            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
+                            <div class="relative flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-black tracking-tight">Request Fabric Sample</h3>
+                                    <p class="text-xs text-emerald-100 mt-0.5">{{ inquiry.client?.company_name }} · sent to dyeing lab</p>
+                                </div>
+                                <button @click="showSampleModal = false"
+                                    class="p-2 bg-white/15 ring-1 ring-white/25 hover:bg-white/25 rounded-xl transition active:scale-95">
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                        <form @submit.prevent="submitSampleRequest" class="p-5 space-y-4">
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Fabric *
+                                </label>
+                                <select v-model="sampleForm.product_id" required
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition">
+                                    <option value="" disabled>Select fabric</option>
+                                    <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}{{ p.sku ? ` · ${p.sku}` : '' }}</option>
+                                </select>
+                                <p v-if="isBulkInquiry" class="text-[10px] text-gray-400 mt-1">Bulk inquiry — choose the specific fabric for this sample round.</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Color Description *
+                                </label>
+                                <textarea v-model="sampleForm.color_description" rows="3" required
+                                    placeholder="e.g. Deep royal blue, slightly reddish cast — see attached reference"
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Urgency
+                                </label>
+                                <select v-model="sampleForm.urgency"
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition">
+                                    <option value="low">Low</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                    Notes for the Lab
+                                </label>
+                                <textarea v-model="sampleForm.notes" rows="2"
+                                    placeholder="Optional guidance for the chemist"
+                                    class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition"></textarea>
+                            </div>
+                            <button type="submit" :disabled="sampleSubmitting"
+                                class="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 hover:scale-[1.01] hover:shadow-xl disabled:opacity-50 transition-all shadow-lg active:scale-95">
+                                <Loader2 v-if="sampleSubmitting" class="h-4 w-4 animate-spin" />
+                                <FlaskConical v-else class="h-4 w-4" />
+                                Send to Dyeing Lab
                             </button>
                         </form>
                     </div>
@@ -746,7 +868,7 @@
                                 <div>
                                     <h3 class="text-sm font-black tracking-tight">Create Job Order</h3>
                                     <p class="text-xs text-blue-100 mt-0.5">
-                                        {{ recipes.length }} recipe(s) available · {{ inquiry.client?.company_name }}
+                                        {{ totalRecipesCount }} recipe(s) available · {{ inquiry.client?.company_name }}
                                     </p>
                                     <div class="mt-2 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-200">
                                         <span class="rounded-full bg-white/20 px-2 py-0.5">1 · Review PO</span>
@@ -795,6 +917,30 @@
                                         <p class="text-[10px] text-gray-400 mt-1 font-medium">Must match the client's purchase order shown on the left.</p>
                                     </div>
 
+                                    <!-- Quotation used for pricing -->
+                                    <div v-if="(acceptedQuotations ?? []).length > 1">
+                                        <label class="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+                                            Quotation for Pricing *
+                                        </label>
+                                        <select v-model="jobOrderQuotationId" required aria-label="Quotation" @change="onJobQuotationChange"
+                                            class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                            <option v-for="q in acceptedQuotations" :key="q.id" :value="q.id">
+                                                {{ q.quotation_number }} · {{ (q.items ?? []).length }} tier(s)
+                                            </option>
+                                        </select>
+                                        <p class="text-[9px] text-gray-400 mt-1 font-medium">This conversation has {{ acceptedQuotations.length }} accepted quotations — prices below follow the chosen one.</p>
+                                    </div>
+                                    <div v-else-if="(acceptedQuotations ?? []).length === 1">
+                                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl px-3 py-2.5">
+                                            Pricing from <span class="font-mono">{{ acceptedQuotations[0].quotation_number }}</span> (accepted)
+                                        </p>
+                                    </div>
+                                    <div v-else>
+                                        <p class="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2.5">
+                                            No accepted quotation on this conversation — prices must be entered manually.
+                                        </p>
+                                    </div>
+
                                     <!-- Product items -->
                                     <div v-for="(item, idx) in jobOrderForm.items" :key="idx"
                                         class="border border-gray-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 rounded-3xl p-4 space-y-3 shadow-sm">
@@ -813,7 +959,7 @@
                                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
                                                 Product *
                                             </label>
-                                            <select v-model="item.product_id" required aria-label="Product"
+                                            <select v-model="item.product_id" required aria-label="Product" @change="onJobProductChange(item)"
                                                 class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
                                                 <option value="">Select Product</option>
                                                 <option v-for="p in availableProducts" :key="p.id" :value="p.id">{{ p.name }}</option>
@@ -824,8 +970,12 @@
                                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
                                                 Color *
                                             </label>
-                                            <input v-model="item.color" type="text" placeholder="e.g. Royal Blue" required
-                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                            <select v-model="item.color" required aria-label="Color" @change="onJobColorChange(item)"
+                                                class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition">
+                                                <option value="" disabled>Select color tier</option>
+                                                <option v-for="c in JOB_COLORS" :key="c" :value="c">{{ c }}</option>
+                                            </select>
+                                            <p class="text-[9px] text-gray-400 mt-1 font-medium">Priced from the client-approved quotation.</p>
                                         </div>
 
                                         <div>
@@ -843,10 +993,15 @@
                                                     }}
                                                 </option>
                                                 <option v-for="r in recipesForProduct(item.product_id)" :key="r.id" :value="r.id">
-                                                    {{ r.yarn_type }} — {{ r.dye_color }}
+                                                    <template v-if="r.is_lab_sample">🧬 {{ r.sample_code }} · </template>{{ r.yarn_type }} — {{ r.dye_color }}
                                                     <template v-if="r.weave_design"> ({{ r.weave_design }})</template>
                                                 </option>
                                             </select>
+                                            <p v-if="item.product_id && recipesForProduct(item.product_id).some(r => r.is_lab_sample)"
+                                                class="text-[9px] text-teal-600 dark:text-teal-400 font-bold mt-1 flex items-center gap-1">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                                                Lab recipe from this conversation auto-selected — change if needed
+                                            </p>
                                             <p v-if="item.product_id && recipesForProduct(item.product_id).length > 0"
                                                 class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 flex items-center gap-1">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
@@ -871,8 +1026,19 @@
                                                     Price per kg (₱) *
                                                 </label>
                                                 <input v-model.number="item.unit_price" type="number" min="0" step="0.01" inputmode="decimal"
-                                                    placeholder="0.00" required
+                                                    placeholder="0.00" required :readonly="item.auto_price"
+                                                    :class="item.auto_price ? 'bg-indigo-50/60 dark:bg-indigo-500/10 cursor-not-allowed' : ''"
                                                     class="w-full rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 p-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition" />
+                                                <p v-if="item.auto_price" class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 flex items-center gap-1">
+                                                    <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                                                    Auto-priced from {{ selectedJobQuotation?.quotation_number ?? 'accepted quotation' }} ({{ item.color }})
+                                                </p>
+                                                <p v-else-if="!selectedJobQuotation" class="text-[9px] text-amber-500 font-bold mt-1">
+                                                    No accepted quotation on this conversation — enter the price manually.
+                                                </p>
+                                                <p v-else-if="item.product_id && item.color" class="text-[9px] text-amber-500 font-bold mt-1">
+                                                    No approved price for this product + color — enter manually or check the quotation tiers.
+                                                </p>
                                             </div>
                                         </div>
 
@@ -932,18 +1098,21 @@ import { usePageAccess } from '@/composables/usePageAccess';
 import { useRealtimeConversation } from '@/composables/useRealtimeConversation';
 import {
     ArrowLeft, Send, Loader2, FileText, X, Package, Trash2,
-    Plus, Paperclip, ClipboardList, XCircle, Calendar, ChevronDown
+    Plus, Paperclip, ClipboardList, XCircle, Calendar, ChevronDown, FlaskConical
 } from 'lucide-vue-next';
 
 const { canEdit } = usePageAccess();
-const canEditInquiry = computed(() => canEdit('ECO', 'inquiry'));
+const canEditInquiry = computed(() => canEdit('CRM', 'inquiry'));
 
 const props = defineProps({
     inquiry:        { type: Object,  required: true },
     quotations:     { type: Array,   default: () => [] },
+    approvedQuotation: { type: Object, default: null },
+    acceptedQuotations: { type: Array, default: () => [] },
     parsedProducts: { type: Array,   default: () => [] },
     allProducts:    { type: Array,   default: () => [] },
     recipes:        { type: Array,   default: () => [] },
+    sampleRecipes:  { type: Array,   default: () => [] },
     materials:      { type: Array,   default: () => [] },
 });
 
@@ -991,6 +1160,15 @@ const isBulkInquiry = computed(() =>
 // Use allProducts for dropdown (they have valid IDs)
 const availableProducts = computed(() => props.allProducts);
 
+// Every distinct recipe across client history + this conversation's lab work.
+const totalRecipesCount = computed(() => {
+    const ids = new Set([
+        ...(props.recipes ?? []).map(r => Number(r.id)),
+        ...((props.sampleRecipes ?? []).map(s => s.recipe && Number(s.recipe.id)).filter(Boolean)),
+    ]);
+    return ids.size;
+});
+
 const formatStatus = (s) => (s ? s.replace(/_/g, ' ').toUpperCase() : 'OPEN');
 const formatTime   = (d) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const formatPeso   = (v) => Number(v || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1019,6 +1197,18 @@ const colorDotStyle = (color) => {
     if (color === 'Dark Colors')  return 'background-color:#374151; border-color:#1f2937';
     return 'background-color:#9ca3af; border-color:#6b7280';
 };
+
+// Quotation tabs: active vs trash (rejected + trashed)
+const quoteTab = ref('active');
+const activeQuotations = computed(() =>
+    (props.quotations ?? []).filter(q => !['rejected', 'trashed'].includes(q.status))
+);
+const trashedQuotations = computed(() =>
+    (props.quotations ?? []).filter(q => ['rejected', 'trashed'].includes(q.status))
+);
+const visibleQuotations = computed(() =>
+    quoteTab.value === 'trash' ? trashedQuotations.value : activeQuotations.value
+);
 
 const groupItemsByFabric = (items) =>
     (items || []).reduce((acc, item) => {
@@ -1070,7 +1260,7 @@ const removeItem = (idx) => {
 
 const submitQuotation = () => {
     submitting.value = true;
-    router.post(route('eco.inquiry.quotation', props.inquiry.id), form.value, {
+    router.post(route('crm.inquiry.quotation', props.inquiry.hash_key), form.value, {
         onSuccess: () => {
             showQuotationModal.value = false;
         },
@@ -1121,9 +1311,9 @@ const {
 } = useRealtimeConversation({
     getMessages: () => liveMessages.value,
     appendMessages: mergeMessages,
-    feedUrl: route('eco.inquiry.feed', props.inquiry.id),
-    typingUrl: route('eco.inquiry.typing', props.inquiry.id),
-    sendUrl: route('eco.inquiry.message', props.inquiry.id),
+    feedUrl: route('crm.inquiry.feed', props.inquiry.hash_key),
+    typingUrl: route('crm.inquiry.typing', props.inquiry.hash_key),
+    sendUrl: route('crm.inquiry.message', props.inquiry.hash_key),
     onNewMessages: () => scrollToBottom(),
 });
 const sending = rtSending;
@@ -1150,6 +1340,13 @@ const meetingData = ref({
     type: 'video',
 });
 
+// Earliest pickable slot, formatted for datetime-local (today or later).
+const meetingMinDateTime = computed(() => {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+});
+
 const openMeetingModal = () => {
     meetingData.value = { scheduled_at: '', location: '', type: 'video' };
     showMeetingModal.value = true;
@@ -1157,7 +1354,7 @@ const openMeetingModal = () => {
 
 const submitMeeting = () => {
     scheduling.value = true;
-    router.post(route('eco.inquiry.meeting', props.inquiry.id), meetingData.value, {
+    router.post(route('crm.inquiry.meeting', props.inquiry.hash_key), meetingData.value, {
         onSuccess: () => {
             showMeetingModal.value = false;
             scrollToBottom();
@@ -1169,10 +1366,36 @@ const submitMeeting = () => {
 const rejectModal   = ref({ show: false, reason: '' });
 const openRejectModal = () => { rejectModal.value = { show: true, reason: '' }; };
 const submitReject  = () => {
-    router.post(route('eco.inquiry.reject', props.inquiry.id), { reason: rejectModal.value.reason }, {
+    router.post(route('crm.inquiry.reject', props.inquiry.hash_key), { reason: rejectModal.value.reason }, {
         onSuccess: () => { rejectModal.value.show = false; },
     });
 };
+
+// ── Fabric sample loop (CRM → dyeing lab → forward to client) ──
+const showSampleModal = ref(false);
+const sampleSubmitting = ref(false);
+const sampleForm = ref({ product_id: '', color_description: '', notes: '', urgency: 'normal' });
+
+const openSampleModal = () => {
+    sampleForm.value = {
+        product_id: props.inquiry.product?.id ?? '',
+        color_description: '',
+        notes: '',
+        urgency: 'normal',
+    };
+    showSampleModal.value = true;
+};
+
+const submitSampleRequest = () => {
+    sampleSubmitting.value = true;
+    router.post(route('crm.inquiry.sample-request', props.inquiry.hash_key), sampleForm.value, {
+        preserveScroll: true,
+        onSuccess: () => { showSampleModal.value = false; },
+        onFinish: () => { sampleSubmitting.value = false; },
+    });
+};
+
+const sampleStatusLabel = (s) => (s ? String(s).replace(/_/g, ' ') : '');
 
 const recipeModal = ref({
     show: false,
@@ -1207,7 +1430,7 @@ const openRecipeModal = (attachment) => {
 const submitRecipe = () => {
     recipeModal.value.error = null;
     recipeModal.value.submitting = true;
-    router.post(route('eco.attachment.create-recipe', recipeModal.value.attachment.id), recipeForm.value, {
+    router.post(route('crm.attachment.create-recipe', recipeModal.value.attachment.id), recipeForm.value, {
         onSuccess: () => {
             recipeModal.value.show = false;
         },
@@ -1233,21 +1456,27 @@ const jobOrderModal = ref({
     error: null,
 });
 
+const JOB_COLORS = ['White', 'Light Colors', 'Dark Colors'];
+
+const makeJobOrderItem = () => ({ product_id: '', color: '', recipe_id: null, kilos: 0, unit_price: 0, auto_price: false, description: '' });
+
 const jobOrderForm = ref({
     po_number: '',
-    items: [{ product_id: '', color: '', recipe_id: null, kilos: 0, unit_price: 0, description: '' }],
+    items: [makeJobOrderItem()],
 });
 
 const openJobOrderModal = (attachment) => {
     jobOrderForm.value = {
         po_number: '',
-        items: [{ product_id: '', color: '', recipe_id: null, kilos: 0, unit_price: 0, description: '' }],
+        items: [makeJobOrderItem()],
     };
+    // Default to the latest accepted quotation (first in the list).
+    jobOrderQuotationId.value = props.acceptedQuotations?.[0]?.id ?? props.approvedQuotation?.id ?? null;
     jobOrderModal.value = { show: true, submitting: false, attachment, error: null };
 };
 
 const addJobOrderItem = () => {
-    jobOrderForm.value.items.push({ product_id: '', color: '', recipe_id: null, kilos: 0, unit_price: 0, description: '' });
+    jobOrderForm.value.items.push(makeJobOrderItem());
 };
 
 const removeJobOrderItem = (idx) => {
@@ -1260,10 +1489,83 @@ const recipesForProduct = (productId) => {
     const numId = Number(productId);
     if (isNaN(numId) || numId <= 0) return [];
 
-    return props.recipes.filter(r => {
+    const matches = (r) => {
         const byForeignKey   = Number(r.product_id) === numId;
         const byRelationship = r.product && Number(r.product.id) === numId;
         return byForeignKey || byRelationship;
+    };
+
+    // Lab recipes formulated for THIS conversation first (tagged with their
+    // sample round), then older client recipes — deduped by recipe id.
+    const seen = new Set();
+    const merged = [];
+    for (const s of (props.sampleRecipes ?? [])) {
+        const r = s.recipe;
+        if (r && !seen.has(Number(r.id)) && matches(r)) {
+            seen.add(Number(r.id));
+            merged.push({ ...r, sample_code: s.sample_code, sample_status: s.sample_status, is_lab_sample: true });
+        }
+    }
+    for (const r of (props.recipes ?? [])) {
+        if (!seen.has(Number(r.id)) && matches(r)) {
+            seen.add(Number(r.id));
+            merged.push({ ...r, is_lab_sample: false });
+        }
+    }
+    return merged;
+};
+
+// Prefer the approved lab recipe for the product, else the latest lab one.
+const defaultLabRecipeId = (productId) => {
+    const list = recipesForProduct(productId).filter(r => r.is_lab_sample);
+    if (!list.length) return null;
+    return (list.find(r => r.sample_status === 'approved') ?? list[0]).id;
+};
+
+const onJobProductChange = (item) => {
+    const labId = defaultLabRecipeId(item.product_id);
+    item.recipe_id = labId ?? null;
+    applyQuotedPrice(item);
+};
+
+// Unit price comes from the job order's chosen accepted quotation: match
+// the row for this product + color tier (White / Light Colors / Dark Colors).
+const jobOrderQuotationId = ref(null);
+const selectedJobQuotation = computed(() =>
+    (props.acceptedQuotations ?? []).find(q => Number(q.id) === Number(jobOrderQuotationId.value))
+    ?? props.approvedQuotation ?? null
+);
+
+const quotedPriceFor = (productId, color) => {
+    const items = selectedJobQuotation.value?.items ?? [];
+    const name = (availableProducts.value.find(p => Number(p.id) === Number(productId))?.name ?? '').trim().toLowerCase();
+    if (!name || !color) return null;
+    const hit = items.find(i =>
+        String(i.fabric ?? '').trim().toLowerCase() === name &&
+        String(i.color ?? '').toLowerCase() === String(color).toLowerCase()
+    );
+    return hit ? Number(hit.unit_price) : null;
+};
+
+const applyQuotedPrice = (item) => {
+    const price = quotedPriceFor(item.product_id, item.color);
+    if (price !== null && !isNaN(price)) {
+        item.unit_price = price;
+        item.auto_price = true;
+    } else {
+        item.auto_price = false;
+    }
+};
+
+const onJobColorChange = (item) => {
+    applyQuotedPrice(item);
+};
+
+// Switching quotations re-prices every line from the newly chosen one.
+const onJobQuotationChange = () => {
+    jobOrderForm.value.items.forEach((item) => {
+        if (item.product_id && item.color) applyQuotedPrice(item);
+        else item.auto_price = false;
     });
 };
 
@@ -1277,7 +1579,7 @@ const jobOrderGrandTotal = computed(() =>
 const submitJobOrder = () => {
     jobOrderModal.value.error = null;
     jobOrderModal.value.submitting = true;
-    router.post(route('eco.attachment.create-job-order', jobOrderModal.value.attachment.id), jobOrderForm.value, {
+    router.post(route('crm.attachment.create-job-order', jobOrderModal.value.attachment.id), jobOrderForm.value, {
         onSuccess: () => {
             jobOrderModal.value.show = false;
         },

@@ -418,7 +418,7 @@
                 <div v-if="dssModal.show"
                     class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
                     @click.self="dssModal.show = false">
-                    <div class="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div class="bg-white dark:bg-zinc-900 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-teal-700 via-cyan-700 to-blue-800 text-white flex justify-between items-start">
                             <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
                             <div class="relative">
@@ -445,7 +445,7 @@
                                 <div v-else-if="dssModal.result.verdict === 'insufficient'"
                                     class="rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 p-4 flex items-start gap-3">
                                     <TriangleAlert class="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-                                    <p class="text-sm font-bold text-rose-800 dark:text-rose-200">Not sustainable — pushing is blocked. Procurement suggestions are filed automatically when you attempt the push.</p>
+                                    <p class="text-sm font-bold text-rose-800 dark:text-rose-200">Not sustainable — pushing is blocked. Use Request on a short row to file procurement now (PRO is notified), or suggestions are filed automatically when you attempt the push.</p>
                                 </div>
                                 <div v-else
                                     class="rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 flex items-start gap-3">
@@ -456,28 +456,42 @@
                                 <p v-if="dssModal.result.materials?.length" class="text-[10px] font-black uppercase tracking-widest text-gray-400">
                                     Counted against {{ dssModal.result.committed_orders }} accepted order(s) · ATP = on-hand − committed
                                 </p>
-                                <div v-if="dssModal.result.materials?.length" class="rounded-2xl border border-gray-100 dark:border-zinc-700 overflow-hidden">
-                                    <table class="w-full text-xs">
+                                <div v-if="dssModal.result.materials?.length" class="rounded-2xl border border-gray-100 dark:border-zinc-700 overflow-x-auto">
+                                    <table class="w-full min-w-[620px] text-xs">
                                         <thead class="bg-gray-50 dark:bg-zinc-800 text-[9px] font-black uppercase tracking-widest text-gray-400">
                                             <tr>
-                                                <th class="px-4 py-2.5 text-left">Material</th>
-                                                <th class="px-4 py-2.5 text-right">Need</th>
-                                                <th class="px-4 py-2.5 text-right">Committed</th>
-                                                <th class="px-4 py-2.5 text-right">On-hand</th>
-                                                <th class="px-4 py-2.5 text-right">ATP</th>
-                                                <th class="px-4 py-2.5 text-center">OK?</th>
+                                                <th class="px-3 py-2 text-left">Material</th>
+                                                <th class="px-3 py-2 text-right">Need</th>
+                                                <th class="px-3 py-2 text-right">Used</th>
+                                                <th class="px-3 py-2 text-right">Stock</th>
+                                                <th class="px-3 py-2 text-right">ATP</th>
+                                                <th class="px-3 py-2 text-center">OK?</th>
+                                                <th class="px-3 py-2 text-center">Procure</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
                                             <tr v-for="m in dssModal.result.materials" :key="m.material_id">
-                                                <td class="px-4 py-2.5 font-black">{{ m.material_name }}</td>
-                                                <td class="px-4 py-2.5 text-right font-bold">{{ m.required }}{{ m.unit }}</td>
-                                                <td class="px-4 py-2.5 text-right">{{ m.committed }}{{ m.unit }}</td>
-                                                <td class="px-4 py-2.5 text-right">{{ m.available }}{{ m.unit }}</td>
-                                                <td class="px-4 py-2.5 text-right font-black" :class="m.sufficient ? 'text-emerald-600' : 'text-rose-600'">{{ m.atp }}{{ m.unit }}</td>
-                                                <td class="px-4 py-2.5 text-center">
+                                                <td class="px-3 py-2 font-black whitespace-nowrap">{{ m.material_name }}</td>
+                                                <td class="px-3 py-2 text-right font-bold whitespace-nowrap">{{ m.required }}{{ m.unit }}</td>
+                                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ m.committed }}{{ m.unit }}</td>
+                                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ m.available }}{{ m.unit }}</td>
+                                                <td class="px-3 py-2 text-right font-black whitespace-nowrap" :class="m.sufficient ? 'text-emerald-600' : 'text-rose-600'">{{ m.atp }}{{ m.unit }}</td>
+                                                <td class="px-3 py-2 text-center">
                                                     <CheckCircle2 v-if="m.sufficient" class="h-4 w-4 text-emerald-500 inline" />
                                                     <TriangleAlert v-else class="h-4 w-4 text-rose-500 inline" />
+                                                </td>
+                                                <td class="px-3 py-2 text-center whitespace-nowrap">
+                                                    <span v-if="requestedReqs[m.material_id]" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-black">
+                                                        <Check class="h-3 w-3" /> {{ requestedReqs[m.material_id] }}
+                                                    </span>
+                                                    <button v-else-if="canEditPush && !m.sufficient" @click="requestProcurement(m)" :disabled="!!requesting[m.material_id]"
+                                                        title="File a procurement request for this material and notify the PRO module"
+                                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-[10px] font-black uppercase tracking-wide transition-colors active:scale-95">
+                                                        <Loader2 v-if="requesting[m.material_id]" class="h-3 w-3 animate-spin" />
+                                                        <ClipboardList v-else class="h-3 w-3" />
+                                                        {{ requesting[m.material_id] ? 'Filing…' : 'Request' }}
+                                                    </button>
+                                                    <span v-else class="text-gray-300 dark:text-zinc-600">—</span>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -759,7 +773,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
-import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2 } from 'lucide-vue-next';
+import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2, ClipboardList } from 'lucide-vue-next';
 import axios from 'axios';
 
 const { canEdit } = usePageAccess();
@@ -786,6 +800,8 @@ const dssChecking = ref({});
 
 const openDss = async (order) => {
     dssModal.value = { show: true, loading: true, order, result: null };
+    requesting.value = {};
+    requestedReqs.value = {};
     dssChecking.value[order.id] = true;
     try {
         const { data } = await axios.get(route('eco.push.dss', order.id));
@@ -803,6 +819,30 @@ const pushFromDss = () => {
     const order = dssModal.value.order;
     dssModal.value.show = false;
     confirmModal.value = { show: true, order, module: 'scm' };
+};
+
+// Per-material procurement request state (shortfall rows only).
+const requesting = ref({});
+const requestedReqs = ref({});
+
+const requestProcurement = async (m) => {
+    const order = dssModal.value.order;
+    if (!order || requesting.value[m.material_id]) return;
+    requesting.value[m.material_id] = true;
+    try {
+        const { data } = await axios.post(route('eco.push.dss.request', order.id), { material_id: m.material_id });
+        requestedReqs.value[m.material_id] = data.req_number;
+        showToast(data.created
+            ? `Procurement requested (${data.req_number}) — PRO module notified.`
+            : `Already requested (${data.req_number}).`, 'success');
+    } catch (e) {
+        const msg = e?.response?.data?.message || 'Could not file procurement request.';
+        const rn = e?.response?.data?.req_number;
+        if (rn) requestedReqs.value[m.material_id] = rn;
+        showToast(msg, 'error');
+    } finally {
+        delete requesting.value[m.material_id];
+    }
 };
 
 // Toast notification state

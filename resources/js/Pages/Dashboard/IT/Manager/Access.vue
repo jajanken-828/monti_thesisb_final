@@ -72,31 +72,31 @@ const saveUser = (userId) => {
                 <table class="w-full text-left min-w-[720px]">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
                             <th v-for="page in pageKeys" :key="page" class="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
                                 {{ pages[page] }}
                             </th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Save</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Save</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                         <tr v-for="user in eligibleUsers" :key="user.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
-                            <td class="px-6 py-3.5">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5">
                                 <p class="text-sm font-bold text-slate-900 dark:text-white">{{ user.name }}</p>
                                 <p class="text-[11px] text-slate-400">{{ user.role }} · {{ user.position }}</p>
                             </td>
                             <td v-for="page in pageKeys" :key="page" class="px-4 py-3.5 text-center">
                                 <button @click="userPerms[user.id][page] = !userPerms[user.id][page]"
-                                    :class="['w-6 h-6 rounded-md border inline-flex items-center justify-center transition-all',
+                                    :class="['w-9 h-9 sm:w-6 sm:h-6 rounded-md border inline-flex items-center justify-center transition-all',
                                         userPerms[user.id][page]
                                             ? 'bg-blue-600 border-blue-600 text-white'
                                             : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 hover:border-blue-400']">
                                     <ShieldCheck v-if="userPerms[user.id][page]" class="w-4 h-4" />
                                 </button>
                             </td>
-                            <td class="px-6 py-3.5 text-right">
+                            <td class="px-4 sm:px-6 py-3 sm:py-3.5 text-right">
                                 <button @click="saveUser(user.id)" :disabled="savingUserId === user.id"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
                                     <Save class="w-3.5 h-3.5" /> {{ savingUserId === user.id ? 'Saving…' : 'Save' }}
                                 </button>
                             </td>

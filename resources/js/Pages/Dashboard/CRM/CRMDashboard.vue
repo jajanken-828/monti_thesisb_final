@@ -5,7 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     Users, Briefcase, TrendingUp, Clock, Calendar, MessageSquare,
     CheckCircle, XCircle, AlertCircle, Building2, KanbanSquare,
-    PieChart, BarChart3, ArrowRight, Eye, Share2, Sparkles, LayoutDashboard,
+    PieChart, BarChart3, ArrowRight, Eye, Sparkles, LayoutDashboard,
     FileText, Activity, Megaphone
 } from 'lucide-vue-next';
 
@@ -63,6 +63,9 @@ const quickLinks = computed(() => {
     if (canViewPage('opportunities')) {
         links.push({ label: 'Opportunities', href: route('crm.opportunities'), icon: KanbanSquare, permKey: 'opportunities' });
     }
+    if (canViewPage('inquiry')) {
+        links.push({ label: 'Inquiries', href: route('crm.inquiries'), icon: MessageSquare, permKey: 'inquiry' });
+    }
     if (canViewPage('customer_profiles')) {
         links.push({ label: 'Accounts', href: route('crm.customerprofile.index'), icon: Building2, permKey: 'customer_profiles' });
     }
@@ -83,9 +86,6 @@ const quickLinks = computed(() => {
     }
     if (canViewPage('investigation')) {
         links.push({ label: 'Due Diligence', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' });
-    }
-    if (canViewPage('socials')) {
-        links.push({ label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' });
     }
     return links;
 });

@@ -25,9 +25,9 @@ const badge = (s) => ({
                     <div class="relative flex flex-wrap items-center gap-4">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/30 shadow-lg animate-pop"><FileText class="h-7 w-7" /></div>
                         <div class="min-w-0 flex-1">
-                            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">CRM · ECO Issued</p>
+                            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-100">CRM · Issued</p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Quotations</h1>
-                            <p class="text-sm text-blue-100/90">{{ summary.sent }} awaiting client · {{ summary.accepted }} accepted · {{ peso(summary.value) }} accepted value. Issuing stays in ECO.</p>
+                            <p class="text-sm text-blue-100/90">{{ summary.sent }} awaiting client · {{ summary.accepted }} accepted · {{ peso(summary.value) }} accepted value. Issued from Client Inquiries.</p>
                         </div>
                     </div>
                 </div>

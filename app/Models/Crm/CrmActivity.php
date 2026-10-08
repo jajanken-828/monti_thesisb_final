@@ -8,15 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CrmActivity extends Model
 {
-    public const TYPES = ['call', 'meeting', 'note', 'task', 'email'];
+    public const TYPES = ['call', 'meeting', 'reminder', 'todo', 'note', 'task', 'email'];
+    public const STATUSES = ['planned', 'done', 'cancelled'];
 
     protected $fillable = [
-        'client_id', 'opportunity_id', 'lead_id', 'type', 'subject',
-        'body', 'due_at', 'done_at', 'owner_id',
+        'client_id', 'opportunity_id', 'lead_id', 'type', 'subject', 'summary',
+        'body', 'notes', 'due_at', 'due_date', 'done_at', 'status', 'owner_id', 'assigned_to',
     ];
 
     protected $casts = [
         'due_at' => 'datetime',
+        'due_date' => 'datetime',
         'done_at' => 'datetime',
     ];
 
@@ -38,6 +40,23 @@ class CrmActivity extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /** Canonical due moment (new due_date wins, legacy due_at fallback). */
+    public function getDueAttribute()
+    {
+        return $this->due_date ?? $this->due_at;
+    }
+
+    /** Canonical title (new summary wins, legacy subject fallback). */
+    public function getTitleAttribute(): ?string
+    {
+        return $this->summary ?? $this->subject;
     }
 
     public function getIsOverdueAttribute(): bool

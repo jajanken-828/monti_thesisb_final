@@ -30,6 +30,13 @@ trait HasPagePermissions
             return array_fill_keys($pages, 'edit');
         }
 
+        // Vice President bypass: full edit on all CRM pages.
+        if (strtoupper($module) === 'CRM'
+            && (($user->position ?? '') === 'vice_president' || $user->role === 'COO')) {
+            $pages = array_keys(config('module_pages.' . strtolower($module), []));
+            return array_fill_keys($pages, 'edit');
+        }
+
         // Module manager bypass: a manager is automatically granted full
         // edit access to every page within their own module — UNLESS explicit
         // PagePermission rows exist for them, in which case those rows are

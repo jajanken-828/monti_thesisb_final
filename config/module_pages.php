@@ -27,14 +27,13 @@ return [
         'leads'              => 'Leads',
         'customer_profiles'  => 'Accounts',
         'opportunities'      => 'Opportunities',
+        'inquiry'            => 'Inquiries',
         'approvals'          => 'Approvals',
         'quotations'         => 'Quotations',
         'activities'         => 'Activities',
         'cases'              => 'Cases',
         'campaigns'          => 'Campaigns',
         'investigation'      => 'Due Diligence',
-        'socials'            => 'Socials',
-        'access'             => 'Access Control',
     ],
 
     'scm' => [
@@ -82,7 +81,6 @@ return [
     'eco' => [
         'dashboard' => 'Dashboard',
         'store'     => 'Store',
-        'inquiry'   => 'Inquiries',
         'supplier'  => 'Suppliers',
         'credit'    => 'Credit',
         'push'      => 'Push',
@@ -105,6 +103,7 @@ return [
         'requests' => 'Material Requests',
         'quotations' => 'Quotations',
         'receipt' => 'Receipt',
+        'tracking' => 'Order Tracking',
     ],
 
     'proj' => [
@@ -131,5 +130,6 @@ return [
         'expenses' => 'Expenses',
         'payroll' => 'Payroll',
         'reports' => 'Reports',
+        'approvals' => 'PO Approvals',
     ],
 ];

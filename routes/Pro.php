@@ -36,8 +36,12 @@ Route::prefix('dashboard/pro')->name('pro.')->middleware(['auth', 'verified'])->
             ->middleware('page.permission:quotations,edit')->name('quotations.decline');
         Route::get('/receipt', [ProcurementController::class, 'receipt'])
             ->middleware('page.permission:receipt,view')->name('receipt');
+        Route::get('/tracking', [ProcurementController::class, 'tracking'])
+            ->middleware('page.permission:tracking,view')->name('tracking');
         Route::post('/purchase-orders/{poId}/send', [ProcurementController::class, 'sendPurchaseOrder'])
             ->middleware('page.permission:receipt,edit')->name('purchase-orders.send');
+        Route::post('/purchase-orders/{poId}/return', [ProcurementController::class, 'returnToRequests'])
+            ->middleware('page.permission:receipt,edit')->name('purchase-orders.return');
         Route::post('/invoices/{invoiceId}/pay', [ProcurementController::class, 'payInvoice'])
             ->middleware('page.permission:receipt,edit')->name('invoices.pay');
     });

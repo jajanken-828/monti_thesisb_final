@@ -36,6 +36,7 @@ export const hrmModule = {
             // Recruitment (routes enforce application/interview).
             { label: 'Job Postings', href: safe('hrm.recruitment.job-postings.index'), icon: ClipboardList, permKey: 'application' },
             { label: 'Applications', href: safe('hrm.recruitment.applications.index'), icon: FileText, permKey: 'application' },
+            { label: 'Applicant Queue', href: safe('applicants.index'), icon: LayoutDashboard, permKey: 'application' },
             { label: 'Interviews', href: safe('hrm.recruitment.interviews.index'), icon: Eye, permKey: 'interview' },
             // Onboarding (routes enforce onboarding).
             { label: 'Onboarding', href: safe('hrm.onboarding.status.index'), icon: UserPlus, permKey: 'onboarding' },

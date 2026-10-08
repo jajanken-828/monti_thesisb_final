@@ -79,7 +79,7 @@ const rows = computed(() => props.articles.data || []);
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Self-help for office and plant — deflect tickets before they happen.</p>
             </div>
             <button v-if="canEditKnowledge" @click="openCreate"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 <Plus class="w-4 h-4" /> New Article
             </button>
             <span v-else class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
@@ -112,8 +112,8 @@ const rows = computed(() => props.articles.data || []);
                 <div class="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
                     <button @click="openArticle(a)" class="text-xs font-bold text-blue-600 hover:text-blue-500">Read →</button>
                     <span class="flex-1"></span>
-                    <button v-if="canEditKnowledge && (isManager || a.author_id === $page.props.auth.user.id)" @click="openEdit(a)" class="p-1.5 text-slate-400 hover:text-blue-600"><Pencil class="w-4 h-4" /></button>
-                    <button v-if="isManager && canEditKnowledge" @click="removeArticle(a)" class="p-1.5 text-slate-400 hover:text-red-500"><Trash2 class="w-4 h-4" /></button>
+                    <button v-if="canEditKnowledge && (isManager || a.author_id === $page.props.auth.user.id)" @click="openEdit(a)" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-blue-600"><Pencil class="w-4 h-4" /></button>
+                    <button v-if="isManager && canEditKnowledge" @click="removeArticle(a)" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-red-500"><Trash2 class="w-4 h-4" /></button>
                 </div>
             </div>
         </div>
@@ -131,7 +131,7 @@ const rows = computed(() => props.articles.data || []);
                 </div>
                 <form @submit.prevent="submitForm" class="space-y-3">
                     <input v-model="form.title" required placeholder="Article title" class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <input v-model="form.category" required placeholder="Category (erp, network…)" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                         <select v-model="form.audience" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                             <option value="all">Everyone</option><option value="office">Office</option>

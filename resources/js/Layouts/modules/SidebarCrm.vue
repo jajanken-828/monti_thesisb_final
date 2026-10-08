@@ -1,8 +1,8 @@
 <script>
 import {
     LayoutDashboard, FileUser, Eye, Award, ClipboardCheck, Users,
-    AlertCircle, UserPen, Share2, KanbanSquare, FileText, Activity,
-    Briefcase, Megaphone, ShieldCheck,
+    AlertCircle, UserPen, KanbanSquare, FileText, Activity,
+    Briefcase, Megaphone, ShieldCheck, MessageSquare,
 } from 'lucide-vue-next'
 
 export const crmModule = {
@@ -21,15 +21,17 @@ export const crmModule = {
             { label: 'Leads', href: route('crm.lead'), icon: FileUser, permKey: 'leads' },
             { label: 'Accounts', href: route('crm.customerprofile.index'), icon: Users, permKey: 'customer_profiles' },
             { label: 'Opportunities', href: route('crm.opportunities'), icon: KanbanSquare, permKey: 'opportunities' },
+            { label: 'Inquiries', href: route('crm.inquiries'), icon: MessageSquare, permKey: 'inquiry' },
             { label: 'Approvals', href: route('crm.approval.index'), icon: ClipboardCheck, permKey: 'approvals' },
             { label: 'Quotations', href: route('crm.quotations'), icon: FileText, permKey: 'quotations' },
             { label: 'Activities', href: route('crm.activities'), icon: Activity, permKey: 'activities' },
             { label: 'Cases', href: route('crm.cases'), icon: Briefcase, permKey: 'cases' },
             { label: 'Campaigns', href: route('crm.campaigns'), icon: Megaphone, permKey: 'campaigns' },
             { label: 'Due Diligence', href: route('crm.investigation.index'), icon: AlertCircle, permKey: 'investigation' },
-            { label: 'Socials', href: route('crm.socials.index'), icon: Share2, permKey: 'socials' },
         ]
         if (isCEO) return all
+        // President & Vice President (COO / vice_president): full CRM access.
+        if (user?.role === 'COO' || user?.position === 'vice_president') return all
         // Explicit rows (even all-'disabled') are the exact access set and
         // override this shortcut — mirrors backend CheckPagePermission.
         if (userPosition === 'manager' && user?.role === 'CRM' && !ctx.hasExplicitModuleGrants('CRM')) return all

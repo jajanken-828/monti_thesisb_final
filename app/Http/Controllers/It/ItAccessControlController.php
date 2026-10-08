@@ -123,6 +123,36 @@ class ItAccessControlController extends Controller
         return $root ? strtoupper($root) : null;
     }
 
+    /**
+     * Maps a manufacturing_role slug to its department (knitting, dyeing,
+     * finishing, maintenance, boiler). Mirrors User::getSupervisedRolesAttribute
+     * and CheckManufacturingRoleAccess::$departmentRoles.
+     */
+    protected function manufacturingDepartmentFor(?string $role): ?string
+    {
+        if (! $role) {
+            return null;
+        }
+
+        $map = [
+            'knitting_yarn' => 'knitting',
+            'knitting_mechanic' => 'knitting',
+            'dyeing_color' => 'dyeing',
+            'dyeing_fabric_softener' => 'dyeing',
+            'dyeing_squeezer' => 'dyeing',
+            'dyeing_ironing' => 'dyeing',
+            'dyeing_packaging' => 'dyeing',
+            'dyeing_lab_chemist' => 'dyeing',
+            'checker_quality' => 'finishing',
+            'maintenance_checker' => 'maintenance',
+            'pollution_control_operator' => 'maintenance',
+            'safety_officer' => 'maintenance',
+            'boiler_operator' => 'boiler',
+        ];
+
+        return $map[$role] ?? null;
+    }
+
     public function index()
     {
         $users = User::with(['moduleAccess', 'pagePermissions'])
@@ -139,18 +169,15 @@ class ItAccessControlController extends Controller
                 'position' => $u->position,
                 // MAN supervisors are stored as position=staff + flag.
                 // Expose a display position so the UI never shows them as Staff.
-                'display_position' => ($u->is_manufacturing_supervisor && $u->position === 'staff')
-                    ? 'manufacturing_supervisor'
-                    : $u->position,
+                'display_position' => $u->is_manufacturing_supervisor ? 'supervisor' : $u->position,
                 'supervisor_department' => $u->supervisor_department,
                 'manufacturing_role' => $u->manufacturing_role,
+                'manufacturing_department' => $u->is_manufacturing_supervisor
+                    ? $u->supervisor_department
+                    : $this->manufacturingDepartmentFor($u->manufacturing_role),
                 'is_active' => (bool) $u->is_active,
                 'suspended_until' => $u->suspended_until,
                 'is_manufacturing_supervisor' => (bool) $u->is_manufacturing_supervisor,
-                'supervisor_department' => $u->supervisor_department,
-                // Manufacturing supervisors are stored as position='staff' —
-                // expose the display position so they never render as Staff.
-                'display_position' => $u->is_manufacturing_supervisor ? 'supervisor' : $u->position,
                 'root_module' => $this->rootModuleFor($u),
                 'is_elevated' => $this->isElevated($u),
             ]);
@@ -551,7 +578,8 @@ class ItAccessControlController extends Controller
 
         $modules = array_values(array_unique($modules));
 
-        DB::transaction(function () use ($user, $modules) {
+        $prunedPages = 0;
+        DB::transaction(function () use ($user, $modules, &$prunedPages) {
             $user->moduleAccess()->delete();
             foreach ($modules as $module) {
                 UserModuleAccess::create([
@@ -560,6 +588,19 @@ class ItAccessControlController extends Controller
                     'permission_level' => 'edit',
                     'granted_by' => auth()->id(),
                 ]);
+            }
+            // Revoking a module revokes its pages too: drop every page row
+            // whose module is no longer granted (case-insensitive), so stale
+            // view/edit rows can't linger, inflate counts, re-open access,
+            // or re-provision the module shell on the next Pages save.
+            $kept = array_map('strtoupper', $modules);
+            $staleIds = PagePermission::where('user_id', $user->id)
+                ->get(['id', 'module'])
+                ->reject(fn ($pp) => in_array(strtoupper((string) $pp->module), $kept, true))
+                ->pluck('id');
+            if ($staleIds->isNotEmpty()) {
+                $prunedPages = $staleIds->count();
+                PagePermission::whereIn('id', $staleIds)->delete();
             }
             // Seed every page of every granted module as disabled so IT
             // must explicitly enable each page (view/edit) afterwards —
@@ -570,11 +611,13 @@ class ItAccessControlController extends Controller
         });
 
         $this->logAction($user->id, 'modules.updated',
-            'Module grants updated for ' . $user->name . ': [' . implode(', ', $modules) . '].',
-            ['before' => $before, 'after' => $modules]
+            'Module grants updated for ' . $user->name . ': [' . implode(', ', $modules) . '].'
+            . ($prunedPages ? " {$prunedPages} page grant(s) of revoked module(s) removed." : ''),
+            ['before' => $before, 'after' => $modules, 'pruned_pages' => $prunedPages]
         );
 
-        return back()->with('success', 'Module grants updated.');
+        return back()->with('success', 'Module grants updated.'
+            . ($prunedPages ? " {$prunedPages} page grant(s) of the removed module(s) were revoked too." : ''));
     }
 
     /**
@@ -611,6 +654,28 @@ class ItAccessControlController extends Controller
         // Staff may only receive grants for their home module.
         if (! $this->isElevated($user)) {
             $allowedModules = [strtoupper($user->role)];
+        } else {
+            // Elevated accounts (manager/secretary/special_officer/VP/
+            // supervisor) may hold extra modules. The Pages tab lets IT set
+            // a page before the Modules tab was ever saved, and the old code
+            // silently dropped those rows here — IT believed access was
+            // granted while the sidebar kept hiding the page. Treat a
+            // submitted usable (view/edit) grant as an implicit module grant
+            // instead, and provision the module row below.
+            foreach ($data['grants'] ?? [] as $grant) {
+                $module = strtoupper($grant['module'] ?? '');
+                $page = strtolower($grant['page'] ?? '');
+                $level = strtolower($grant['level'] ?? '');
+                if ($module === '' || ! in_array($level, ['view', 'edit'], true)) {
+                    continue;
+                }
+                if (! in_array($module . '.' . $page, $validPairs, true)) {
+                    continue;
+                }
+                if (! in_array($module, $allowedModules, true)) {
+                    $allowedModules[] = $module;
+                }
+            }
         }
 
         $before = PagePermission::where('user_id', $user->id)
@@ -625,8 +690,10 @@ class ItAccessControlController extends Controller
 
         $summary = [];
         $coerced = 0;
-        DB::transaction(function () use ($user, $data, $validPairs, $allowedModules, $lockedRoot, &$summary, &$coerced) {
+        $provisionedModules = [];
+        DB::transaction(function () use ($user, $data, $validPairs, $allowedModules, $lockedRoot, &$summary, &$coerced, &$provisionedModules) {
             $user->pagePermissions()->delete();
+            $usableModules = [];
             foreach ($data['grants'] ?? [] as $grant) {
                 $module = strtoupper($grant['module']);
                 $page = strtolower($grant['page']);
@@ -648,17 +715,40 @@ class ItAccessControlController extends Controller
                     'permission_level' => $level,
                 ]);
                 $summary[] = "{$module}.{$page}:{$level}";
+                if (in_array($level, ['view', 'edit'], true)) {
+                    $usableModules[$module] = true;
+                }
+            }
+            // Provision the module shell for every usable grant so the module
+            // gate (CheckModuleAccess) and the sidebar module condition stay
+            // in sync with the pages IT just enabled — no second Modules save
+            // required.
+            foreach (array_keys($usableModules) as $module) {
+                $exists = $user->moduleAccess()->whereIn('module', [$module, strtoupper($module), strtolower($module)])->exists();
+                if (! $exists) {
+                    UserModuleAccess::create([
+                        'user_id' => $user->id,
+                        'module' => $module,
+                        'permission_level' => 'edit',
+                        'granted_by' => auth()->id(),
+                    ]);
+                    $provisionedModules[] = $module;
+                }
             }
         });
 
         $this->logAction($user->id, 'pages.updated',
             'Page permissions updated for ' . $user->name . ' (' . count($summary) . ' grants'
-            . ($coerced ? ", {$coerced} locked-root DISABLED coerced to edit" : '') . ').',
-            ['before' => $before, 'after' => $summary]
+            . ($coerced ? ", {$coerced} locked-root DISABLED coerced to edit" : '')
+            . ($provisionedModules ? ', module shell granted for [' . implode(', ', $provisionedModules) . ']' : '') . ').',
+            ['before' => $before, 'after' => $summary, 'provisioned_modules' => $provisionedModules]
         );
 
-        return back()->with('success', 'Page permissions updated.'
-            . ($coerced ? " ({$coerced} root page(s) kept enabled — higher-up default.)" : ''));
+        $notice = 'Page permissions updated.'
+            . ($coerced ? " ({$coerced} root page(s) kept enabled — higher-up default.)" : '')
+            . ($provisionedModules ? ' Module access granted for [' . implode(', ', $provisionedModules) . '].' : '');
+
+        return back()->with('success', $notice);
     }
 
     /**

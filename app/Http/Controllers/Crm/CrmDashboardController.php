@@ -23,8 +23,9 @@ class CrmDashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Allow only CRM users (any position) and CEO
-        if (!in_array($user->role, ['CRM'])) {
+        // Allow CRM users (any position) plus the President (CEO)
+        // and the Vice President (COO / vice_president) — full access.
+        if (!in_array($user->role, ['CRM', 'CEO', 'COO'], true)) {
             abort(403, 'Unauthorized access.');
         }
 

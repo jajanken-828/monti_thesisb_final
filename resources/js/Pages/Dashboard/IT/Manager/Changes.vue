@@ -70,7 +70,7 @@ const riskClass = (r) => ({
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">RFCs with CAB approval and maintenance windows — never surprise production.</p>
             </div>
             <button v-if="canEditChanges" @click="showForm = true"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 <Plus class="w-4 h-4" /> File Change
             </button>
             <span v-else class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
@@ -84,7 +84,7 @@ const riskClass = (r) => ({
                         placeholder="Search change no or title..."
                         class="w-full pl-9 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-slate-200 placeholder-slate-400" />
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 [&>select]:flex-1 [&>select]:sm:flex-none [&>select]:min-w-[130px]">
                     <select :value="filters.status || ''" @change="applyFilters({ status: $event.target.value })"
                         class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                         <option value="">All statuses</option>
@@ -105,44 +105,44 @@ const riskClass = (r) => ({
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
+                <table class="w-full text-left min-w-[680px]">
                     <thead>
                         <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700">
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Change</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type / Risk</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Window</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                            <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Change</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type / Risk</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Window</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
                         <tr v-for="c in rows" :key="c.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
-                            <td class="px-6 py-4">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4">
                                 <p class="text-sm font-bold text-slate-900 dark:text-white">{{ c.change_no }} — {{ c.title }}</p>
                                 <p class="text-[11px] text-slate-400 truncate max-w-md">{{ c.description }}</p>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                                 <span class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase">{{ c.change_type }}</span>
                                 <span :class="['ml-2 inline-flex items-center gap-1 text-[11px] font-black uppercase', riskClass(c.risk)]">
                                     <Flag class="w-3 h-3" />{{ c.risk }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-xs text-slate-500 whitespace-nowrap">
                                 {{ c.scheduled_start ? new Date(c.scheduled_start).toLocaleString() : '—' }}
                             </td>
-                            <td class="px-6 py-4"><span :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase', statusClass(c.status)]">{{ c.status.replace('_', ' ') }}</span></td>
-                            <td class="px-6 py-4 text-right whitespace-nowrap">
+                            <td class="px-4 sm:px-6 py-3 sm:py-4"><span :class="['px-2 py-0.5 rounded-full text-[10px] font-black uppercase', statusClass(c.status)]">{{ c.status.replace('_', ' ') }}</span></td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">
                                 <template v-if="isManager && canEditChanges && ['draft', 'pending_approval'].includes(c.status)">
-                                    <button @click="approve(c.id)" title="Approve" class="p-1.5 text-slate-400 hover:text-emerald-600"><Check class="w-4 h-4" /></button>
-                                    <button @click="reject(c.id)" title="Reject" class="p-1.5 text-slate-400 hover:text-red-500"><Ban class="w-4 h-4" /></button>
+                                    <button @click="approve(c.id)" title="Approve" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-emerald-600"><Check class="w-4 h-4" /></button>
+                                    <button @click="reject(c.id)" title="Reject" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-red-500"><Ban class="w-4 h-4" /></button>
                                 </template>
                                 <button v-if="c.status === 'approved' && canEditChanges" @click="advance(c.id, 'in_progress')" title="Start work"
-                                    class="px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg">Start</button>
+                                    class="px-3 py-2 sm:py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg">Start</button>
                                 <template v-if="c.status === 'in_progress' && canEditChanges">
-                                    <button @click="advance(c.id, 'completed')" class="px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg">Complete</button>
-                                    <button @click="advance(c.id, 'rolled_back')" class="px-3 py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg">Roll back</button>
+                                    <button @click="advance(c.id, 'completed')" class="px-3 py-2 sm:py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg">Complete</button>
+                                    <button @click="advance(c.id, 'rolled_back')" class="px-3 py-2 sm:py-1.5 text-xs font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg">Roll back</button>
                                 </template>
-                                <button v-if="isManager && canEditChanges && ['draft', 'rejected'].includes(c.status)" @click="remove(c.id)" class="p-1.5 text-slate-400 hover:text-red-500"><Trash2 class="w-4 h-4" /></button>
+                                <button v-if="isManager && canEditChanges && ['draft', 'rejected'].includes(c.status)" @click="remove(c.id)" class="p-2.5 sm:p-1.5 text-slate-400 hover:text-red-500"><Trash2 class="w-4 h-4" /></button>
                             </td>
                         </tr>
                     </tbody>
@@ -162,7 +162,7 @@ const riskClass = (r) => ({
                     <input v-model="form.title" required placeholder="Change title" class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" />
                     <textarea v-model="form.description" required rows="3" placeholder="What will change, impact on production, affected systems..."
                         class="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200"></textarea>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select v-model="form.change_type" class="px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200">
                             <option value="standard">Standard (pre-approved)</option>
                             <option value="normal">Normal (needs CAB)</option>
@@ -172,7 +172,7 @@ const riskClass = (r) => ({
                             <option value="low">Risk: Low</option><option value="medium">Risk: Medium</option><option value="high">Risk: High</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div><label class="text-[11px] font-bold text-slate-400 uppercase">Window Start</label>
                             <input v-model="form.scheduled_start" type="datetime-local" class="mt-1 w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200" /></div>
                         <div><label class="text-[11px] font-bold text-slate-400 uppercase">Window End</label>

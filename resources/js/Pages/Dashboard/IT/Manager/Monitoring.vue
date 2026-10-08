@@ -71,7 +71,7 @@ const statusPill = (s) => ({
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Servers, network, ERP, power and plant-floor systems.</p>
             </div>
             <button v-if="isManager && canEditMonitoring" @click="showForm = true"
-                class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
+                class="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30 active:scale-95">
                 <Plus class="w-4 h-4" /> Monitor System
             </button>
             <span v-else-if="!canEditMonitoring" class="text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
@@ -108,13 +108,13 @@ const statusPill = (s) => ({
                 <h2 class="text-sm font-black uppercase tracking-widest text-slate-500">Recent Checks</h2>
             </div>
             <ul class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                <li v-for="c in recentChecks" :key="c.id" class="px-6 py-3 flex items-center gap-3">
+                <li v-for="c in recentChecks" :key="c.id" class="px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                     <span :class="['w-2 h-2 rounded-full flex-shrink-0', statusDot(c.status)]"></span>
                     <p class="text-sm text-slate-700 dark:text-slate-200 flex-1">
                         <span class="font-bold">{{ c.system?.name }}</span>
                         <span class="text-slate-400"> — {{ c.status }}{{ c.notes ? ` · ${c.notes}` : '' }}</span>
                     </p>
-                    <p class="text-[11px] text-slate-400 whitespace-nowrap">{{ c.checker?.name || 'system' }} · {{ new Date(c.created_at).toLocaleString() }}</p>
+                    <p class="text-[11px] text-slate-400 sm:whitespace-nowrap w-full sm:w-auto sm:text-right">{{ c.checker?.name || 'system' }} · {{ new Date(c.created_at).toLocaleString() }}</p>
                 </li>
             </ul>
             <div v-if="recentChecks.length === 0" class="p-8 text-center text-sm text-slate-400">No checks logged yet.</div>

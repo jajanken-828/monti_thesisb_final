@@ -9,6 +9,8 @@ export interface User {
     position?: string;
     employee_id?: string | null;
     department?: string | null;
+    department_name?: string | null;
+    hrmDepartment?: { name?: string | null } | null;
     manufacturing_role?: string | null;
     supervisor_department?: string | null;
     is_manufacturing_supervisor?: boolean;

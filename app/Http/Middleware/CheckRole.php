@@ -30,9 +30,9 @@ class CheckRole
             return $next($request);
         }
 
-        // If no specific roles are required, allow any authenticated user
+        // If no specific roles are required, deny access (fail closed)
         if (empty($roles)) {
-            return $next($request);
+            abort(403, 'No roles specified for this route.');
         }
 
         // Convert allowed roles to uppercase for case-insensitive matching

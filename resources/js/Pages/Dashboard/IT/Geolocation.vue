@@ -478,7 +478,7 @@ const syncGps = () => {
 
                     <!-- Map -->
                     <div class="animate-fade-up lg:col-span-3" style="animation-delay: 140ms">
-                        <div class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur p-2 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300 h-[720px] overflow-hidden">
+                        <div class="group relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur p-2 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/15 transition-all duration-300 h-[420px] sm:h-[560px] lg:h-[720px] overflow-hidden">
                             <div id="map" class="w-full h-full rounded-[1.4rem] z-0"></div>
 
                             <div class="absolute top-6 left-6 z-[1000] pointer-events-none">
@@ -569,7 +569,7 @@ const syncGps = () => {
                                 <span class="text-[11px] font-bold text-gray-400 whitespace-nowrap">{{ log.created_at ? new Date(log.created_at).toLocaleString() : '' }}</span>
                                 <div class="flex items-center gap-1.5 flex-wrap">
                                     <button @click="focusSite(log)" title="Locate on map" class="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 active:scale-95 transition"><LocateFixed class="h-4 w-4" /></button>
-                                    <button @click="useAsDraft(log)" title="Load into editor" class="hidden sm:flex h-8 px-2.5 items-center gap-1 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-[11px] font-black hover:bg-slate-200 active:scale-95 transition">Edit pin</button>
+                                    <button @click="useAsDraft(log)" title="Load into editor" class="flex h-8 px-2.5 items-center gap-1 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-[11px] font-black hover:bg-slate-200 active:scale-95 transition">Edit pin</button>
                                     <button @click="openEdit(log)" title="Rename / adjust" class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-100 active:scale-95 transition"><Pencil class="h-4 w-4" /></button>
                                     <button @click="toggleSite(log)" :title="(log.is_active ?? true) ? 'Deactivate site' : 'Activate site'" :class="['flex h-8 w-8 items-center justify-center rounded-xl active:scale-95 transition', (log.is_active ?? true) ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-gray-200']"><Power class="h-4 w-4" /></button>
                                     <button @click="deleteSite(log)" title="Remove site" class="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 active:scale-95 transition"><Trash2 class="h-4 w-4" /></button>
@@ -643,7 +643,7 @@ const syncGps = () => {
                             <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1.5">Site name *</label>
                             <input v-model="editForm.label" type="text" class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500/50" />
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-1.5">Latitude</label>
                                 <input v-model.number="editForm.latitude" type="number" step="any" class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-orange-500/50" />

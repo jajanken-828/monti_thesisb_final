@@ -87,7 +87,7 @@ class MonitorController extends Controller
     public function storeFloor(Request $request, Warehouse $warehouse)
     {
         $user = auth()->user();
-        if ($warehouse->supervisor_id !== $user->id) {
+        if ($warehouse->supervisor_id !== $user->id && $warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized');
         }
 
@@ -122,7 +122,7 @@ class MonitorController extends Controller
     public function updateFloor(Request $request, WarehouseFloor $floor)
     {
         $user = auth()->user();
-        if ($floor->warehouse->supervisor_id !== $user->id) {
+        if ($floor->warehouse->supervisor_id !== $user->id && $floor->warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized');
         }
 
@@ -151,7 +151,7 @@ class MonitorController extends Controller
     public function destroyFloor(WarehouseFloor $floor)
     {
         $user = auth()->user();
-        if ($floor->warehouse->supervisor_id !== $user->id) {
+        if ($floor->warehouse->supervisor_id !== $user->id && $floor->warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized');
         }
 
@@ -188,7 +188,7 @@ class MonitorController extends Controller
     public function updateLayout(Request $request, Warehouse $warehouse)
     {
         $user = auth()->user();
-        if ($warehouse->supervisor_id !== $user->id) {
+        if ($warehouse->supervisor_id !== $user->id && $warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized');
         }
 
@@ -374,7 +374,7 @@ class MonitorController extends Controller
         $stock = WarehouseStockItem::findOrFail($data['stock_item_id']);
         $user = auth()->user();
 
-        if ($stock->warehouse->supervisor_id !== $user->id) {
+        if ($stock->warehouse->supervisor_id !== $user->id && $stock->warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized to assign stock.');
         }
 
@@ -410,7 +410,7 @@ class MonitorController extends Controller
         $stockItem->load('warehouse');
 
         // Must supervise the source warehouse
-        if ($stockItem->warehouse->supervisor_id !== $user->id) {
+        if ($stockItem->warehouse->supervisor_id !== $user->id && $stockItem->warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized to move this stock.');
         }
 
@@ -481,7 +481,7 @@ class MonitorController extends Controller
         ]);
 
         $user = auth()->user();
-        if ($stockItem->warehouse->supervisor_id !== $user->id) {
+        if ($stockItem->warehouse->supervisor_id !== $user->id && $stockItem->warehouse->manager_id !== $user->id) {
             abort(403, 'Unauthorized.');
         }
 

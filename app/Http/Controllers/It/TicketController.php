@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\It;
 
 use App\Http\Controllers\Controller;
+use App\Models\Core\ProblemReport;
 use App\Models\Core\User;
 use App\Models\It\ItTicket;
 use Illuminate\Http\Request;
@@ -134,6 +135,16 @@ class TicketController extends Controller
         }
 
         $ticket->fill($data)->save();
+
+        // A ticket born from a Help Center report keeps that report in step,
+        // so the reporter watches real helpdesk progress from My reports.
+        ProblemReport::where('ticket_id', $ticket->id)->update([
+            'status' => match ($ticket->status) {
+                'resolved', 'closed' => 'resolved',
+                'open' => 'open',
+                default => 'in_progress',
+            },
+        ]);
 
         return redirect()->back()->with('success', "Ticket {$ticket->ticket_no} updated.");
     }

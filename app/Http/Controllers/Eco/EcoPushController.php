@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Eco;
 
 use App\Http\Controllers\Controller;
+use App\Models\Core\Notification;
+use App\Models\Core\User;
 use App\Models\Ord\OrderQueue;
 use App\Models\Ord\PurchaseOrder;
 use App\Models\Crm\Client;
@@ -115,6 +117,60 @@ class EcoPushController extends Controller
         $salesOrder = SalesOrder::findOrFail($order);
 
         return response()->json($dss->evaluate($salesOrder));
+    }
+
+    /**
+     * DSS modal "Request" button: file a procurement request for ONE
+     * specific shortfall material and notify the procurement (PRO) module
+     * staff to process it. Idempotent per job order + material.
+     */
+    public function requestProcurement($order, Request $request, StockSustainabilityService $dss)
+    {
+        $salesOrder = SalesOrder::findOrFail($order);
+
+        if ($salesOrder->status !== 'pending') {
+            return response()->json(['message' => 'Only pending orders can request procurement.'], 422);
+        }
+
+        $data = $request->validate([
+            'material_id' => 'required|exists:materials,id',
+        ]);
+
+        $result = $dss->requestMaterial($salesOrder, (int) $data['material_id'], auth()->user()?->name);
+
+        if (! ($result['requested'] ?? false)) {
+            return response()->json([
+                'message' => $result['message'] ?? 'No request needed.',
+                'reason' => $result['reason'] ?? null,
+            ], 422);
+        }
+
+        // Notify the procurement module: every active PRO account gets a
+        // bell notification linking straight to Material Requests. The
+        // request itself flows through the normal pipeline
+        // (SCM Procurement Orders → forwarded → PRO).
+        $jo = $result['jo_number'] ?? $salesOrder->jo_number ?? ('JO-'.$salesOrder->id);
+        $proUsers = User::where('role', 'PRO')->where('is_active', true)->get(['id']);
+        foreach ($proUsers as $pro) {
+            Notification::notify(
+                (int) $pro->id,
+                'procurement',
+                "Procurement requested: {$result['material_name']} for {$jo}",
+                "Short {$result['shortage']}{$result['unit']} (needs {$result['required']}{$result['unit']}, ATP {$result['atp']}{$result['unit']}). Request {$result['req_number']} filed from the ECO Push Center.",
+                'pro.manager.material-requests',
+                auth()->id()
+            );
+        }
+
+        return response()->json([
+            'req_number' => $result['req_number'],
+            'created' => $result['created'],
+            'material_id' => $result['material_id'],
+            'material_name' => $result['material_name'],
+            'shortage' => $result['shortage'],
+            'unit' => $result['unit'],
+            'notified' => $proUsers->count(),
+        ]);
     }
 
     /**

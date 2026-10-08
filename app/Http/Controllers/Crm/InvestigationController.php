@@ -7,6 +7,7 @@ use App\Models\Crm\Client;
 use App\Models\Crm\CrmClientAssignment;
 use App\Models\Crm\CrmFeedback;
 use App\Models\Core\User;
+use App\Traits\StoresFeedbackAttachments;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ use App\Traits\HasPagePermissions;
 
 class InvestigationController extends Controller
 {
-    use HasPagePermissions;
+    use HasPagePermissions, StoresFeedbackAttachments;
 
     public function index()
     {
@@ -22,7 +23,7 @@ class InvestigationController extends Controller
         
         // The middleware already checks page permission, so we don't need role checks here,
         // but we keep the business logic for staff vs manager view.
-        if (!in_array($user->role, ['CRM'])) {
+        if (!in_array($user->role, ['CRM', 'CEO', 'COO'], true)) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -46,14 +47,14 @@ class InvestigationController extends Controller
             // Fetch clients with feedback and assignee eagerly loaded
             $clients = Client::whereIn('id', $clientIds)
                              ->with(['logo', 'feedback' => function($q) {
-                                 $q->latest()->with('assignee');
+                                 $q->latest()->with(['assignee', 'attachments']);
                              }])
                              ->get();
         } else {
             // Manager/CEO sees all active clients
             $clients = Client::where('status', 'active')
                              ->with(['logo', 'feedback' => function($q) {
-                                 $q->latest()->with('assignee');
+                                 $q->latest()->with(['assignee', 'attachments']);
                              }])
                              ->get();
         }
@@ -89,9 +90,19 @@ class InvestigationController extends Controller
             'type'      => 'required|in:feedback,complaint',
             'subject'   => 'required|string|max:255',
             'message'   => 'required|string',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx|max:10240',
         ]);
 
-        $feedback = CrmFeedback::create($validated + ['status' => 'open']);
+        $feedback = CrmFeedback::create([
+            'client_id' => $validated['client_id'],
+            'type' => $validated['type'],
+            'subject' => $validated['subject'],
+            'message' => $validated['message'],
+            'status' => 'open',
+        ]);
+
+        $this->storeFeedbackFiles($feedback, $this->collectFeedbackFiles($validated), Auth::id());
 
         // Auto-assign to the staff who is assigned to this client
         $assignment = CrmClientAssignment::where('client_id', $validated['client_id'])->first();

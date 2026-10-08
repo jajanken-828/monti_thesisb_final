@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Core\PagePermission;
+use App\Models\Core\User;
 use App\Models\Work\WorkforcePermission;
 use App\Models\Crm\CrmPagePermission;
 use App\Models\Core\UserModuleAccess;
@@ -29,7 +30,12 @@ class HandleInertiaRequests extends Middleware
         $pagePermissionsList = [];
         $assignedClientIds = [];
 
-        if ($user) {
+        // Portal guards (client / supplier / applicant) authenticate with
+        // their own models — none of the employee permission machinery
+        // below applies to them. Their data is shared via getGuardUser().
+        // Without this gate, any portal visit crashes on employee-only
+        // relations (e.g. hrmDepartment) with a RelationNotFoundException.
+        if ($user instanceof User) {
             // 1. Fetch explicit permissions from DB (raw — includes 'disabled'
             //    rows so the auto-grant check below sees the exact access set).
             $explicitPermissions = PagePermission::where('user_id', $user->id)
@@ -86,7 +92,7 @@ class HandleInertiaRequests extends Middleware
 
             // Fetch CRM page permissions
             $crmPagePermissions = [];
-            if (in_array($user->role, ['CRM', 'CEO'])) {
+            if (in_array($user->role, ['CRM', 'CEO', 'COO'])) {
                 $crmPagePermissions = CrmPagePermission::where('user_id', $user->id)->pluck('page')->toArray();
             }
 
@@ -100,8 +106,15 @@ class HandleInertiaRequests extends Middleware
                     ->toArray();
             }
 
+            // Department display name (HRM-assigned department first, then the
+            // legacy department string, then manufacturing supervisor scope,
+            // then a role-derived label) so profile/sidebar consumers never
+            // render a blank department for module-native accounts.
+            $user->loadMissing('hrmDepartment:id,name');
+
             // Merge user attributes with permissions
             $userData = array_merge($user->toArray(), [
+                'department_name'        => $this->resolveDepartmentName($user),
                 'permissions'            => $permissionsGrouped,
                 'workforce_permissions'  => $workforcePermissions,
                 'crmPagePermissions'     => $crmPagePermissions,
@@ -157,11 +170,36 @@ class HandleInertiaRequests extends Middleware
      */
     protected function augmentPermissionsForModuleUser($user, array $explicitPermissions): array
     {
+        $result = $explicitPermissions;
+
+        // President & Vice President hold full (edit) access on every CRM
+        // page. Rows are injected here so ALL frontend consumers
+        // (usePageAccess, sidebar filters, grouped permissions) see them —
+        // mirroring the CheckPagePermission bypass. An explicit row for a
+        // page (including IT's 'disabled') always wins and is never
+        // overwritten; other modules are untouched (overseer model).
+        if ($user->role === 'CEO'
+            || $user->role === 'COO'
+            || ($user->position ?? '') === 'vice_president') {
+            foreach ($this->getModulePages('CRM') as $page) {
+                $hasRow = collect($result)->first(fn ($perm) =>
+                    strtoupper((string) ($perm['module'] ?? '')) === 'CRM'
+                    && strtolower((string) ($perm['page'] ?? '')) === strtolower($page));
+                if (! $hasRow) {
+                    $result[] = [
+                        'module'           => 'CRM',
+                        'page'             => $page,
+                        'permission_level' => 'edit',
+                    ];
+                }
+            }
+        }
+
         $module = strtoupper($user->role);
         $position = $user->position;
 
         if (!in_array($position, ['manager', 'staff'])) {
-            return $explicitPermissions;
+            return $result;
         }
 
         $hasExplicit = collect($explicitPermissions)->contains(function ($perm) use ($module) {
@@ -169,12 +207,10 @@ class HandleInertiaRequests extends Middleware
         });
 
         if ($hasExplicit) {
-            return $explicitPermissions;
+            return $result;
         }
 
         $modulePages = $this->getModulePages($module);
-
-        $result = $explicitPermissions;
 
         foreach ($modulePages as $page) {
             $exists = collect($result)->firstWhere(function ($perm) use ($module, $page) {
@@ -217,21 +253,74 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
+     * Display name for the employee's department: HRM-assigned department
+     * name first, then the legacy `department` string (populated at
+     * self-registration), then the manufacturing supervisor's scoped
+     * department, then a role-derived label (IT Department, HR Department,
+     * Customer Relationship Department, …). Null only when nothing is known.
+     */
+    protected function resolveDepartmentName($user): ?string
+    {
+        $hrmName = $user->hrmDepartment?->name;
+        if (is_string($hrmName) && trim($hrmName) !== '') {
+            return trim($hrmName);
+        }
+
+        $dept = $user->department;
+        if (is_string($dept) && trim($dept) !== '') {
+            return trim($dept);
+        }
+
+        if (! empty($user->is_manufacturing_supervisor) && ! empty($user->supervisor_department)) {
+            return ucfirst((string) $user->supervisor_department).' Department';
+        }
+
+        $map = [
+            'IT'  => 'IT Department',
+            'HRM' => 'HR Department',
+            'CRM' => 'Customer Relationship Department',
+            'SCM' => 'Supply Chain Department',
+            'FIN' => 'Finance Department',
+            'MAN' => 'Manufacturing Department',
+            'LOG' => 'Logistics Department',
+            'WAR' => 'Warehouse Department',
+            'INV' => 'Inventory Department',
+            'ORD' => 'Order Management Department',
+            'ECO' => 'E-Commerce Department',
+            'PRO' => 'Procurement Department',
+            'PROJ' => 'Project Department',
+            'WRF' => 'Workforce Department',
+            'CEO' => 'Office of the CEO',
+            'COO' => 'Office of the COO',
+        ];
+
+        $role = strtoupper((string) ($user->role ?? ''));
+        if (isset($map[$role])) {
+            return $map[$role];
+        }
+        if ($role !== '') {
+            return ucfirst(strtolower($role)).' Department';
+        }
+
+        return null;
+    }
+
+    /**
      * Get all page names for a given module.
      */
     protected function getModulePages(string $module): array
     {
         $map = [
             'HRM' => ['dashboard', 'employee', 'application', 'interview', 'trainee', 'onboarding', 'payroll', 'analytics'],
-            'CRM' => ['dashboard', 'leads', 'customer_profiles', 'opportunities', 'approvals', 'quotations', 'activities', 'cases', 'campaigns', 'investigation', 'socials'],
+            'CRM' => ['dashboard', 'leads', 'customer_profiles', 'opportunities', 'inquiry', 'approvals', 'quotations', 'activities', 'cases', 'campaigns', 'investigation'],
             'SCM' => ['dashboard', 'sales', 'procurement', 'planning', 'purchase', 'deliveries', 'vendor', 'analytics'],
-            'FIN' => ['dashboard', 'receivables', 'payables', 'expenses', 'payroll', 'reports'],
+            'FIN' => ['dashboard', 'receivables', 'payables', 'expenses', 'payroll', 'reports', 'approvals'],
             'MAN' => ['dashboard', 'production', 'reject', 'inventory'],
             'INV' => ['dashboard', 'materials', 'products', 'bom', 'checker'],
             'ORD' => ['dashboard', 'orders', 'productions', 'delivery', 'returns'],
             'WAR' => ['warehouse', 'receiving', 'monitor', 'packages', 'reject'],
-            'ECO' => ['dashboard', 'store', 'inquiry', 'supplier', 'credit', 'push'],
-            'PRO' => ['dashboard', 'requests', 'quotations', 'receipt'],
+            'ECO' => ['dashboard', 'store', 'supplier', 'credit', 'push'],
+            'PRO' => ['dashboard', 'requests', 'quotations', 'receipt', 'tracking'],
             'PROJ' => ['dashboard'],
             'IT' => ['dashboard', 'tickets', 'assets', 'monitoring', 'knowledge', 'changes', 'access', 'access_control', 'access_logs'],
             'LOG' => ['dashboard', 'load', 'dispatch', 'fleet', 'drivers', 'routes', 'tracking', 'proof', 'reports'],

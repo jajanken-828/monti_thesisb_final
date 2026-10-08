@@ -169,7 +169,7 @@ const fmtDate = (v) => v ? new Date(v).toLocaleDateString('en-US', { month: 'sho
                 </div>
                 <div v-if="!memos?.data?.length" class="text-center text-sm text-gray-400 py-8">No memos found.</div>
                 <div v-if="memos?.links?.length > 3" class="flex flex-wrap gap-2 justify-center">
-                    <Link v-for="link in memos.links" :key="link.label" :href="link.url ?? '#'" v-html="link.label" :class="['px-3 py-1.5 rounded-xl text-xs font-bold ring-1 transition', link.active ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 ring-gray-200 dark:ring-zinc-700']" preserve-scroll />
+                    <Link v-for="link in memos.links" :key="link.label" :href="link.url ?? '#'" v-text="link.label.replace('&laquo;', '«').replace('&raquo;', '»')" :class="['px-3 py-1.5 rounded-xl text-xs font-bold ring-1 transition', link.active ? 'bg-indigo-600 text-white ring-indigo-600' : 'bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 ring-gray-200 dark:ring-zinc-700']" preserve-scroll />
                 </div>
             </div>
         </div>

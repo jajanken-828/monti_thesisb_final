@@ -21,14 +21,26 @@ class CrmOpportunity extends Model
     public const TERMINAL = ['won', 'lost'];
 
     protected $fillable = [
-        'client_id', 'lead_id', 'title', 'stage', 'value',
-        'probability', 'expected_close', 'owner_id', 'lost_reason',
+        'client_id', 'lead_id', 'contact_id', 'stage_id', 'title', 'stage', 'value',
+        'probability', 'priority', 'expected_close', 'owner_id', 'lost_reason',
+        'internal_notes', 'source', 'medium', 'campaign', 'referred_by', 'email', 'phone',
     ];
 
     protected $casts = [
         'value' => 'decimal:2',
         'expected_close' => 'date',
+        'priority' => 'integer',
     ];
+
+    public function stageRef(): BelongsTo
+    {
+        return $this->belongsTo(CrmStage::class, 'stage_id');
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(CrmContact::class, 'contact_id');
+    }
 
     public function client(): BelongsTo
     {
@@ -53,6 +65,28 @@ class CrmOpportunity extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(CrmActivity::class, 'opportunity_id')->latest();
+    }
+
+    /** Activity state for the pipeline card icon / stage bar. */
+    public function getActivityStateAttribute(): string
+    {
+        $next = $this->relationLoaded('activities')
+            ? $this->activities->where('status', 'planned')->sortBy('due_date')->first()
+            : $this->activities()->where('status', 'planned')->orderByRaw('due_date IS NULL, due_date ASC')->first();
+
+        if (! $next || ! $next->due_date) {
+            return $next ? 'planned' : 'none';
+        }
+        $due = $next->due_date->startOfDay();
+        $today = now()->startOfDay();
+        if ($due->lt($today)) {
+            return 'overdue';
+        }
+        if ($due->eq($today)) {
+            return 'today';
+        }
+
+        return 'planned';
     }
 
     public function getWeightedAttribute(): float

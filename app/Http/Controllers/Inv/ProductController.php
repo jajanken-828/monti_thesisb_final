@@ -117,10 +117,10 @@ class ProductController extends Controller
                 return back()->withErrors(['error' => 'Duplicate product ID or SKU generated. Please try again.']);
             }
             \Log::error('Product store DB error: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Database error: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'A database error occurred. Please try again.']);
         } catch (\Exception $e) {
             \Log::error('Product store general error: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Failed to save product: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to save product. Please try again.']);
         }
     }
 

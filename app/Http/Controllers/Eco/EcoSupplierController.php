@@ -62,7 +62,7 @@ class EcoSupplierController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            'attachment' => 'nullable|file|max:10240', // 10MB max
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,zip|max:10240',
         ]);
 
         $attachmentPath = null;

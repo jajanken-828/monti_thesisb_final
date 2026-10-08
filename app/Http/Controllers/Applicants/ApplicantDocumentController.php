@@ -11,9 +11,15 @@ class ApplicantDocumentController extends Controller
 {
     public function store(Request $request, Applicant $applicant)
     {
+        $user = $request->user();
+        abort_unless(
+            $user && ($user->role === 'HRM' || $user->position === 'general_manager' || $user->position === 'special_officer'),
+            403
+        );
+
         $data = $request->validate([
             'type' => 'required|in:resume,id,sss,philhealth,pagibig,certificate,other',
-            'file' => 'required|file|max:5120',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
         ]);
         $path = $request->file('file')->store('applicants/documents', 'public');
         $doc = ApplicantDocument::create([

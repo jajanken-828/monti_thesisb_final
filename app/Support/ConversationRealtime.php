@@ -33,12 +33,14 @@ class ConversationRealtime
 
     /**
      * Fetch messages for polling. Returns only rows newer than $afterId
-     * so the frontend can append without a full reload.
+     * so the frontend can append without a full reload. The client portal
+     * additionally hides lab→CRM handoffs until CRM forwards them.
      */
-    public static function feed(int $inquiryId, int $afterId = 0)
+    public static function feed(int $inquiryId, int $afterId = 0, bool $onlyVisibleToClient = false)
     {
-        return ConversationMessage::with('attachments')
+        return ConversationMessage::with(['attachments', 'sampleRequest'])
             ->where('inquiry_id', $inquiryId)
+            ->when($onlyVisibleToClient, fn ($q) => $q->where('visible_to_client', true))
             ->when($afterId > 0, fn ($q) => $q->where('id', '>', $afterId))
             ->orderBy('id')
             ->get();

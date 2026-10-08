@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Suppliers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Inv\Material;
+use App\Models\Pro\SupplierProduct;
 use App\Models\Scm\PurchaseInvoice;
 use App\Models\Scm\RequestForQuotation;
 use App\Models\Scm\RfqResponse;
@@ -30,6 +32,7 @@ class SupplierDashboardController extends Controller
         })->values()->map(fn ($rfq) => [
             'id' => $rfq->id,
             'rfq_number' => $rfq->rfq_number,
+            'material_id' => $rfq->material_id,
             'material_name' => $rfq->material_name,
             'category' => $rfq->category,
             'unit' => $rfq->unit,
@@ -53,6 +56,14 @@ class SupplierDashboardController extends Controller
                 'submittedQuotes' => $rfqs->whereNotNull('my_response')->count(),
             ],
             'rfqs' => $rfqs,
+            // Catalog prices keyed by material id — the quotation modal
+            // auto-fills the unit price from My Products.
+            'catalogPrices' => SupplierProduct::where('supplier_id', $supplierId)
+                ->where('is_available', true)
+                ->whereNotNull('unit_price')
+                ->pluck('unit_price', 'material_id')
+                ->map(fn ($p) => (float) $p)
+                ->toArray(),
         ]);
     }
 
@@ -90,6 +101,89 @@ class SupplierDashboardController extends Controller
         $rfq->update(['status' => $existingResponses >= 1 ? 'responded' : 'partial_response']);
 
         return redirect()->back()->with('success', 'Quotation submitted successfully!');
+    }
+
+    /**
+     * Product catalog: raw materials this supplier carries, grouped by
+     * Monti category (Yarn / Dye / Supplies / Packaging). Names, units
+     * and categories always come from the inventory materials table.
+     */
+    public function products()
+    {
+        $supplier = auth('supplier')->user();
+
+        $products = SupplierProduct::with('material')
+            ->where('supplier_id', $supplier->id)
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'material_id' => $p->material_id,
+                'name' => $p->material?->name ?? '—',
+                'mat_id' => $p->material?->mat_id ?? '',
+                'category' => $p->material?->category ?? 'Supplies',
+                'unit' => $p->material?->unit ?? 'Kg',
+                'unit_price' => $p->unit_price,
+                'is_available' => (bool) $p->is_available,
+            ]);
+
+        $listedIds = $products->pluck('material_id')->all();
+        $catalog = Material::whereNotIn('id', $listedIds ?: [0])
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get(['id', 'mat_id', 'name', 'unit', 'category']);
+
+        return Inertia::render('Supplier/supplierProducts', [
+            'auth' => [
+                'user' => $supplier,
+                'supplier' => $supplier,
+            ],
+            'products' => $products,
+            'catalog' => $catalog,
+        ]);
+    }
+
+    public function storeProduct(Request $request)
+    {
+        $supplier = auth('supplier')->user();
+
+        $validated = $request->validate([
+            'material_id' => 'required|exists:materials,id',
+            'unit_price' => 'nullable|numeric|min:0',
+        ]);
+
+        $exists = SupplierProduct::where('supplier_id', $supplier->id)
+            ->where('material_id', $validated['material_id'])
+            ->exists();
+        if ($exists) {
+            return back()->withErrors(['material_id' => 'This material is already in your catalog.']);
+        }
+
+        SupplierProduct::create([
+            'supplier_id' => $supplier->id,
+            'material_id' => $validated['material_id'],
+            'unit_price' => $validated['unit_price'] ?? null,
+            'is_available' => true,
+        ]);
+
+        return back()->with('success', 'Product added to your catalog.');
+    }
+
+    public function toggleProduct(SupplierProduct $product)
+    {
+        abort_unless($product->supplier_id === auth('supplier')->id(), 403);
+
+        $product->update(['is_available' => ! $product->is_available]);
+
+        return back()->with('success', $product->is_available ? 'Product marked available.' : 'Product marked unavailable.');
+    }
+
+    public function destroyProduct(SupplierProduct $product)
+    {
+        abort_unless($product->supplier_id === auth('supplier')->id(), 403);
+
+        $product->delete();
+
+        return back()->with('success', 'Product removed from your catalog.');
     }
 
     public function purchaseOrders()

@@ -65,7 +65,24 @@ const openRFQ = (req) => {
     rfqForm.notes = '';
     rfqForm.selected_suppliers = [];
     supplierStep.value = false;
+    showAllSuppliers.value = false;
     showRFQModal.value = true;
+};
+
+// Suppliers carrying the requested material (exact match on their product
+// catalog). The list defaults to matches only, with a show-all fallback.
+const showAllSuppliers = ref(false);
+const matchedSuppliers = computed(() => {
+    const mid = Number(selectedRequest.value?.material_id);
+    if (!mid) return props.suppliers || [];
+    return (props.suppliers || []).filter((s) => (s.product_material_ids || []).map(Number).includes(mid));
+});
+const visibleSuppliers = computed(() => showAllSuppliers.value ? (props.suppliers || []) : matchedSuppliers.value);
+const matchLabel = computed(() => selectedRequest.value?.material_name || 'this material');
+const carries = (sup) => {
+    const mid = Number(selectedRequest.value?.material_id);
+    if (!mid) return true;
+    return (sup.product_material_ids || []).map(Number).includes(mid);
 };
 
 const proceedToSuppliers = () => {
@@ -89,6 +106,20 @@ const toggleSupplier = (id) => {
 const submitRFQ = () => {
     if (rfqForm.selected_suppliers.length === 0) {
         triggerModalAlert('No Suppliers Selected', 'Please select at least one supplier to send the RFQ to.');
+        return;
+    }
+
+    // Security: every selected supplier must carry the requested material.
+    // (Reachable via "Show all suppliers" — matches-only view can't pick
+    // non-carriers in the first place.)
+    const offenders = (props.suppliers || [])
+        .filter((s) => rfqForm.selected_suppliers.includes(s.id) && !carries(s))
+        .map((s) => s.business_name);
+    if (offenders.length > 0) {
+        triggerModalAlert(
+            'Supplier Cannot Supply',
+            `${offenders.join(', ')} ${offenders.length === 1 ? 'does' : 'do'} not carry ${matchLabel.value} in ${offenders.length === 1 ? 'its' : 'their'} product catalog. Deselect ${offenders.length === 1 ? 'it' : 'them'} or ask the vendor to list the material first.`
+        );
         return;
     }
 
@@ -296,7 +327,16 @@ const getUrgencyClass = (u) => {
                                 </div>
 
                                 <div v-else class="space-y-3">
-                                    <div v-for="sup in suppliers" :key="sup.id" @click="toggleSupplier(sup.id)"
+                                    <div class="flex items-center justify-between px-1">
+                                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                                            <template v-if="showAllSuppliers">Showing all {{ visibleSuppliers.length }} supplier{{ visibleSuppliers.length === 1 ? '' : 's' }}</template>
+                                            <template v-else>Showing {{ visibleSuppliers.length }} supplier{{ visibleSuppliers.length === 1 ? '' : 's' }} carrying <span class="text-indigo-600 dark:text-indigo-400">{{ matchLabel }}</span></template>
+                                        </p>
+                                        <button type="button" @click="showAllSuppliers = !showAllSuppliers" class="text-[11px] font-black text-indigo-600 dark:text-indigo-400 hover:underline">
+                                            {{ showAllSuppliers ? 'Show matches only' : 'Show all suppliers' }}
+                                        </button>
+                                    </div>
+                                    <div v-for="sup in visibleSuppliers" :key="sup.id" @click="toggleSupplier(sup.id)"
                                         class="group flex items-center p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
                                         :class="rfqForm.selected_suppliers.includes(sup.id) ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-900/20 shadow-lg shadow-indigo-500/10' : 'border-gray-100 dark:border-zinc-800 hover:border-indigo-200 dark:hover:border-indigo-800 bg-white dark:bg-zinc-900'">
                                         <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-600 to-violet-700 text-white flex items-center justify-center mr-4 flex-shrink-0 shadow-lg">
@@ -304,9 +344,10 @@ const getUrgencyClass = (u) => {
                                             <CheckCircle v-else class="w-5 h-5" />
                                         </div>
                                         <div class="flex-1 min-w-0"><p class="font-black text-sm text-gray-900 dark:text-white tracking-tight truncate">{{ sup.business_name }}</p><p class="text-xs text-gray-500 font-bold truncate">{{ sup.email }}</p></div>
+                                        <span v-if="carries(sup)" class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 mr-2">Carries {{ matchLabel }}</span>
                                         <span v-if="rfqForm.selected_suppliers.includes(sup.id)" class="text-[9px] font-black uppercase px-2.5 py-1 rounded-full bg-indigo-600 text-white flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Selected</span>
                                     </div>
-                                    <p v-if="!suppliers?.length" class="text-center py-8 text-sm text-gray-400 font-bold">No suppliers available.</p>
+                                    <p v-if="!visibleSuppliers?.length" class="text-center py-8 text-sm text-gray-400 font-bold">No suppliers carry {{ matchLabel }} yet. <button type="button" @click="showAllSuppliers = true" class="text-indigo-600 hover:underline">Show all suppliers</button> or ask vendors to list it in My Products.</p>
                                 </div>
                             </div>
 

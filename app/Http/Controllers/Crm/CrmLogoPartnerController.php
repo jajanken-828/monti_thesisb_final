@@ -48,6 +48,13 @@ class CrmLogoPartnerController extends Controller
     {
         $logo = CrmLogoPartner::findOrFail($id);
 
+        $user = Auth::user();
+        $isOwner = $logo->uploaded_by === $user->id;
+        $isManager = in_array($user->position, ['manager', 'general_manager', 'special_officer', 'vice_president'], true);
+        $isCrmRole = in_array($user->role, ['CRM', 'CEO', 'COO'], true);
+
+        abort_unless($isOwner || $isManager || $isCrmRole, 403);
+
         if ($logo->logo_path) {
             Storage::disk('public')->delete($logo->logo_path);
         }

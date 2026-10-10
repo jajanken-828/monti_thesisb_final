@@ -49,6 +49,8 @@ Route::prefix('dashboard/inventory')->name('inv.')->middleware(['auth', 'verifie
     Route::get('/checker', [CheckerController::class, 'index'])
         ->middleware('page.permission:checker,view')->name('checker');
     // ✅ FIXED: Use MaterialController@procurement for creating procurement requests
+    Route::post('/checker/procurement-bulk', [MaterialController::class, 'bulkProcurement'])
+        ->middleware('page.permission:checker,edit')->name('checker.procurement.bulk');
     Route::post('/checker/procurement/{material}', [MaterialController::class, 'procurement'])
         ->middleware('page.permission:checker,edit')->name('checker.procurement');
     Route::post('/checker/order/{order}', [CheckerController::class, 'checkOrder'])

@@ -23,12 +23,12 @@ class ClientProfileController extends Controller
         $client = Auth::guard('client')->user();
 
         $validated = $request->validate([
-            'company_name'    => 'required|string|max:255',
-            'business_type'   => 'required|string|max:255',
+            'company_name'    => 'sometimes|required|string|max:255',
+            'business_type'   => 'sometimes|required|string|max:255',
             'tin_number'      => 'nullable|string|max:50',
-            'contact_person'  => 'required|string|max:255',
-            'phone'           => 'required|string|max:20',
-            'company_address' => 'required|string',
+            'contact_person'  => 'sometimes|required|string|max:255',
+            'phone'           => 'sometimes|required|string|max:20',
+            'company_address' => 'sometimes|required|string',
             'city'            => 'nullable|string|max:100',
             'province'        => 'nullable|string|max:100',
             'postal_code'     => 'nullable|string|max:20',
@@ -37,24 +37,47 @@ class ClientProfileController extends Controller
             'logo'            => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 
-        // 'logo' is an uploaded file, not a clients column — keep it out of the mass update.
+        $data = [];
+
+        if ($request->has('company_name')) {
+            $data['company_name'] = $validated['company_name'];
+        }
+        if ($request->has('business_type')) {
+            $data['business_type'] = $validated['business_type'];
+        }
+        if ($request->has('tin_number')) {
+            $data['tin_number'] = $validated['tin_number'];
+        }
+        if ($request->has('contact_person')) {
+            $data['contact_person'] = $validated['contact_person'];
+        }
+        if ($request->has('phone')) {
+            $data['phone'] = $validated['phone'];
+        }
+        if ($request->has('company_address')) {
+            $data['company_address'] = $validated['company_address'];
+        }
+        if ($request->has('city')) {
+            $data['city'] = $validated['city'];
+        }
+        if ($request->has('province')) {
+            $data['province'] = $validated['province'];
+        }
+        if ($request->has('postal_code')) {
+            $data['postal_code'] = $validated['postal_code'];
+        }
+        if ($request->has('latitude')) {
+            $data['latitude'] = $validated['latitude'] !== '' ? (float) $validated['latitude'] : null;
+        }
+        if ($request->has('longitude')) {
+            $data['longitude'] = $validated['longitude'] !== '' ? (float) $validated['longitude'] : null;
+        }
+
         $logoFile = $validated['logo'] ?? null;
-        unset($validated['logo']);
 
-        // Explicitly cast lat/lng to float so they are never stored as strings,
-        // and preserve null when the client hasn't pinned a location yet.
-        $validated['latitude']  = isset($validated['latitude'])
-            ? (float) $validated['latitude']
-            : null;
-
-        $validated['longitude'] = isset($validated['longitude'])
-            ? (float) $validated['longitude']
-            : null;
-
-        $client->update($validated);
+        $client->update($data);
 
         if ($logoFile) {
-            // Replace any existing logo (file + record) with the new upload.
             $existing = CrmLogoPartner::where('client_id', $client->id)->get();
             foreach ($existing as $old) {
                 if ($old->logo_path) {

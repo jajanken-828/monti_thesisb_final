@@ -46,6 +46,9 @@ class PurchaseOrder extends Model
         'confirmed_by',
         'cancel_reason',
         'on_hold_reason',
+        // Payment posting (ORD receipt uploads).
+        'payment_status',
+        'receipt_file',
     ];
 
     protected $casts = [

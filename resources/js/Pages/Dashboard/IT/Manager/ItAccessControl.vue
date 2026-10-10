@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Search, X, ShieldCheck, ShieldOff, PauseCircle, RotateCcw, Save, Users, Bell, CheckCircle2, Ban, Lock } from 'lucide-vue-next';
@@ -378,12 +378,38 @@ const currentPages = computed(() => {
     }));
 });
 
+// Plant-staff trap guard: every MAN role workspace (including its Dashboard
+// tab) is gated by the Production page on the backend, so enabling Dashboard
+// while Production stays DISABLED leaves the account with no openable page —
+// login bounces into a "production disabled" 403. Supervisors are exempt:
+// their overview dashboard is dashboard-gated and works standalone.
+const manPlantDashboardWarning = computed(() => {
+    const u = managing.value;
+    if (!u || u.role !== 'MAN' || u.position !== 'staff' || u.is_manufacturing_supervisor) return false;
+    if (String(currentModule.value || '').toLowerCase() !== 'man') return false;
+    const gKey = Object.keys(pageGrants.value).find((k) => String(k).toLowerCase() === 'man');
+    const grants = (gKey && pageGrants.value[gKey]) || {};
+    const dashboardOn = ['view', 'edit'].includes(grants.dashboard);
+    const productionOn = ['view', 'edit'].includes(grants.production);
+    return dashboardOn && !productionOn;
+});
+
 const setLevel = (page, level) => {
     // Locked root pages of higher-ups can never be disabled.
     if (level === 'disabled' && isPageLocked(currentModule.value)) return;
     if (!pageGrants.value[currentModule.value]) pageGrants.value[currentModule.value] = {};
     pageGrants.value[currentModule.value][page] = level;
 };
+
+// The manage drawer is teleported to <body> (fullscreen, above every
+// navbar/sidebar layer). Lock background scroll while it is open so the
+// panel — never the page behind it — is what scrolls on any viewport.
+watch(managing, (open) => {
+    document.body.style.overflow = open ? 'hidden' : '';
+});
+onUnmounted(() => {
+    document.body.style.overflow = '';
+});
 </script>
 
 <template>
@@ -529,9 +555,11 @@ const setLevel = (page, level) => {
             </div>
         </div>
 
-        <!-- Manage drawer -->
-        <div v-if="managing" class="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm" @click.self="managing = null">
-            <div class="bg-white dark:bg-slate-800 w-full max-w-2xl h-full overflow-y-auto border-l border-slate-200 dark:border-slate-700 flex flex-col">
+        <!-- Manage drawer (teleported: fullscreen overlay above all nav layers,
+             viewport-height panel with its own scroll so nothing gets cut off) -->
+        <Teleport to="body">
+        <div v-if="managing" class="fixed inset-0 z-[70] flex justify-end bg-black/50 backdrop-blur-sm" @click.self="managing = null">
+            <div class="bg-white dark:bg-slate-800 w-full sm:max-w-2xl h-dvh max-h-dvh overflow-y-auto overscroll-contain border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col">
                 <!-- Sticky header + tabs: the Account / Position / Modules / Page
                      Access buttons stay visible while the (long) Page Access
                      list scrolls underneath. -->
@@ -708,7 +736,12 @@ const setLevel = (page, level) => {
                             </button>
                         </div>
                         <div v-if="!currentModule" class="p-4 text-xs text-slate-400 font-bold">No page modules available for this employee.</div>
-                        <div v-else class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                        <template v-else>
+                        <div v-if="manPlantDashboardWarning" class="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-[11px] font-bold text-amber-700 dark:text-amber-300 leading-relaxed">
+                            Dashboard alone opens nothing for plant staff — every role workspace (including its Dashboard tab) requires the Production page.
+                            Enable Production (VIEW or EDIT) as well, or this account lands on a limited-access notice after login.
+                        </div>
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                             <table class="w-full text-left">
                                 <thead>
                                     <tr class="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700">
@@ -740,6 +773,7 @@ const setLevel = (page, level) => {
                                 </tbody>
                             </table>
                         </div>
+                        </template>
                         <button @click="savePages" :disabled="pagesForm.processing"
                             class="w-full inline-flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 active:scale-95 disabled:opacity-50">
                             <Save class="w-4 h-4" /> Save Page Permissions
@@ -748,10 +782,13 @@ const setLevel = (page, level) => {
                 </div>
             </div>
         </div>
+        </Teleport>
 
-        <!-- Final confirmation modal for position commands -->
-        <div v-if="confirmPosition && managing" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" @click.self="confirmPosition = null">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-md p-6">
+        <!-- Final confirmation modal for position commands (teleported with
+             the drawer so it always renders above it, fully in view) -->
+        <Teleport to="body">
+        <div v-if="confirmPosition && managing" class="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" @click.self="confirmPosition = null">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-md p-6 my-auto">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                         <CheckCircle2 class="w-5 h-5 text-indigo-600" />
@@ -775,5 +812,6 @@ const setLevel = (page, level) => {
                 </div>
             </div>
         </div>
+        </Teleport>
     </AuthenticatedLayout>
 </template>

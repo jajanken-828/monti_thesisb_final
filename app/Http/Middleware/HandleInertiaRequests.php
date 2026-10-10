@@ -319,7 +319,7 @@ class HandleInertiaRequests extends Middleware
             'INV' => ['dashboard', 'materials', 'products', 'bom', 'checker'],
             'ORD' => ['dashboard', 'orders', 'productions', 'delivery', 'returns'],
             'WAR' => ['warehouse', 'receiving', 'monitor', 'packages', 'reject'],
-            'ECO' => ['dashboard', 'store', 'supplier', 'credit', 'push'],
+            'ECO' => ['dashboard', 'store', 'supplier', 'client', 'credit', 'push'],
             'PRO' => ['dashboard', 'requests', 'quotations', 'receipt', 'tracking'],
             'PROJ' => ['dashboard'],
             'IT' => ['dashboard', 'tickets', 'assets', 'monitoring', 'knowledge', 'changes', 'access', 'access_control', 'access_logs'],

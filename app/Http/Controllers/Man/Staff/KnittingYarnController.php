@@ -125,7 +125,12 @@ class KnittingYarnController extends ManufacturingStaffController
                 $materialsData = [];
 
                 if ($recipe && $recipe->materials) {
-                    $jsonMaterials = json_decode($recipe->materials, true);
+                    // BomRecord casts materials to array, but older rows may
+                    // still arrive as a JSON string — handle both.
+                    $rawMaterials = $recipe->materials;
+                    $jsonMaterials = is_string($rawMaterials)
+                        ? json_decode($rawMaterials, true)
+                        : $rawMaterials;
                     if (is_array($jsonMaterials)) {
                         $materials = Material::whereIn('id', array_keys($jsonMaterials))
                             ->get()->keyBy('id');

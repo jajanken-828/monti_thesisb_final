@@ -3,6 +3,7 @@
 namespace App\Services\Eco;
 
 use App\Models\Inv\Material;
+use App\Models\Man\ManufacturingInventoryItem;
 use App\Models\Ord\SalesOrder;
 use App\Models\Scm\MaterialRequest;
 use App\Models\War\WarehouseStockItem;
@@ -11,14 +12,15 @@ use App\Models\War\WarehouseStockItem;
  * Decision Support: stock sustainability check for ECO order acceptance.
  *
  * Before ECO accepts (pushes) a job order, this service verifies that live
- * warehouse stock can cover BOTH the new order AND everything already
- * committed to previously accepted orders:
+ * stock can cover BOTH the new order AND everything already committed to
+ * previously accepted orders:
  *
- *   available_to_promise = live_stock − committed_to_accepted_orders
+ *   supply   = unopened warehouse stock + opened production remaining
+ *   atp      = supply − committed_to_accepted_orders
  *
- * Example: 2000kg yarn on hand, accepted orders already consume 1800kg →
- * ATP = 200kg, so a new 300kg order is blocked and procurement is
- * suggested for the shortfall materials.
+ * Example: 2000kg on hand (1500 unopened + 500 opened), accepted orders
+ * already consume 1800kg → ATP = 200kg, so a new 300kg order is blocked
+ * and procurement is suggested for the shortfall materials.
  *
  * Committed = accepted-but-unfinished job orders (stock not yet consumed).
  * Terminal states (completed / delivered / cancelled) neither commit nor
@@ -44,16 +46,11 @@ class StockSustainabilityService
     ];
 
     /**
-     * Material requirements for one order: [material_id => required_qty].
-     * Derived from the attached recipe (BOM) × order quantity in kg.
-     * Returns [] when the order has no usable recipe (verdict: no_recipe).
-     *
-     * Recipes come in two shapes: ID-keyed ({"1": qty} from CRM/BOM) and
-     * name-keyed ({"Blue Dye": qty} from lab sign-off). Names are resolved
-     * to material IDs; keys matching nothing are skipped instead of
-     * surfacing as "Unknown material".
+     * Material requirement RATES for one order: [material_id => qty per
+     * order unit], before multiplying by the order quantity. Shared by
+     * materialsForOrder() and the DSS "why" breakdown in evaluate().
      */
-    public function materialsForOrder(SalesOrder $order): array
+    public function recipeRates(SalesOrder $order): array
     {
         $order->loadMissing('recipe');
         $recipe = $order->recipe;
@@ -83,20 +80,67 @@ class StockSustainabilityService
                 ->toArray();
         }
 
-        $qty = (float) ($order->quantity ?? 0);
-        $needed = [];
+        $rates = [];
         foreach ($materials as $materialKey => $qtyPerUnit) {
             $matId = is_numeric($materialKey)
                 ? (int) $materialKey
                 : (int) ($byName[(string) $materialKey] ?? 0);
-            if ($matId <= 0) {
+            if ($matId <= 0 || ((float) $qtyPerUnit) <= 0) {
                 continue;
             }
-            $need = ((float) $qtyPerUnit) * $qty;
+            $rates[$matId] = ($rates[$matId] ?? 0) + (float) $qtyPerUnit;
+        }
+
+        return $rates;
+    }
+
+    /**
+     * Material requirements for one order: [material_id => required_qty].
+     * Derived from the attached recipe (BOM) × order quantity in kg.
+     * Returns [] when the order has no usable recipe (verdict: no_recipe).
+     *
+     * Recipes come in two shapes: ID-keyed ({"1": qty} from CRM/BOM) and
+     * name-keyed ({"Blue Dye": qty} from lab sign-off). Names are resolved
+     * to material IDs; keys matching nothing are skipped instead of
+     * surfacing as "Unknown material".
+     */
+    public function materialsForOrder(SalesOrder $order): array
+    {
+        $qty = (float) ($order->quantity ?? 0);
+        $needed = [];
+        foreach ($this->recipeRates($order) as $matId => $rate) {
+            $need = $rate * $qty;
             $needed[$matId] = ($needed[$matId] ?? 0) + $need;
         }
 
         return array_filter($needed, fn ($v) => $v > 0);
+    }
+
+    /**
+     * Per-material claim breakdown: which accepted orders hold how much.
+     * [material_id => [{order_id, jo_number, qty}, ...]].
+     * The order being evaluated is excluded so it isn't double-counted.
+     */
+    public function committedBreakdown(?int $excludeId = null): array
+    {
+        $orders = SalesOrder::whereIn('status', self::COMMITTED_STATUSES)
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->with('recipe')
+            ->orderBy('id')
+            ->get();
+
+        $lines = [];
+        foreach ($orders as $order) {
+            foreach ($this->materialsForOrder($order) as $matId => $qty) {
+                $lines[$matId][] = [
+                    'order_id' => $order->id,
+                    'jo_number' => $order->jo_number ?? 'JO-'.$order->id,
+                    'qty' => round($qty, 2),
+                ];
+            }
+        }
+
+        return $lines;
     }
 
     /**
@@ -105,23 +149,18 @@ class StockSustainabilityService
      */
     public function committedTotals(?int $excludeId = null): array
     {
-        $orders = SalesOrder::whereIn('status', self::COMMITTED_STATUSES)
-            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
-            ->with('recipe')
-            ->get();
-
         $totals = [];
-        foreach ($orders as $order) {
-            foreach ($this->materialsForOrder($order) as $matId => $qty) {
-                $totals[$matId] = ($totals[$matId] ?? 0) + $qty;
-            }
+        foreach ($this->committedBreakdown($excludeId) as $matId => $lines) {
+            $totals[$matId] = round(array_sum(array_column($lines, 'qty')), 2);
         }
 
         return $totals;
     }
 
     /**
-     * Live warehouse stock per material (in_stock only, depleted excluded).
+     * Live warehouse stock per material — canonical on-hand definition
+     * shared with Materials / Checker / Monitor / Planning (unopened rows:
+     * in_stock + reserved, qty > 0).
      */
     public function liveStock(array $materialIds): array
     {
@@ -130,9 +169,29 @@ class StockSustainabilityService
         }
 
         return WarehouseStockItem::whereIn('material_id', $materialIds)
-            ->where('status', 'in_stock')
+            ->whereIn('status', ['in_stock', 'reserved'])
             ->where('quantity', '>', 0)
             ->selectRaw('material_id, SUM(quantity) as qty')
+            ->groupBy('material_id')
+            ->pluck('qty', 'material_id')
+            ->map(fn ($v) => (float) $v)
+            ->toArray();
+    }
+
+    /**
+     * Live OPENED (production remaining) stock per material — same rule as
+     * the Materials/Checker opened check: live manufacturing lots only
+     * (depleted excluded, mirrors MAN ProductionInventory).
+     */
+    public function liveOpenedStock(array $materialIds): array
+    {
+        if (empty($materialIds)) {
+            return [];
+        }
+
+        return ManufacturingInventoryItem::whereIn('material_id', $materialIds)
+            ->where('status', '!=', 'depleted')
+            ->selectRaw('material_id, SUM(remaining_quantity) as qty')
             ->groupBy('material_id')
             ->pluck('qty', 'material_id')
             ->map(fn ($v) => (float) $v)
@@ -161,13 +220,22 @@ class StockSustainabilityService
         }
 
         $committed = $this->committedTotals($order->id);
+        $breakdown = $this->committedBreakdown($order->id);
+        $rates = $this->recipeRates($order);
+        $orderQty = (float) ($order->quantity ?? 0);
         $stock = $this->liveStock(array_keys($required));
+        $opened = $this->liveOpenedStock(array_keys($required));
         $materials = Material::whereIn('id', array_keys($required))->get()->keyBy('id');
 
         $rows = [];
         $sufficient = true;
         foreach ($required as $matId => $need) {
-            $have = (float) ($stock[$matId] ?? 0);
+            $unopened = (float) ($stock[$matId] ?? 0);
+            $onFloor = (float) ($opened[$matId] ?? 0);
+            // Full supply view: sealed warehouse stock PLUS usable opened
+            // lots on the floor. An order is pushable while EITHER pool
+            // (or both together) covers the total demand.
+            $have = $unopened + $onFloor;
             $taken = (float) ($committed[$matId] ?? 0);
             $atp = $have - $taken;
             $shortage = max(0, $need - $atp);
@@ -175,16 +243,30 @@ class StockSustainabilityService
                 $sufficient = false;
             }
 
+            // "Why" detail for the DSS modal: every figure derived, nothing
+            // unexplained. Committed lines capped (count kept exact).
+            $lines = array_values($breakdown[$matId] ?? []);
+
             $rows[] = [
                 'material_id' => $matId,
                 'material_name' => $materials[$matId]->name ?? 'Unknown material',
                 'unit' => $materials[$matId]->unit ?? 'kg',
                 'required' => round($need, 2),
                 'committed' => round($taken, 2),
+                // Total demand on this material: this order's need plus
+                // everything already promised to accepted orders.
+                'total_needed' => round($need + $taken, 2),
                 'available' => round($have, 2),
+                'unopened' => round($unopened, 2),
+                'opened' => round($onFloor, 2),
                 'atp' => round($atp, 2),
                 'shortage' => round($shortage, 2),
                 'sufficient' => $shortage <= 0,
+                'order_qty' => $orderQty,
+                'recipe_rate' => round($rates[$matId] ?? 0, 4),
+                'committed_lines' => array_slice($lines, 0, 10),
+                'committed_lines_extra' => max(0, count($lines) - 10),
+                'committed_orders_count' => count($lines),
             ];
         }
 

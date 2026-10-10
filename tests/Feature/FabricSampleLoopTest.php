@@ -146,6 +146,7 @@ class FabricSampleLoopTest extends TestCase
             $table->id();
             $table->string('mat_id')->nullable();
             $table->string('name')->nullable();
+            $table->string('category')->nullable();
             $table->string('unit')->nullable();
             $table->timestamps();
         });
@@ -190,7 +191,7 @@ class FabricSampleLoopTest extends TestCase
 
     protected function crmStaff(): User
     {
-        return User::create([
+        $staff = User::create([
             'name' => 'CRM Staff',
             'email' => 'crm.staff@test.local',
             'password' => Hash::make('password123'),
@@ -198,6 +199,24 @@ class FabricSampleLoopTest extends TestCase
             'position' => 'staff',
             'is_active' => true,
         ]);
+
+        return $this->withRole($staff, 'CRM', 'staff');
+    }
+
+    /**
+     * role/position/is_active are NOT mass-assignable on User, so create()
+     * silently drops them (NULL in memory breaks every module gate).
+     * Persist them via query and return a fresh model.
+     */
+    protected function withRole(User $user, string $role, string $position, ?string $manufacturingRole = null): User
+    {
+        $data = ['role' => $role, 'position' => $position, 'is_active' => true];
+        if ($manufacturingRole !== null) {
+            $data['manufacturing_role'] = $manufacturingRole;
+        }
+        User::where('id', $user->id)->update($data);
+
+        return $user->fresh();
     }
 
     public function test_crm_request_stays_hidden_from_client(): void
@@ -270,6 +289,16 @@ class FabricSampleLoopTest extends TestCase
     }
 
     /**
+     * Seed an inventory material for lab formulation payloads.
+     */
+    protected function labMaterial(string $matId, string $name, string $category): int
+    {
+        return \App\Models\Inv\Material::create([
+            'mat_id' => $matId, 'name' => $name, 'category' => $category, 'unit' => 'kg',
+        ])->id;
+    }
+
+    /**
      * A real 1x1 JPEG (no GD needed) so the `image` validation rule passes.
      */
     protected function fakeSwatchPhoto(): UploadedFile
@@ -296,6 +325,7 @@ class FabricSampleLoopTest extends TestCase
             'manufacturing_role' => 'dyeing_lab_chemist',
             'is_active' => true,
         ]);
+        $chemist = $this->withRole($chemist, 'MAN', 'staff', 'dyeing_lab_chemist');
         \App\Models\Core\PagePermission::create([
             'user_id' => $chemist->id, 'module' => 'MAN',
             'page' => 'production', 'permission_level' => 'edit',
@@ -313,9 +343,9 @@ class FabricSampleLoopTest extends TestCase
 
         $this->actingAs($chemist)
             ->post(route('man.staff.dyeing-lab-chemist.sample.formulate', $sample->id), [
-                'dyestuffs' => [['name' => 'Blue RR', 'pct' => 2.5]],
-                'auxiliaries' => [['name' => 'Salt', 'gpl' => 30]],
-                'yarn_type' => '100% Cotton',
+                'dyestuffs' => [['material_id' => $this->labMaterial('DYE-1', 'Blue RR', 'Dye'), 'name' => 'Blue RR', 'pct' => 2.5]],
+                'auxiliaries' => [['material_id' => $this->labMaterial('AUX-1', 'Salt', 'Supplies'), 'name' => 'Salt', 'gpl' => 30]],
+                'yarns' => [['material_id' => $this->labMaterial('YRN-1', 'Cotton 30s', 'Yarn'), 'name' => 'Cotton 30s', 'qty' => 5]],
                 'weave_design' => 'Twill 2/1',
                 'sample_photo' => $this->fakeSwatchPhoto(),
             ])
@@ -357,6 +387,7 @@ class FabricSampleLoopTest extends TestCase
             'manufacturing_role' => 'dyeing_lab_chemist',
             'is_active' => true,
         ]);
+        $chemist = $this->withRole($chemist, 'MAN', 'staff', 'dyeing_lab_chemist');
         \App\Models\Core\PagePermission::create([
             'user_id' => $chemist->id, 'module' => 'MAN',
             'page' => 'production', 'permission_level' => 'edit',
@@ -375,8 +406,8 @@ class FabricSampleLoopTest extends TestCase
 
         $this->actingAs($chemist)
             ->post(route('man.staff.dyeing-lab-chemist.sample.formulate', $sample->id), [
-                'dyestuffs' => [['name' => 'Blue RR', 'pct' => 3.0]],
-                'yarn_type' => '100% Cotton',
+                'dyestuffs' => [['material_id' => $this->labMaterial('DYE-2', 'Blue RR', 'Dye'), 'name' => 'Blue RR', 'pct' => 3.0]],
+                'yarns' => [['material_id' => $this->labMaterial('YRN-2', 'Cotton 30s', 'Yarn'), 'name' => 'Cotton 30s', 'qty' => 4]],
                 'weave_design' => 'Twill 2/1',
                 'sample_photo' => $this->fakeSwatchPhoto(),
             ])

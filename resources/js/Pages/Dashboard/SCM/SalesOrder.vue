@@ -3,8 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
-import { ShoppingCart, Eye, X, Loader2, CheckCircle, Clock, AlertCircle, Send, Check, Package, AlertTriangle, Info, Sparkles } from 'lucide-vue-next';
-import axios from 'axios';
+import { ShoppingCart, Eye, X, Loader2, Clock, Send, Check, Sparkles } from 'lucide-vue-next';
 
 const { canEdit } = usePageAccess();
 const canEditSales = computed(() => canEdit('SCM', 'sales'));
@@ -15,12 +14,6 @@ const isLoading = ref(false);
 const selectedOrder = ref(null);
 const showDetailModal = ref(false);
 const actionLoading = ref({});
-
-// ── Inventory Check Result Modal ───────────────────────────────────────────
-const inventoryCheckLoading = ref(false);
-const showInventoryResultModal = ref(false);
-const inventoryResult = ref(null);
-const currentCheckOrder = ref(null);
 
 // ── Confirmation modal state (for push to production) ──────────────────────
 const confirmModal = ref({
@@ -40,13 +33,15 @@ const showToast = (message, type = 'success') => {
 };
 
 // ── Open confirmation modal for push ───────────────────────────────────────
+// Stock was already checked in the ECO Push Center; the backend re-verifies
+// live with the same DSS engine when pushing, so no manual check step here.
 const openPushToProductionConfirm = (order) => {
     confirmModal.value = {
         show: true,
         order,
         action: 'push',
         title: 'Push to Manufacturing?',
-        message: 'This will forward the order to the Manufacturing plant. Ensure inventory has been verified and is sufficient before proceeding.',
+        message: 'This will forward the order to the Manufacturing plant. Warehouse stock is re-verified live on push — insufficient stock blocks automatically.',
     };
 };
 
@@ -70,52 +65,15 @@ const executeConfirmedAction = () => {
     });
 };
 
-// ── INSTANT INVENTORY CHECK ─────────────────────────────────────────────────
-const checkInventoryInstant = async (order) => {
-    currentCheckOrder.value = order;
-    inventoryCheckLoading.value = true;
-    showInventoryResultModal.value = true;
-    inventoryResult.value = null;
-
-    const type = order.type === 'sales_order' ? 'sales_order' : 'purchase_order';
-    const id = order.type === 'sales_order' ? order.sales_order_id : order.id;
-    const url = route('scm.sales-order.check-inventory-instant', { type, id });
-
-    try {
-        const response = await axios.get(url);
-        inventoryResult.value = response.data;
-    } catch (error) {
-        console.error('Inventory check failed:', error);
-        showToast('Failed to check inventory. Please try again.', 'error');
-        showInventoryResultModal.value = false;
-    } finally {
-        inventoryCheckLoading.value = false;
+// ── Push availability ──────────────────────────────────────────────────────
+// Sales orders: check happens once in the ECO Push Center; SCM pushing
+// re-verifies live server-side. Purchase orders keep their queue gate.
+const canPush = (order) => {
+    if (!canEditSales.value) return false;
+    if (order.type === 'sales_order') {
+        return ['pushed_to_scm', 'inv_check', 'inv_checked'].includes(order.stage);
     }
-};
-
-// ── Proceed with actual inventory check (status update) after viewing result ─
-const proceedWithInventoryCheck = () => {
-    if (!currentCheckOrder.value || !inventoryResult.value) return;
-
-    const order = currentCheckOrder.value;
-    const sufficient = inventoryResult.value.sufficient;
-    actionLoading.value[order.id] = 'check';
-
-    const url = order.type === 'sales_order'
-        ? route('scm.sales-order.check-inventory-sales', order.sales_order_id)
-        : route('scm.sales-order.check-inventory', order.id);
-
-    router.post(url, { sufficient }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            showToast(sufficient ? 'Inventory OK – ready for production.' : 'Inventory check recorded – insufficient stock.');
-            showInventoryResultModal.value = false;
-            inventoryResult.value = null;
-            currentCheckOrder.value = null;
-        },
-        onError: (errors) => showToast(errors?.error ?? 'Failed to update status.', 'error'),
-        onFinish: () => delete actionLoading.value[order.id],
-    });
+    return order.stage === 'inv_checked' && order.inv_check_sufficient;
 };
 
 // ── Open detail modal ───────────────────────────────────────────────────────
@@ -133,13 +91,6 @@ const getStatusBadge = (stage, sufficient) => {
     if (stage === 'inv_check') return { text: 'Inventory Check', class: 'bg-amber-50 text-amber-700 border-amber-200' };
     if (stage === 'pushed_to_scm') return { text: 'Received from ECO', class: 'bg-blue-50 text-blue-700 border-blue-200' };
     return { text: stage.replace(/_/g, ' '), class: 'bg-slate-50 text-slate-600 border-slate-200' };
-};
-
-// Helper for inventory result status
-const getMaterialStatusBadge = (status) => {
-    return status === 'sufficient'
-        ? { class: 'bg-green-100 text-green-700', icon: CheckCircle }
-        : { class: 'bg-red-100 text-red-600', icon: AlertTriangle };
 };
 </script>
 
@@ -238,14 +189,7 @@ const getMaterialStatusBadge = (status) => {
                                         class="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all flex justify-center items-center gap-1.5 active:scale-95">
                                     <Eye class="h-3.5 w-3.5" /> View
                                 </button>
-                                <button v-if="['pushed_to_scm', 'inv_check'].includes(order.stage) && canEditSales"
-                                        @click="checkInventoryInstant(order)"
-                                        :disabled="actionLoading[order.id]"
-                                        class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition disabled:opacity-50 flex justify-center items-center gap-1.5 shadow-md active:scale-95">
-                                    <Loader2 v-if="actionLoading[order.id] === 'check'" class="h-3.5 w-3.5 animate-spin" />
-                                    Check Inv
-                                </button>
-                                <button v-if="order.stage === 'inv_checked' && order.inv_check_sufficient && canEditSales"
+                                <button v-if="canPush(order)"
                                         @click="openPushToProductionConfirm(order)"
                                         :disabled="actionLoading[order.id]"
                                         class="flex-1 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition disabled:opacity-50 flex justify-center items-center gap-1.5 shadow-md active:scale-95">
@@ -320,14 +264,7 @@ const getMaterialStatusBadge = (status) => {
                                                     class="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-indigo-600 hover:text-white transition-all">
                                                 <Eye class="h-4 w-4" />
                                             </button>
-                                            <button v-if="['pushed_to_scm', 'inv_check'].includes(order.stage) && canEditSales"
-                                                    @click="checkInventoryInstant(order)"
-                                                    :disabled="actionLoading[order.id]"
-                                                    class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition disabled:opacity-50 flex items-center gap-1.5 shadow-md active:scale-95">
-                                                <Loader2 v-if="actionLoading[order.id] === 'check'" class="h-3 w-3 animate-spin" />
-                                                Check Inv
-                                            </button>
-                                            <button v-if="order.stage === 'inv_checked' && order.inv_check_sufficient && canEditSales"
+                                            <button v-if="canPush(order)"
                                                     @click="openPushToProductionConfirm(order)"
                                                     :disabled="actionLoading[order.id]"
                                                     class="px-4 py-2.5 bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition disabled:opacity-50 flex items-center gap-1.5 shadow-md active:scale-95">
@@ -356,128 +293,6 @@ const getMaterialStatusBadge = (status) => {
                         <X v-else class="h-4 w-4 text-white" />
                     </div>
                     <p class="text-sm font-bold leading-snug">{{ toast.message }}</p>
-                </div>
-            </Transition>
-        </Teleport>
-
-        <!-- Inventory Check Result Modal -->
-        <Teleport to="body">
-            <Transition name="modal">
-                <div v-if="showInventoryResultModal"
-                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/60 backdrop-blur-sm"
-                    @click.self="showInventoryResultModal = false">
-                    <div class="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-gray-100 dark:border-zinc-800">
-
-                        <!-- Modal Header -->
-                        <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 px-6 sm:px-8 py-6 text-white">
-                            <div class="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl animate-float" />
-                            <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;" />
-                            <div class="relative flex justify-between items-start">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse"></span>
-                                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">
-                                            Inventory Check
-                                        </p>
-                                    </div>
-                                    <h3 class="font-black text-xl tracking-tight">
-                                        {{ currentCheckOrder?.po_number }}
-                                    </h3>
-                                    <p class="text-sm text-blue-100/90 mt-1">{{ currentCheckOrder?.client_name }}</p>
-                                </div>
-                                <button @click="showInventoryResultModal = false"
-                                    class="p-2.5 bg-white/15 hover:bg-white/25 ring-1 ring-white/25 rounded-2xl transition-colors backdrop-blur">
-                                    <X class="h-5 w-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Modal Body -->
-                        <div class="p-6 sm:p-8 overflow-y-auto">
-                            <div v-if="inventoryCheckLoading" class="flex flex-col items-center justify-center py-12">
-                                <Loader2 class="h-8 w-8 text-indigo-500 animate-spin mb-4" />
-                                <p class="text-gray-500 dark:text-gray-400 font-medium">Checking inventory...</p>
-                            </div>
-
-                            <div v-else-if="inventoryResult">
-                                <!-- Overall Sufficient / Insufficient Banner -->
-                                <div :class="[
-                                    'flex items-center gap-3 p-4 rounded-2xl mb-6 ring-1',
-                                    inventoryResult.sufficient ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-200 border' : 'bg-rose-50 border-red-200 text-red-800 dark:bg-rose-500/10 dark:border-rose-500/30 dark:text-rose-200 border'
-                                ]">
-                                    <component :is="inventoryResult.sufficient ? CheckCircle : AlertTriangle"
-                                        :class="['h-6 w-6', inventoryResult.sufficient ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300']" />
-                                    <div>
-                                        <p class="font-black text-lg">
-                                            {{ inventoryResult.sufficient ? 'All materials available' : 'Insufficient stock' }}
-                                        </p>
-                                        <p class="text-sm opacity-80">
-                                            {{ inventoryResult.sufficient
-                                                ? 'Required quantities are in stock.'
-                                                : 'Some materials are below required quantities.' }}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Materials Table -->
-                                <div class="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl overflow-hidden">
-                                    <table class="w-full text-sm">
-                                        <thead class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-zinc-800">
-                                            <tr>
-                                                <th class="text-left p-4">Material</th>
-                                                <th class="text-right p-4">Required</th>
-                                                <th class="text-right p-4">Available</th>
-                                                <th class="text-right p-4">Shortage</th>
-                                                <th class="text-center p-4">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
-                                            <tr v-for="mat in inventoryResult.materials" :key="mat.material_id" class="hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-colors">
-                                                <td class="p-4 font-medium text-gray-800 dark:text-gray-100">
-                                                    {{ mat.material_name }}
-                                                    <span class="text-xs text-gray-400 ml-1">({{ mat.unit }})</span>
-                                                </td>
-                                                <td class="p-4 text-right font-mono">{{ mat.required.toLocaleString() }}</td>
-                                                <td class="p-4 text-right font-mono">{{ mat.available.toLocaleString() }}</td>
-                                                <td class="p-4 text-right font-mono" :class="mat.shortage > 0 ? 'text-rose-600 font-bold' : 'text-gray-400'">
-                                                    {{ mat.shortage > 0 ? mat.shortage.toLocaleString() : '—' }}
-                                                </td>
-                                                <td class="p-4 text-center">
-                                                    <span :class="['inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black', getMaterialStatusBadge(mat.status).class]">
-                                                        <component :is="getMaterialStatusBadge(mat.status).icon" class="w-3 h-3" />
-                                                        {{ mat.status === 'sufficient' ? 'OK' : 'LOW' }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <!-- No materials case -->
-                                <div v-if="inventoryResult.materials.length === 0" class="text-center py-8 text-gray-400">
-                                    <Package class="w-10 h-10 mx-auto mb-3 opacity-30 animate-bounce-soft" />
-                                    <p>No material requirements found for this order.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Footer -->
-                        <div class="p-6 border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex gap-3">
-                            <button @click="showInventoryResultModal = false"
-                                class="flex-1 py-4 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 text-xs font-black uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors active:scale-95">
-                                Close
-                            </button>
-                            <button v-if="!inventoryCheckLoading && inventoryResult && canEditSales"
-                                @click="proceedWithInventoryCheck"
-                                :disabled="actionLoading[currentCheckOrder?.id] === 'check'"
-                                class="flex-1 py-4 rounded-2xl text-white text-xs font-black uppercase tracking-widest transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
-                                :class="inventoryResult.sufficient ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'">
-                                <Loader2 v-if="actionLoading[currentCheckOrder?.id] === 'check'" class="h-4 w-4 animate-spin" />
-                                <Send v-else class="h-4 w-4" />
-                                Confirm Inventory Check
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </Transition>
         </Teleport>
@@ -664,12 +479,7 @@ const getMaterialStatusBadge = (status) => {
                             Close
                         </button>
                         <!-- Quick action from modal -->
-                        <button v-if="selectedOrder && ['pushed_to_scm', 'inv_check'].includes(selectedOrder.stage) && canEditSales"
-                                @click="() => { showDetailModal = false; checkInventoryInstant(selectedOrder); }"
-                                class="flex-1 py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-widest transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 active:scale-95">
-                            Check Inventory
-                        </button>
-                        <button v-if="selectedOrder && selectedOrder.stage === 'inv_checked' && selectedOrder.inv_check_sufficient && canEditSales"
+                        <button v-if="selectedOrder && canPush(selectedOrder)"
                                 @click="() => { showDetailModal = false; openPushToProductionConfirm(selectedOrder); }"
                                 class="flex-1 py-4 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 text-white text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2 active:scale-95">
                             Push to Manufacturing

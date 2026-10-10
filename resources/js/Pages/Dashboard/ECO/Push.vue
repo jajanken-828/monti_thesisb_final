@@ -140,7 +140,7 @@
                                 <button @click="openDss(jo)" :disabled="dssChecking[jo.id]"
                                     class="flex-1 py-3 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-teal-100 transition-colors flex justify-center items-center gap-2 active:scale-95 disabled:opacity-50">
                                     <Loader2 v-if="dssChecking[jo.id]" class="h-4 w-4 animate-spin" />
-                                    <Activity v-else class="h-4 w-4" /> Check stock
+                                    <Activity v-else class="h-4 w-4" /> Check Inv
                                 </button>
                                 <button v-if="canEditPush" @click="openConfirm(jo, 'scm')" :disabled="pushing[jo.id]"
                                     class="flex-1 py-3 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/25 hover:scale-[1.02] active:scale-95">
@@ -273,7 +273,7 @@
                                                 class="p-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 hover:bg-indigo-600 hover:text-white transition-all active:scale-95">
                                                 <Eye class="h-4 w-4" />
                                             </button>
-                                            <button @click="openDss(jo)" :disabled="dssChecking[jo.id]" title="Sustainability check"
+                                            <button @click="openDss(jo)" :disabled="dssChecking[jo.id]" title="Inventory check"
                                                 class="p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-all active:scale-95 disabled:opacity-50">
                                                 <Loader2 v-if="dssChecking[jo.id]" class="h-4 w-4 animate-spin" />
                                                 <Activity v-else class="h-4 w-4" />
@@ -411,7 +411,8 @@
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════════
-             DSS SUSTAINABILITY-CHECK MODAL (quick inventory check)
+             INVENTORY CHECK MODAL (single stock check for ECO + SCM — the old
+             SCM check-inv buttons now live here)
              ══════════════════════════════════════════════════════════════════ -->
         <Teleport to="body">
             <Transition name="modal">
@@ -422,7 +423,7 @@
                         <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-teal-700 via-cyan-700 to-blue-800 text-white flex justify-between items-start">
                             <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
                             <div class="relative">
-                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-teal-100">Decision support · stock check</p>
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-teal-100">Inventory Check · ECO + SCM</p>
                                 <h3 class="font-black text-xl tracking-tight">Can we sustain {{ dssModal.order?.jo_number }}?</h3>
                             </div>
                             <button @click="dssModal.show = false" class="relative p-2 bg-white/15 hover:bg-white/25 rounded-xl transition-colors">
@@ -454,27 +455,45 @@
                                 </div>
 
                                 <p v-if="dssModal.result.materials?.length" class="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                    Counted against {{ dssModal.result.committed_orders }} accepted order(s) · ATP = on-hand − committed
+                                    Demand vs on-hand · click the accepted-orders figure for the per-order breakdown
                                 </p>
                                 <div v-if="dssModal.result.materials?.length" class="rounded-2xl border border-gray-100 dark:border-zinc-700 overflow-x-auto">
-                                    <table class="w-full min-w-[620px] text-xs">
+                                    <table class="w-full min-w-[760px] text-xs">
                                         <thead class="bg-gray-50 dark:bg-zinc-800 text-[9px] font-black uppercase tracking-widest text-gray-400">
                                             <tr>
                                                 <th class="px-3 py-2 text-left">Material</th>
-                                                <th class="px-3 py-2 text-right">Need</th>
-                                                <th class="px-3 py-2 text-right">Used</th>
-                                                <th class="px-3 py-2 text-right">Stock</th>
+                                                <th class="px-3 py-2 text-right">Need · this order</th>
+                                                <th class="px-3 py-2 text-right">Committed · accepted</th>
+                                                <th class="px-3 py-2 text-right">Total needed</th>
+                                                <th class="px-3 py-2 text-right">On-hand</th>
                                                 <th class="px-3 py-2 text-right">ATP</th>
                                                 <th class="px-3 py-2 text-center">OK?</th>
                                                 <th class="px-3 py-2 text-center">Procure</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-50 dark:divide-zinc-800">
-                                            <tr v-for="m in dssModal.result.materials" :key="m.material_id">
+                                            <template v-for="m in dssModal.result.materials" :key="m.material_id">
+                                            <tr class="hover:bg-indigo-50/40 dark:hover:bg-indigo-950/10">
                                                 <td class="px-3 py-2 font-black whitespace-nowrap">{{ m.material_name }}</td>
-                                                <td class="px-3 py-2 text-right font-bold whitespace-nowrap">{{ m.required }}{{ m.unit }}</td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ m.committed }}{{ m.unit }}</td>
-                                                <td class="px-3 py-2 text-right whitespace-nowrap">{{ m.available }}{{ m.unit }}</td>
+                                                <td class="px-3 py-2 text-right whitespace-nowrap">
+                                                    <p class="font-bold">{{ m.required }}{{ m.unit }}</p>
+                                                    <p class="text-[9px] font-medium text-gray-400">{{ m.recipe_rate ?? 0 }}{{ m.unit }}/unit × {{ m.order_qty ?? 0 }}</p>
+                                                </td>
+                                                <td class="px-3 py-2 text-right whitespace-nowrap">
+                                                    <button @click="toggleDssRow(m.material_id)" title="Show the accepted orders behind this total"
+                                                        class="inline-flex items-center gap-1.5 group/why text-right">
+                                                        <span class="font-bold group-hover/why:text-indigo-600 group-hover/why:underline underline-offset-2">{{ m.committed }}{{ m.unit }}</span>
+                                                        <span class="inline-flex items-center gap-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 px-1.5 py-0.5 text-[9px] font-black">
+                                                            <ChevronDown :class="['h-3 w-3 transition-transform', dssExpanded[m.material_id] && 'rotate-180']" />
+                                                            {{ m.committed_orders_count ?? 0 }}
+                                                        </span>
+                                                    </button>
+                                                </td>
+                                                <td class="px-3 py-2 text-right font-black whitespace-nowrap">{{ m.total_needed }}{{ m.unit }}</td>
+                                                <td class="px-3 py-2 text-right whitespace-nowrap">
+                                                    <p class="font-bold">{{ m.available }}{{ m.unit }}</p>
+                                                    <p class="text-[9px] font-medium text-gray-400">unopened {{ m.unopened ?? m.available }}{{ m.unit }} + opened {{ m.opened ?? 0 }}{{ m.unit }}</p>
+                                                </td>
                                                 <td class="px-3 py-2 text-right font-black whitespace-nowrap" :class="m.sufficient ? 'text-emerald-600' : 'text-rose-600'">{{ m.atp }}{{ m.unit }}</td>
                                                 <td class="px-3 py-2 text-center">
                                                     <CheckCircle2 v-if="m.sufficient" class="h-4 w-4 text-emerald-500 inline" />
@@ -494,6 +513,24 @@
                                                     <span v-else class="text-gray-300 dark:text-zinc-600">—</span>
                                                 </td>
                                             </tr>
+                                            <tr v-if="dssExpanded[m.material_id]">
+                                                <td colspan="8" class="px-3 py-3 bg-indigo-50/60 dark:bg-indigo-950/20">
+                                                    <p class="text-[9px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-300 mb-2">Accepted orders holding {{ m.material_name }} — total {{ m.committed }}{{ m.unit }}</p>
+                                                    <div v-if="m.committed_lines?.length" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                                        <p v-for="line in m.committed_lines" :key="line.order_id"
+                                                            class="rounded-xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 px-3 py-2 text-[11px] font-mono font-bold text-gray-700 dark:text-gray-200">
+                                                            {{ line.jo_number }} <span class="text-indigo-600 dark:text-indigo-300">holds {{ line.qty }}{{ m.unit }}</span>
+                                                        </p>
+                                                    </div>
+                                                    <p v-else class="text-[11px] font-bold text-gray-400">No accepted order holds this material — the total need is this order alone.</p>
+                                                    <p v-if="m.committed_lines_extra > 0" class="mt-1.5 text-[10px] font-bold italic text-gray-400">+ {{ m.committed_lines_extra }} more order(s) included in the total</p>
+                                                    <p class="mt-2 text-[11px] font-bold" :class="m.sufficient ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'">
+                                                        Total {{ m.total_needed }}{{ m.unit }} (need {{ m.required }} + committed {{ m.committed }}) vs on-hand {{ m.available }}{{ m.unit }} (unopened {{ m.unopened ?? m.available }} + opened {{ m.opened ?? 0 }})
+                                                        {{ m.sufficient ? '— covered.' : `— short by ${m.shortage}${m.unit}, file procurement above.` }}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                            </template>
                                         </tbody>
                                     </table>
                                 </div>
@@ -773,7 +810,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
-import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2, ClipboardList } from 'lucide-vue-next';
+import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2, ClipboardList, ChevronDown } from 'lucide-vue-next';
 import axios from 'axios';
 
 const { canEdit } = usePageAccess();
@@ -794,12 +831,18 @@ const summaryModal = ref({ show: false, data: {} });
 // Confirmation modal state
 const confirmModal = ref({ show: false, order: null, module: null });
 
-// DSS sustainability-check state (quick inventory check before acceptance)
+// Inventory-check state (THE single stock check for ECO + SCM, run before acceptance)
 const dssModal = ref({ show: false, loading: false, order: null, result: null });
 const dssChecking = ref({});
+const dssExpanded = ref({});
+
+const toggleDssRow = (materialId) => {
+    dssExpanded.value[materialId] = !dssExpanded.value[materialId];
+};
 
 const openDss = async (order) => {
     dssModal.value = { show: true, loading: true, order, result: null };
+    dssExpanded.value = {};
     requesting.value = {};
     requestedReqs.value = {};
     dssChecking.value[order.id] = true;

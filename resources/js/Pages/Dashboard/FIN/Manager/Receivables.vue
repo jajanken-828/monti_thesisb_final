@@ -325,7 +325,6 @@ const submitPayment = () => {
                                 </button>
                             </div>
                         </div>
-                        </div>
                     </div>
                 </div>
             </Transition>

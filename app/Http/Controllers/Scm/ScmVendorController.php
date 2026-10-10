@@ -65,6 +65,20 @@ class ScmVendorController extends Controller
             'approved_at' => now(),
             'approved_by' => auth()->id(),
             'supplier_id' => $supplier->id,
+            'rejection_reason' => null,
+            'rejected_at' => null,
+            'rejected_by' => null,
+        ]);
+
+        // Keep the suppliers table in sync — ECO reads approved
+        // suppliers (and approval_status) from this column.
+        $supplier->update([
+            'status' => 'approved',
+            'approved_at' => now(),
+            'approved_by' => auth()->id(),
+            'rejected_at' => null,
+            'rejected_by' => null,
+            'rejection_reason' => null,
         ]);
 
         // Save requirements if provided
@@ -95,6 +109,17 @@ class ScmVendorController extends Controller
             'rejected_at' => now(),
             'rejected_by' => auth()->id(),
         ]);
+
+        // Keep the suppliers table in sync so ECO reflects the outcome.
+        $supplier = Supplier::where('email', $registration->email)->first();
+        if ($supplier) {
+            $supplier->update([
+                'status' => 'rejected',
+                'rejection_reason' => $validated['rejection_reason'],
+                'rejected_at' => now(),
+                'rejected_by' => auth()->id(),
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Vendor registration rejected.');
     }

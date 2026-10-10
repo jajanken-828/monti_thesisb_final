@@ -5,6 +5,12 @@ import { Hourglass, ShieldCheck, LogOut, RefreshCw } from 'lucide-vue-next'
 
 const props = defineProps({
     user: Object,
+    // Optional override for scoped-access states (e.g. a MAN plant staffer
+    // holding Dashboard but not the Production grant their role workspace
+    // requires). Defaults preserve the original "no pages yet" copy.
+    title: { type: String, default: '' },
+    message: { type: String, default: '' },
+    hint: { type: String, default: '' },
 })
 
 const refresh = () => router.reload()
@@ -24,12 +30,13 @@ const refresh = () => router.reload()
                 Monti Textile &bull; {{ user?.role }} &bull; {{ user?.position }}
             </p>
             <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-3">
-                Waiting for access, {{ user?.name?.split(' ')[0] ?? 'there' }}.
+                {{ title || (`Waiting for access, ${user?.name?.split(' ')[0] ?? 'there'}.`) }}
             </h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md leading-relaxed mb-2">
-                Your account is active, but an administrator has not granted you access to any
-                pages yet. All of your page permissions are currently
-                <span class="font-bold text-gray-700 dark:text-gray-200">disabled</span> (the default).
+                {{ message || 'Your account is active, but an administrator has not granted you access to any pages yet. All of your page permissions are currently disabled (the default).' }}
+            </p>
+            <p v-if="hint" class="text-sm text-amber-600 dark:text-amber-400 max-w-md leading-relaxed mb-2 font-bold">
+                {{ hint }}
             </p>
             <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md leading-relaxed mb-8">
                 Please wait for the admins to set up your access. Once they enable at least one

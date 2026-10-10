@@ -6,43 +6,34 @@ use App\Http\Controllers\Controller;
 use App\Models\Inv\Material;
 use App\Models\War\Warehouse;
 use App\Models\War\WarehouseStockItem;
+use App\Services\Inv\MaterialStockService;
 use Inertia\Inertia;
 
 class InvDashboardController extends Controller
 {
     public function index()
     {
-        $user = auth()->user();
-
-        // Determine which warehouses the user can see
-        if ($user->position === 'secretary' || $user->position === 'special_officer') {
-            $warehouses = Warehouse::all();
-        } else {
-            $warehouses = $user->warehouseAccess()->get();
-        }
-
-        $warehouseIds = $warehouses->pluck('id')->toArray();
+        // Shared warehouse visibility (secretaries/special officers see all;
+        // granted users are scoped; grant-less users see all).
+        $warehouseIds = MaterialStockService::visibleWarehouseIds(auth()->user());
+        $warehouses = Warehouse::whereIn('id', $warehouseIds)->get();
 
         // Get all materials
         $materials = Material::all();
 
-        // Build materials with stock per warehouse (for the table)
+        // Build materials with stock per warehouse (for the table).
+        // Same on-hand definition as Materials/Checker/Monitor/Planning.
         $materialsWithStock = $materials->map(function ($mat) use ($warehouseIds) {
-            $totalStock = WarehouseStockItem::where('material_id', $mat->id)
-                ->whereIn('warehouse_id', $warehouseIds)
-                ->where('status', 'in_stock')
-                ->sum('quantity');
+            $totalStock = MaterialStockService::unopenedStock($mat->id, $warehouseIds);
 
-            $status = ($totalStock <= 0) ? 'Out of Stock' : (($totalStock <= $mat->reorder_point) ? 'Low Stock' : 'In Stock');
+            $status = match (MaterialStockService::unopenedStatus((float) $totalStock, $mat->reorder_point)) {
+                'ok' => 'In Stock',
+                'low' => 'Low Stock',
+                default => 'Out of Stock',
+            };
 
             // Stock per warehouse (for supervisor toggle)
-            $stockPerWarehouse = [];
-            foreach ($warehouseIds as $wid) {
-                $stockPerWarehouse[$wid] = (float) WarehouseStockItem::where('material_id', $mat->id)
-                    ->where('warehouse_id', $wid)
-                    ->where('status', 'in_stock')
-                    ->sum('quantity');
-            }
+            $stockPerWarehouse = MaterialStockService::unopenedStockByWarehouse($mat->id, $warehouseIds);
 
             return [
                 'id' => $mat->id,
@@ -82,10 +73,12 @@ class InvDashboardController extends Controller
         $warehouseSummary = [];
         foreach ($warehouses as $wh) {
             $totalUnits = WarehouseStockItem::where('warehouse_id', $wh->id)
-                ->where('status', 'in_stock')
+                ->whereIn('status', ['in_stock', 'reserved'])
+                ->where('quantity', '>', 0)
                 ->sum('quantity');
             $skusCount = WarehouseStockItem::where('warehouse_id', $wh->id)
-                ->where('status', 'in_stock')
+                ->whereIn('status', ['in_stock', 'reserved'])
+                ->where('quantity', '>', 0)
                 ->distinct('material_id')
                 ->count('material_id');
 
@@ -105,11 +98,9 @@ class InvDashboardController extends Controller
         // Low stock / out of stock alerts
         $alertItems = [];
         foreach ($materials as $mat) {
+            $perWarehouse = MaterialStockService::unopenedStockByWarehouse($mat->id, $warehouseIds);
             foreach ($warehouses as $wh) {
-                $qty = WarehouseStockItem::where('warehouse_id', $wh->id)
-                    ->where('material_id', $mat->id)
-                    ->where('status', 'in_stock')
-                    ->sum('quantity');
+                $qty = (float) ($perWarehouse[$wh->id] ?? 0);
                 if ($qty <= $mat->reorder_point) {
                     $alertItems[] = [
                         'sku' => $mat->mat_id,

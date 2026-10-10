@@ -4,7 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     ShoppingCart, Package, Truck, CheckCircle,
-    Clock, Receipt, DollarSign, X,
+    Clock, Receipt, DollarSign, X, Navigation,
     Factory, ChevronDown, Plus
 } from 'lucide-vue-next';
 
@@ -87,6 +87,31 @@ const submitInvoice = () => {
         onSuccess: () => { showInvoiceModal.value = false; }
     });
 };
+
+// ── Order tracking (same pipeline language as PRO tracking UI) ──
+const TRACK_STEPS = [
+    { key: 'sent', label: 'New order' },
+    { key: 'production', label: 'In production' },
+    { key: 'shipping', label: 'Shipped' },
+    { key: 'delivered', label: 'Delivered' },
+    { key: 'completed', label: 'Completed' },
+];
+const tracked = ref(null);
+const openTracking = (order) => { tracked.value = order; };
+const closeTracking = () => { tracked.value = null; };
+const stepState = (order, key) => {
+    const orderIdx = TRACK_STEPS.findIndex((s) => s.key === order.status);
+    const idx = TRACK_STEPS.findIndex((s) => s.key === key);
+    if (orderIdx === -1) return 'todo';
+    if (idx < orderIdx) return 'done';
+    if (idx === orderIdx) return 'current';
+    return 'todo';
+};
+const trackProgress = (order) => {
+    const idx = TRACK_STEPS.findIndex((s) => s.key === order.status);
+    if (idx === -1) return 0;
+    return Math.round(((idx + 1) / TRACK_STEPS.length) * 100);
+};
 </script>
 
 <template>
@@ -136,6 +161,22 @@ const submitInvoice = () => {
                         <p class="text-xs text-slate-500 flex items-center gap-1.5">
                             <Clock class="w-3.5 h-3.5" /> Expected Delivery: <strong class="text-slate-700 dark:text-slate-300">{{ order.expected_delivery }}</strong>
                         </p>
+                        <!-- Order tracking progress (mirrors PRO tracking UI) -->
+                        <div class="mt-3">
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                <span>Tracking</span><span class="text-emerald-600">{{ trackProgress(order) }}%</span>
+                            </div>
+                            <div class="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" :style="{ width: trackProgress(order) + '%' }" />
+                            </div>
+                            <div class="mt-1.5 flex flex-wrap gap-1">
+                                <span v-for="s in TRACK_STEPS" :key="s.key"
+                                    :class="stepState(order, s.key) === 'done' ? 'bg-emerald-100 text-emerald-700' : stepState(order, s.key) === 'current' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'"
+                                    class="text-[8px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full">
+                                    {{ stepState(order, s.key) === 'done' ? '✓ ' : '' }}{{ s.label }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     <div class="md:text-right">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order Total</p>
@@ -198,6 +239,10 @@ const submitInvoice = () => {
                 </div>
 
                 <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2 justify-end">
+                    <button @click="openTracking(order)"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-slate-900 rounded-xl text-sm font-black shadow-sm transition-all active:scale-[0.98]">
+                        <Navigation class="w-4 h-4" /> Track Order · {{ trackProgress(order) }}%
+                    </button>
                     <button v-if="order.status === 'sent'" @click="updateStatus(order.id, 'production')"
                         :disabled="processingId === order.id"
                         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-black shadow-sm transition-all active:scale-[0.98] disabled:opacity-50">
@@ -217,6 +262,56 @@ const submitInvoice = () => {
                 </div>
             </div>
         </div>
+
+        <!-- Order Tracking Modal (mirrors PRO tracking UI) -->
+        <Teleport to="body">
+            <div v-if="tracked"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                @click.self="closeTracking">
+                <div class="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                    <div class="px-5 py-4 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white flex justify-between items-center flex-shrink-0">
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100">Order tracking</p>
+                            <h3 class="text-base font-black font-mono">{{ tracked.po_number }}</h3>
+                            <p class="text-[11px] text-emerald-100 font-bold">{{ statusText(tracked.status) }} · {{ trackProgress(tracked) }}% complete</p>
+                        </div>
+                        <button @click="closeTracking"
+                            class="p-2 rounded-xl bg-white/15 hover:bg-white/25 transition">
+                            <X class="w-4 h-4 text-white" />
+                        </button>
+                    </div>
+                    <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+                        <ol class="relative ml-2 border-l-2 border-slate-100 dark:border-slate-800 space-y-5">
+                            <li v-for="s in TRACK_STEPS" :key="s.key" class="relative pl-8">
+                                <span class="absolute left-0 top-0 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full ring-4 ring-white dark:ring-slate-900"
+                                    :class="stepState(tracked, s.key) === 'done' ? 'bg-emerald-500 text-white' : stepState(tracked, s.key) === 'current' ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 animate-pulse' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+                                    <CheckCircle v-if="stepState(tracked, s.key) === 'done'" class="h-3.5 w-3.5" />
+                                    <span v-else class="h-1.5 w-1.5 rounded-full bg-current" />
+                                </span>
+                                <p class="text-sm font-black" :class="stepState(tracked, s.key) === 'todo' ? 'text-slate-400' : 'text-slate-900 dark:text-white'">{{ s.label }}</p>
+                                <p v-if="stepState(tracked, s.key) === 'current'" class="text-[11px] font-bold text-emerald-600">Current stage — update it from the order card actions</p>
+                            </li>
+                        </ol>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <p class="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50 dark:bg-slate-800">Items · ETA {{ tracked.expected_delivery || '—' }}</p>
+                            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <li v-for="item in tracked.items" :key="item.id" class="px-4 py-2.5 text-xs flex justify-between gap-3">
+                                    <span class="font-bold min-w-0">{{ item.material_name }} <span class="text-slate-400 font-medium">× {{ item.qty }} {{ item.unit }}</span></span>
+                                    <span class="font-black whitespace-nowrap">{{ formatCurrency(item.total) }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-4 text-xs">
+                            <p class="font-bold text-slate-600 dark:text-slate-300">Billing: {{ tracked.invoices?.length || 0 }} invoice(s) · paid amounts appear on the order card.</p>
+                        </div>
+                    </div>
+                    <div class="px-5 py-4 border-t border-slate-100 dark:border-slate-800 flex-shrink-0">
+                        <button @click="closeTracking"
+                            class="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl text-sm font-black transition active:scale-[0.99]">Close tracking</button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Invoice Modal (unchanged) -->
         <Teleport to="body">

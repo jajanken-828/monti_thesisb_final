@@ -311,7 +311,6 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
                     Route::post('/softener/{id}/pass', 'passSoftener')->name('pass-softener');
                     Route::post('/squeezer/{id}/pass', 'passSqueezer')->name('pass-squeezer');
                     Route::post('/iron/{id}/pass', 'passIron')->name('pass-iron');
-                    Route::post('/package/{id}/assign-to-order', 'assignPackageToOrder')->name('assign-package');
                     Route::post('/package/{id}/push-to-logistics', 'pushToLogistics')->name('push-to-logistics');
                 });
             });

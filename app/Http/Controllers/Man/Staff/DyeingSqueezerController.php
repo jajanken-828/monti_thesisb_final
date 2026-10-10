@@ -13,7 +13,12 @@ class DyeingSqueezerController extends ManufacturingStaffController
 {
     public function index()
     {
-        $pendingCount = SoftenerJob::where('status', 'softened')->count();
+        // Checker gate: only softener jobs whose fabric the quality checker
+        // already approved to 'squeezer' may be squeezed. Recorded-but-
+        // unapproved work stays with the checker, never here.
+        $pendingCount = SoftenerJob::where('status', 'softened')
+            ->whereHas('fabric', fn ($q) => $q->where('status', 'squeezer'))
+            ->count();
         $recentJobs = SqueezerJob::with('softenerJob.fabric')
             ->where('operator_id', $this->staff()->id)
             ->latest()
@@ -22,6 +27,7 @@ class DyeingSqueezerController extends ManufacturingStaffController
 
         $nextQueue = SoftenerJob::with('fabric')
             ->where('status', 'softened')
+            ->whereHas('fabric', fn ($q) => $q->where('status', 'squeezer'))
             ->orderBy('created_at', 'asc')
             ->take(3)
             ->get(['id', 'code', 'fabric_id', 'created_at']);
@@ -55,8 +61,11 @@ class DyeingSqueezerController extends ManufacturingStaffController
 
     public function dyeingSqueezer()
     {
+        // Only checker-approved work: softened jobs whose fabric sits at
+        // 'squeezer'. Anything still awaiting softener QC is invisible here.
         $softenerJobs = SoftenerJob::with('fabric')
             ->where('status', 'softened')
+            ->whereHas('fabric', fn ($q) => $q->where('status', 'squeezer'))
             ->get();
 
         $machines = Machine::where('type', 'squeezer')
@@ -77,13 +86,21 @@ class DyeingSqueezerController extends ManufacturingStaffController
             'remarks' => 'nullable|string',
         ]);
 
-        $softenerJob = SoftenerJob::findOrFail($validated['softener_job_id']);
+        $softenerJob = SoftenerJob::with('fabric')->findOrFail($validated['softener_job_id']);
+
+        // Checker gate: the fabric must already sit at 'squeezer' (checker
+        // approved the softener job). Squeezing unapproved work is blocked.
+        if ($softenerJob->status !== 'softened') {
+            return back()->withErrors(['softener_job_id' => 'This softener job was already squeezed — awaiting quality check.']);
+        }
+        if ($softenerJob->fabric?->status !== 'squeezer') {
+            return back()->withErrors(['softener_job_id' => 'This fabric has not been approved to squeezing yet — awaiting quality check.']);
+        }
+
         $softenerJob->update(['status' => 'squeezed']);
 
-        // Auto-pass fabric to ironing stage (no checker gate between
-        // squeezer and ironing; ironing flows directly to packaging).
-        $softenerJob->fabric()->update(['status' => 'iron']);
-
+        // Checker gate: fabric stays 'squeezer' until the quality checker
+        // approves it (passSqueezer → iron) or sends it back for rework.
         SqueezerJob::create([
             'softener_job_id' => $validated['softener_job_id'],
             'machine_id' => $validated['machine_id'],
@@ -94,7 +111,7 @@ class DyeingSqueezerController extends ManufacturingStaffController
             'processed_at' => now(),
         ]);
 
-        return redirect()->back()->with('message', 'Squeezing recorded successfully.');
+        return redirect()->back()->with('message', 'Squeezing recorded successfully. Awaiting quality check before it can move to ironing.');
     }
 
     public function reports()

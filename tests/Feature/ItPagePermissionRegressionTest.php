@@ -126,16 +126,27 @@ class ItPagePermissionRegressionTest extends TestCase
         });
     }
 
-    public function test_two_page_grant_actually_restricts_native_it_staff(): void
+    /**
+     * role/position/is_active are NOT mass-assignable on User — persist via
+     * query and return fresh, or every module gate misbehaves.
+     */
+    private function makeStaff(string $name, string $email, string $role, string $position): User
     {
         $staff = User::create([
-            'name' => 'Perm Regression Staff',
-            'email' => 'perm.regression@test.local',
+            'name' => $name,
+            'email' => $email,
             'password' => Hash::make('password123'),
-            'role' => 'IT',
-            'position' => 'staff',
-            'is_active' => true,
         ]);
+        User::where('id', $staff->id)->update([
+            'role' => $role, 'position' => $position, 'is_active' => true,
+        ]);
+
+        return $staff->fresh();
+    }
+
+    public function test_two_page_grant_actually_restricts_native_it_staff(): void
+    {
+        $staff = $this->makeStaff('Perm Regression Staff', 'perm.regression@test.local', 'IT', 'staff');
 
         // 1. No explicit rows: legacy full access.
         $this->actingAs($staff)->get(route('it.dashboard'))->assertStatus(200);
@@ -183,14 +194,7 @@ class ItPagePermissionRegressionTest extends TestCase
             Route::get('dashboard/hrm-probe/payroll', fn () => 'ok')->middleware('page.permission:payroll,view');
         });
 
-        $staff = User::create([
-            'name' => 'HRM Perm Staff',
-            'email' => 'hrm.perm@test.local',
-            'password' => Hash::make('password123'),
-            'role' => 'HRM',
-            'position' => 'staff',
-            'is_active' => true,
-        ]);
+        $staff = $this->makeStaff('HRM Perm Staff', 'hrm.perm@test.local', 'HRM', 'staff');
 
         // Grants stored exactly the way IT Access Control writes them
         // (UPPER module, lowercase config keys).

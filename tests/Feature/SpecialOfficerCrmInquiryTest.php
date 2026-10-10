@@ -75,14 +75,18 @@ class SpecialOfficerCrmInquiryTest extends TestCase
 
     protected function makeUser(string $role, string $position): User
     {
-        return User::create([
+        // NOTE: role/position/is_active are NOT mass-assignable on User —
+        // persist via query and return fresh, or the gates misbehave.
+        $user = User::create([
             'name' => $position . ' ' . $role,
             'email' => strtolower($position) . '.' . strtolower($role) . '@test.local',
             'password' => Hash::make('password123'),
-            'role' => $role,
-            'position' => $position,
-            'is_active' => true,
         ]);
+        User::where('id', $user->id)->update([
+            'role' => $role, 'position' => $position, 'is_active' => true,
+        ]);
+
+        return $user->fresh();
     }
 
     public function test_special_officer_with_module_and_page_grant_opens_inquiry(): void

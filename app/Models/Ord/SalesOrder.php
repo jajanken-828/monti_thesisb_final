@@ -40,6 +40,9 @@ class SalesOrder extends Model
         'cancel_reason',
         'on_hold_reason',
         'created_by',
+        // Payment posting (ORD receipt uploads + FIN collection back-sync).
+        'payment_status',
+        'receipt_file',
     ];
 
     protected $casts = [

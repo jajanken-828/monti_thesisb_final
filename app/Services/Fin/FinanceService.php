@@ -540,6 +540,18 @@ class FinanceService
                 $so->update(['payment_status' => 'paid']);
             }
 
+            // Close the order-to-cash loop: a delivered job order whose
+            // invoice is now fully paid is complete. Guarded lifecycle
+            // transition (audit row included); never blocks the payment.
+            if ($so && $invoice->balance() <= 0 && $so->status === 'delivered') {
+                try {
+                    app(\App\Services\Ord\OrderLifecycleService::class)
+                        ->transitionSalesOrder($so, 'completed', null, 'Auto-completed on full payment of ' . $invoice->invoice_no);
+                } catch (\InvalidArgumentException) {
+                    // Leave the status untouched — payment is already recorded.
+                }
+            }
+
             return $payment;
         });
     }

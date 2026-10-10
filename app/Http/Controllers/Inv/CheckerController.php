@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Inv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inv\Material;
-use App\Models\War\WarehouseStockItem;
 use App\Models\Ord\PurchaseOrder;
 use App\Models\Scm\MaterialRequest;
+use App\Services\Inv\MaterialStockService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -14,27 +14,18 @@ class CheckerController extends Controller
 {
     /**
      * Display stock checker dashboard.
+     * Stock math comes from MaterialStockService (shared with Materials and
+     * the INV dashboard) — per-material Procure decisions use the same
+     * unopened availability.
      */
     public function index()
     {
-        $materials = Material::all();
-        $stockStatus = [];
+        $warehouseIds = MaterialStockService::visibleWarehouseIds(auth()->user());
+        $aggregates = MaterialStockService::openedAggregates();
 
-        foreach ($materials as $material) {
-            $totalStock = WarehouseStockItem::where('material_id', $material->id)->sum('quantity');
-            $status = ($totalStock <= 0) ? 'out' : (($totalStock <= $material->reorder_point) ? 'low' : 'ok');
-
-            $stockStatus[] = [
-                'id' => $material->id,
-                'mat_id' => $material->mat_id,
-                'name' => $material->name,
-                'category' => $material->category,
-                'unit' => $material->unit,
-                'reorder_point' => $material->reorder_point,
-                'total_stock' => (float) $totalStock,
-                'status' => $status,
-            ];
-        }
+        $stockStatus = Material::all()->map(
+            fn ($material) => MaterialStockService::buildRow($material, $warehouseIds, $aggregates)
+        )->values()->all();
 
         $pendingOrdersCount = PurchaseOrder::whereHas('queue', function ($q) {
             $q->where('stage', 'inv_check');
@@ -60,7 +51,10 @@ class CheckerController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $currentStock = WarehouseStockItem::where('material_id', $material->id)->sum('quantity');
+        $currentStock = MaterialStockService::unopenedStock(
+            $material->id,
+            MaterialStockService::visibleWarehouseIds(auth()->user())
+        );
         $reqNumber = 'MR-' . date('Ymd') . '-' . rand(1000, 9999);
 
         MaterialRequest::create([
@@ -80,24 +74,6 @@ class CheckerController extends Controller
         ]);
 
         return redirect()->back()->with('success', "Procurement request {$reqNumber} sent.");
-    }
-
-    /**
-     * Check material sufficiency for pending orders.
-     */
-    public function checkOrders()
-    {
-        $orders = PurchaseOrder::whereHas('queue', function ($q) {
-            $q->where('stage', 'inv_check');
-        })->get();
-
-        foreach ($orders as $order) {
-            // You can implement the same logic as ProductionPlanningController::checkAvailability
-            // For now, just forward to the checker logic
-            // This is a placeholder – you may call a service or update the queue stage.
-        }
-
-        return redirect()->back()->with('message', 'Order check completed.');
     }
 
     /**

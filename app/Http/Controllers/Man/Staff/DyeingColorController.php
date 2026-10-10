@@ -16,7 +16,16 @@ class DyeingColorController extends ManufacturingStaffController
 {
     public function index()
     {
-        $pendingCount = Fabric::where('status', 'dyeing')->count();
+        // Only fabrics still awaiting dye work: at 'dyeing' stage with no dye
+        // job recorded yet. Once recorded, the fabric sits with the quality
+        // checker until approved — it must not linger in the dye queue.
+        $pendingCount = Fabric::where('status', 'dyeing')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('dye_jobs')
+                    ->whereColumn('dye_jobs.fabric_id', 'fabrics.id');
+            })
+            ->count();
         $recentJobs   = DyeJob::with('fabric')
             ->where('operator_id', $this->staff()->id)
             ->latest()
@@ -25,6 +34,11 @@ class DyeingColorController extends ManufacturingStaffController
 
         $nextQueue = Fabric::with('machine')
             ->where('status', 'dyeing')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('dye_jobs')
+                    ->whereColumn('dye_jobs.fabric_id', 'fabrics.id');
+            })
             ->orderBy('created_at', 'asc')
             ->take(3)
             ->get(['id', 'code', 'yarn_type', 'weight', 'created_at']);
@@ -58,19 +72,29 @@ class DyeingColorController extends ManufacturingStaffController
 
     public function dyeingColor()
     {
-        // Fabrics ready for dyeing — eager-load their linked JO + recipe
+        // Fabrics ready for dyeing — eager-load their linked JO + recipe.
+        // Only fabrics with no dye job recorded yet: once recorded, the
+        // fabric waits on the quality checker (stays 'dyeing') until the
+        // checker approves it to softener or rejects it.
         $fabrics = Fabric::with(['machine', 'operator', 'salesOrder.recipe'])
             ->where('status', 'dyeing')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('dye_jobs')
+                    ->whereColumn('dye_jobs.fabric_id', 'fabrics.id');
+            })
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($fabric) {
                 $salesOrder = $fabric->salesOrder;
                 $recipe     = $salesOrder?->recipe;
 
-                // Decode recipe materials if present
+                // Decode recipe materials if present (array via model cast,
+                // or a raw JSON string on older rows).
                 $materialsData = [];
                 if ($recipe && $recipe->materials) {
-                    $json = json_decode($recipe->materials, true);
+                    $raw = $recipe->materials;
+                    $json = is_string($raw) ? json_decode($raw, true) : $raw;
                     if (is_array($json)) {
                         foreach ($json as $matId => $qty) {
                             $materialsData[] = ['material_id' => $matId, 'quantity' => $qty];
@@ -176,6 +200,18 @@ class DyeingColorController extends ManufacturingStaffController
 
         DB::beginTransaction();
         try {
+            // Checker gate: only fabrics the checker placed at 'dyeing' may
+            // be dyed (recolored rejects re-enter here through the checker).
+            $fabric = Fabric::findOrFail($validated['fabric_id']);
+            if ($fabric->status !== 'dyeing') {
+                DB::rollBack();
+                return back()->withErrors(['fabric_id' => 'This fabric is not awaiting dyeing (it may already be recorded or approved).']);
+            }
+            if ($fabric->dyeJobs()->exists()) {
+                DB::rollBack();
+                return back()->withErrors(['fabric_id' => 'A dye job is already recorded for this fabric — awaiting quality check.']);
+            }
+
             // Use the first dye lot as the "primary" for the dye_jobs main columns
             $primaryItem = ManufacturingInventoryItem::with('material')
                 ->findOrFail($validated['dyes_used'][0]['inventory_item_id']);
@@ -211,13 +247,13 @@ class DyeingColorController extends ManufacturingStaffController
                 $item->save();
             }
 
-            // Advance fabric to next stage
-            Fabric::findOrFail($validated['fabric_id'])->update(['status' => 'softener']);
-
+            // Checker gate: fabric stays 'dyeing' until the quality checker
+            // approves it (passDye → softener) or rejects it. Staff must
+            // never advance it — that would bypass quality inspection.
             DB::commit();
             return redirect()->back()->with(
                 'message',
-                'Dye job recorded. Chemical inventory updated for ' . count($validated['dyes_used']) . ' lot(s).'
+                'Dye job recorded. Awaiting quality check before it can move to softener.'
             );
         } catch (\Exception $e) {
             DB::rollBack();

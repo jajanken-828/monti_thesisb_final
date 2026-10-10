@@ -5,12 +5,7 @@ namespace App\Http\Controllers\Scm;
 use App\Http\Controllers\Controller;
 use App\Models\Ord\PurchaseOrder;
 use App\Models\Ord\SalesOrder;
-use App\Models\Ord\OrderQueue;
-use App\Models\Man\BomRecord;
-use App\Models\Inv\Material;
-use App\Models\War\WarehouseStockItem;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Services\Eco\StockSustainabilityService;
 use Inertia\Inertia;
 
 class ScmSalesOrderController extends Controller
@@ -98,49 +93,6 @@ class ScmSalesOrderController extends Controller
     }
 
     /**
-     * Check inventory for a Purchase Order (existing)
-     */
-    public function checkInventory(PurchaseOrder $order)
-    {
-        $queue = $order->queue;
-        if (!$queue) {
-            $queue = OrderQueue::create([
-                'purchase_order_id' => $order->id,
-                'stage' => 'inv_check',
-            ]);
-        } else {
-            $queue->update(['stage' => 'inv_check']);
-        }
-        return redirect()->back()->with('success', 'Inventory check requested for purchase order.');
-    }
-
-    /**
-     * Check inventory for a Sales Order (pushed from ECO)
-     * Now accepts a 'sufficient' boolean to set the order as ready for production.
-     */
-    public function checkInventorySalesOrder(Request $request, SalesOrder $salesOrder)
-    {
-        // Only allowed if currently in 'pushed_to_scm' or 'inv_check' state
-        if (!in_array($salesOrder->status, ['pushed_to_scm', 'inv_check'])) {
-            return redirect()->back()->withErrors(['error' => 'Order is not in a state that allows inventory check.']);
-        }
-
-        $sufficient = $request->boolean('sufficient', false);
-        $newStatus = $sufficient ? 'inv_checked' : 'inv_check';
-
-        $salesOrder->update([
-            'status' => $newStatus,
-            'inv_check_sufficient' => $sufficient,
-        ]);
-
-        $message = $sufficient
-            ? 'Inventory check passed. Order marked as ready for production.'
-            : 'Inventory check completed. Insufficient stock – awaiting procurement.';
-
-        return redirect()->back()->with('success', $message);
-    }
-
-    /**
      * Push Purchase Order to Production
      */
     public function pushToProduction(PurchaseOrder $order)
@@ -154,109 +106,34 @@ class ScmSalesOrderController extends Controller
     }
 
     /**
-     * Push Sales Order to Production
+     * Push Sales Order to Production.
+     *
+     * Single-check model: the manual SCM inventory-check buttons are gone
+     * (checking happens once, in the ECO Push Center). Stock is re-verified
+     * LIVE here with the same DSS engine before anything moves, so SCM can
+     * never push an order the warehouse cannot sustain.
      */
-    public function pushToProductionSalesOrder(SalesOrder $salesOrder)
+    public function pushToProductionSalesOrder(SalesOrder $salesOrder, StockSustainabilityService $dss)
     {
-        if ($salesOrder->status !== 'inv_checked') {
-            return redirect()->back()->withErrors(['error' => 'Sales order cannot be pushed to production. Inventory check must be completed and sufficient first.']);
-        }
-        $salesOrder->update(['status' => 'in_production']);
-        return redirect()->back()->with('success', 'Sales order pushed to Manufacturing.');
-    }
-
-    /**
-     * INSTANT INVENTORY CHECK – Returns JSON with detailed material requirements and stock levels.
-     */
-    public function checkInventoryInstant($type, $id)
-    {
-        if ($type === 'purchase_order') {
-            $order = PurchaseOrder::with(['client', 'items.product'])->findOrFail($id);
-            $materialsNeeded = [];
-
-            foreach ($order->items as $item) {
-                // Try to find recipe using fabric (yarn_type), color, design
-                $recipe = BomRecord::where('client_id', $order->client_id)
-                    ->where('product_id', $item->product_id)
-                    ->where('yarn_type', $item->fabric)
-                    ->where('dye_color', $item->color)
-                    ->where('weave_design', $item->design)
-                    ->first();
-
-                // Fallback: match by client and product only
-                if (!$recipe) {
-                    $recipe = BomRecord::where('client_id', $order->client_id)
-                        ->where('product_id', $item->product_id)
-                        ->first();
-                }
-
-                if ($recipe) {
-                    $materials = json_decode($recipe->materials, true);
-                    foreach ($materials as $materialId => $qtyPerUnit) {
-                        // qtyPerUnit is per kg (or per piece) – multiply by item kilos
-                        $required = $qtyPerUnit * $item->kilos;
-                        if (!isset($materialsNeeded[$materialId])) {
-                            $materialsNeeded[$materialId] = 0;
-                        }
-                        $materialsNeeded[$materialId] += $required;
-                    }
-                }
-            }
-
-            $orderNumber = $order->po_number;
-
-        } elseif ($type === 'sales_order') {
-            $order = SalesOrder::with(['client', 'recipe'])->findOrFail($id);
-            $materialsNeeded = [];
-
-            if ($order->recipe) {
-                $materials = json_decode($order->recipe->materials, true);
-                foreach ($materials as $materialId => $qtyPerUnit) {
-                    $required = $qtyPerUnit * $order->quantity;
-                    $materialsNeeded[$materialId] = $required;
-                }
-            }
-
-            $orderNumber = $order->jo_number ?? 'JO-' . $order->id;
-
-        } else {
-            abort(404);
+        if (!in_array($salesOrder->status, ['pushed_to_scm', 'inv_check', 'inv_checked'])) {
+            return redirect()->back()->withErrors(['error' => 'Sales order cannot be pushed to production from its current stage.']);
         }
 
-        // Get current stock for each material
-        $materialIds = array_keys($materialsNeeded);
-        $materials = Material::whereIn('id', $materialIds)->get()->keyBy('id');
-        $stockItems = WarehouseStockItem::whereIn('material_id', $materialIds)
-            ->where('status', 'in_stock')
-            ->select('material_id', DB::raw('SUM(quantity) as total_stock'))
-            ->groupBy('material_id')
-            ->pluck('total_stock', 'material_id');
+        $result = $dss->evaluate($salesOrder);
 
-        $details = [];
-        $sufficient = true;
+        if (($result['verdict'] ?? null) === 'insufficient') {
+            $lines = collect($result['materials'] ?? [])
+                ->filter(fn ($m) => ($m['shortage'] ?? 0) > 0)
+                ->map(fn ($m) => "{$m['material_name']}: needs {$m['required']}{$m['unit']}, ATP {$m['atp']}{$m['unit']} (short {$m['shortage']}{$m['unit']})")
+                ->implode('; ');
 
-        foreach ($materialsNeeded as $matId => $required) {
-            $available = $stockItems[$matId] ?? 0;
-            $shortage = max(0, $required - $available);
-            if ($shortage > 0) $sufficient = false;
-
-            $details[] = [
-                'material_id' => $matId,
-                'material_name' => $materials[$matId]->name ?? 'Unknown',
-                'unit' => $materials[$matId]->unit ?? '',
-                'required' => round($required, 2),
-                'available' => round($available, 2),
-                'shortage' => round($shortage, 2),
-                'status' => $shortage > 0 ? 'insufficient' : 'sufficient',
-            ];
+            return redirect()->back()->withErrors(['error' => "Push blocked: live stock cannot sustain {$result['jo_number']}. {$lines}. File procurement from the ECO Push Center DSS check."]);
         }
 
-        return response()->json([
-            'order_type' => $type,
-            'order_id' => $id,
-            'order_number' => $orderNumber,
-            'sufficient' => $sufficient,
-            'materials' => $details,
+        $salesOrder->update([
+            'status' => 'in_production',
+            'inv_check_sufficient' => true,
         ]);
+        return redirect()->back()->with('success', 'Stock re-verified live — sales order pushed to Manufacturing.');
     }
 }

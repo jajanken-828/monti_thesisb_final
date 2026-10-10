@@ -59,9 +59,11 @@ class JobPostingPublishTest extends TestCase
     {
         $mgr = User::create([
             'name' => 'HRM Manager', 'email' => 'hrm.mgr@test.local',
-            'password' => Hash::make('secret123'), 'role' => 'HRM',
-            'position' => 'manager', 'is_active' => true,
+            'password' => Hash::make('secret123'),
         ]);
+        // NOTE: role/position are NOT mass-assignable — persist via query.
+        User::where('id', $mgr->id)->update(['role' => 'HRM', 'position' => 'manager', 'is_active' => true]);
+        $mgr = $mgr->fresh();
         $post = HrmJobPosting::create([
             'posting_id' => 'POST-TEST001', 'title' => 'Draft QA', 'status' => 'Draft',
         ]);

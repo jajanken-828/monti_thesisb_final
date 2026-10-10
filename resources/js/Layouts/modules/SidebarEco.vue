@@ -1,7 +1,7 @@
 <script>
 import {
     LayoutDashboard, ShoppingBag, Users as UsersIcon,
-    CreditCard, Send,
+    CreditCard, Send, Building2,
 } from 'lucide-vue-next'
 
 export const ecoModule = {
@@ -19,6 +19,7 @@ export const ecoModule = {
             { label: 'Dashboard', href: route('eco.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
             { label: 'Store', href: route('eco.store'), icon: ShoppingBag, permKey: 'store' },
             { label: 'Suppliers', href: route('eco.suppliers'), icon: UsersIcon, permKey: 'supplier' },
+            { label: 'Clients', href: route('eco.clients'), icon: Building2, permKey: 'client' },
             { label: 'Credit', href: route('eco.credit'), icon: CreditCard, permKey: 'credit' },
             { label: 'Push Center', href: route('eco.push'), icon: Send, permKey: 'push' },
         ]

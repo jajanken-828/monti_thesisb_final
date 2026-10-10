@@ -315,8 +315,34 @@ const syncFormFromClient = () => {
 };
 
 const submit = () => {
-    form.patch(route('client.profile.update'), {
-        forceFormData: true,
+    const data = {
+        company_name: form.company_name,
+        business_type: form.business_type,
+        tin_number: form.tin_number,
+        contact_person: form.contact_person,
+        phone: form.phone,
+        company_address: form.company_address,
+        city: form.city,
+        province: form.province,
+        postal_code: form.postal_code,
+        latitude: form.latitude,
+        longitude: form.longitude,
+    };
+
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+            formData.append(key, value);
+        } else {
+            formData.append(key, '');
+        }
+    });
+
+    if (form.logo) {
+        formData.append('logo', form.logo);
+    }
+
+    router.patch(route('client.profile.update'), formData, {
         preserveScroll: true,
         onSuccess: () => {
             cancelLogoSelection();

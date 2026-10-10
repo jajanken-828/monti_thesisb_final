@@ -4,8 +4,8 @@ import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
     Package, Plus, X, Search, ChevronDown, AlertTriangle,
-    ShoppingCart, Eye, Info, History, TrendingUp, Save,
-    CheckCircle, AlertCircle, Trash2, BadgeCheck, Sparkles
+    Eye, Info, History, TrendingUp, Save, Pencil,
+    CheckCircle, AlertCircle, Trash2, BadgeCheck, Sparkles, Factory
 } from 'lucide-vue-next';
 import { usePageAccess } from '@/composables/usePageAccess';
 
@@ -21,7 +21,7 @@ const props = defineProps({
 const searchQuery = ref('');
 const showAddModal = ref(false);
 const showViewModal = ref(false);
-const showProcurementModal = ref(false);
+const showEditModal = ref(false);
 const showConfirmModal = ref(false);
 const selectedMaterial = ref(null);
 
@@ -43,13 +43,9 @@ const addForm = useForm({
 
 const editForm = useForm({
     name: '',
+    category: 'Yarn',
+    unit: 'Kg',
     reorder_point: 0,
-});
-
-const procurementForm = useForm({
-    required_qty: 0,
-    urgency: 'Medium',
-    notes: '',
 });
 
 // Helpers
@@ -101,8 +97,21 @@ const addMaterial = () => {
 const openViewModal = (material) => {
     selectedMaterial.value = material;
     editForm.name = material.name;
+    editForm.category = material.category;
+    editForm.unit = material.unit;
     editForm.reorder_point = material.reorder_point;
+    editForm.clearErrors();
     showViewModal.value = true;
+};
+
+const openEditModal = (material) => {
+    selectedMaterial.value = material;
+    editForm.name = material.name;
+    editForm.category = material.category;
+    editForm.unit = material.unit;
+    editForm.reorder_point = material.reorder_point;
+    editForm.clearErrors();
+    showEditModal.value = true;
 };
 
 const submitUpdate = () => {
@@ -114,25 +123,7 @@ const submitUpdate = () => {
             editForm.patch(route('inv.materials.update', selectedMaterial.value.id), {
                 onSuccess: () => {
                     showViewModal.value = false;
-                    closeConfirm();
-                },
-            });
-        }
-    );
-};
-
-const submitProcurement = () => {
-    if (procurementForm.required_qty <= 0) return;
-
-    triggerConfirm(
-        'Send Request',
-        `Send procurement request for ${selectedMaterial.value.name} (${procurementForm.required_qty} ${selectedMaterial.value.unit}) to SCM?`,
-        'confirm',
-        () => {
-            procurementForm.post(route('inv.checker.procurement', selectedMaterial.value.id), {
-                onSuccess: () => {
-                    showProcurementModal.value = false;
-                    procurementForm.reset();
+                    showEditModal.value = false;
                     closeConfirm();
                 },
             });
@@ -150,6 +141,19 @@ const statusColor = (status) => {
     if (status === 'In Stock') return 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30';
     if (status === 'Low Stock') return 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30';
     return 'bg-rose-100 text-rose-700 ring-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30';
+};
+
+// CHECK 2 — OPENED (production) stock: remaining qty on live manufacturing lots.
+const openedStatus = (mat) => {
+    if ((mat.opened_stock ?? 0) > 0) return 'In Production';
+    if (mat.opened_status === 'depleted') return 'Depleted';
+    return 'Not Moved';
+};
+
+const openedColor = (status) => {
+    if (status === 'In Production') return 'bg-sky-100 text-sky-700 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30';
+    if (status === 'Depleted') return 'bg-zinc-200 text-zinc-600 ring-zinc-300 dark:bg-zinc-700/40 dark:text-zinc-300 dark:ring-zinc-600';
+    return 'bg-gray-100 text-gray-400 ring-gray-200 dark:bg-zinc-800 dark:text-gray-500 dark:ring-zinc-700';
 };
 </script>
 
@@ -209,7 +213,8 @@ const statusColor = (status) => {
                                     <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Material ID</th>
                                     <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Name</th>
                                     <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">Category</th>
-                                    <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest text-center">Status</th>
+                                    <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest text-center">Unopened · Warehouse</th>
+                                    <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest text-center">Opened · Production</th>
                                     <th class="px-8 py-4 text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -222,11 +227,18 @@ const statusColor = (status) => {
                                         <span :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ring-1', statusColor(stockStatus(mat))]">
                                             <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ stockStatus(mat) }}
                                         </span>
+                                        <p class="mt-1 text-[11px] font-black text-gray-900 dark:text-white">{{ Number(mat.total_stock ?? 0).toLocaleString() }} <span class="font-bold text-gray-400">{{ mat.unit }}</span></p>
+                                    </td>
+                                    <td class="px-8 py-5 text-center">
+                                        <span :class="['inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ring-1', openedColor(openedStatus(mat))]">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />{{ openedStatus(mat) }}
+                                        </span>
+                                        <p class="mt-1 text-[11px] font-black text-gray-900 dark:text-white">{{ Number(mat.opened_stock ?? 0).toLocaleString() }} <span class="font-bold text-gray-400">{{ mat.unit }}</span></p>
                                     </td>
                                     <td class="px-8 py-5 text-center">
                                         <div class="flex items-center justify-center gap-2">
                                             <button @click="openViewModal(mat)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 hover:bg-indigo-600 hover:text-white hover:scale-110 transition-all duration-200" title="View"><Eye class="w-4 h-4" /></button>
-                                            <button v-if="canEditMaterials" @click="selectedMaterial = mat; procurementForm.required_qty = mat.reorder_point; showProcurementModal = true;" class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 hover:bg-blue-600 hover:text-white hover:scale-110 transition-all duration-200" title="Procure"><ShoppingCart class="w-4 h-4" /></button>
+                                            <button v-if="canEditMaterials" @click="openEditModal(mat)" class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-500 hover:bg-amber-500 hover:text-white hover:scale-110 transition-all duration-200" title="Edit"><Pencil class="w-4 h-4" /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -305,8 +317,8 @@ const statusColor = (status) => {
                         </div>
 
                         <div class="p-6 overflow-y-auto space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div class="p-5 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-3xl">
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <div class="p-5 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-3xl col-span-2 md:col-span-1">
                                     <label class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 block mb-2 tracking-widest uppercase">Update Name</label>
                                     <input v-model="editForm.name" type="text" :disabled="!canEditMaterials" class="w-full bg-transparent border-0 p-0 text-base font-black focus:ring-0 text-slate-800 dark:text-white outline-none disabled:opacity-60" />
                                 </div>
@@ -315,8 +327,18 @@ const statusColor = (status) => {
                                     <p class="font-mono text-sm font-bold text-indigo-600 dark:text-indigo-400">{{ selectedMaterial.mat_id }}</p>
                                 </div>
                                 <div class="p-5 bg-slate-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-800 rounded-3xl">
-                                    <p class="text-[10px] text-slate-400 mb-2 tracking-widest uppercase font-black">Live Stock</p>
+                                    <p class="text-[10px] text-slate-400 mb-2 tracking-widest uppercase font-black">Unopened · Warehouse</p>
                                     <p class="text-2xl font-black text-gray-900 dark:text-white">{{ selectedMaterial.total_stock }} <span class="text-xs font-bold text-gray-400">{{ selectedMaterial.unit }}</span></p>
+                                    <span :class="['mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ring-1', statusColor(stockStatus(selectedMaterial))]">
+                                        <span class="h-1 w-1 rounded-full bg-current animate-pulse" />{{ stockStatus(selectedMaterial) }}
+                                    </span>
+                                </div>
+                                <div class="p-5 bg-sky-50/70 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 rounded-3xl">
+                                    <p class="text-[10px] text-sky-600 dark:text-sky-400 mb-2 tracking-widest uppercase font-black flex items-center gap-1"><Factory class="w-3 h-3" /> Opened · Production</p>
+                                    <p class="text-2xl font-black text-gray-900 dark:text-white">{{ selectedMaterial.opened_stock ?? 0 }} <span class="text-xs font-bold text-gray-400">{{ selectedMaterial.unit }}</span></p>
+                                    <span :class="['mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ring-1', openedColor(openedStatus(selectedMaterial))]">
+                                        <span class="h-1 w-1 rounded-full bg-current animate-pulse" />{{ openedStatus(selectedMaterial) }}
+                                    </span>
                                 </div>
                                 <div class="p-5 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-3xl">
                                     <label class="text-[10px] font-black text-indigo-600 dark:text-indigo-400 block mb-2 tracking-widest uppercase">Reorder Threshold</label>
@@ -327,8 +349,31 @@ const statusColor = (status) => {
                                 </div>
                             </div>
 
+                            <div class="rounded-3xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/10 p-5">
+                                <h4 class="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-300 mb-3 flex items-center gap-2"><TrendingUp class="w-4 h-4" /> Flow Trace · every kilo accounted for</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                                    <div class="bg-white dark:bg-zinc-900 rounded-2xl px-3 py-3 border border-gray-100 dark:border-zinc-800">
+                                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Received</p>
+                                        <p class="text-lg font-black text-gray-900 dark:text-white">{{ Number(selectedMaterial.received_total ?? 0).toLocaleString() }} <span class="text-[10px] font-bold text-gray-400">{{ selectedMaterial.unit }}</span></p>
+                                    </div>
+                                    <div class="bg-white dark:bg-zinc-900 rounded-2xl px-3 py-3 border border-gray-100 dark:border-zinc-800">
+                                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Unopened · Warehouse</p>
+                                        <p class="text-lg font-black text-emerald-600">{{ Number(selectedMaterial.total_stock ?? 0).toLocaleString() }} <span class="text-[10px] font-bold text-gray-400">{{ selectedMaterial.unit }}</span></p>
+                                    </div>
+                                    <div class="bg-white dark:bg-zinc-900 rounded-2xl px-3 py-3 border border-gray-100 dark:border-zinc-800">
+                                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Opened · Production</p>
+                                        <p class="text-lg font-black text-sky-600">{{ Number(selectedMaterial.opened_stock ?? 0).toLocaleString() }} <span class="text-[10px] font-bold text-gray-400">{{ selectedMaterial.unit }}</span></p>
+                                    </div>
+                                    <div class="bg-white dark:bg-zinc-900 rounded-2xl px-3 py-3 border border-gray-100 dark:border-zinc-800">
+                                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Consumed</p>
+                                        <p class="text-lg font-black text-slate-500 dark:text-gray-300">{{ Number(selectedMaterial.consumed_qty ?? 0).toLocaleString() }} <span class="text-[10px] font-bold text-gray-400">{{ selectedMaterial.unit }}</span></p>
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-[10px] font-bold text-slate-400 text-center">Received = Warehouse + Production + Consumed · moved to production: {{ Number(selectedMaterial.moved_to_production ?? 0).toLocaleString() }} {{ selectedMaterial.unit }}</p>
+                            </div>
+
                             <div class="space-y-4">
-                                <h4 class="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900 dark:text-white"><History class="w-5 h-5 text-indigo-500" /> Lot Management Records</h4>
+                                <h4 class="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900 dark:text-white"><History class="w-5 h-5 text-indigo-500" /> Lot Management Records <span class="text-[10px] text-slate-400 font-bold">· Unopened warehouse lots</span></h4>
                                 <div class="rounded-3xl border border-gray-100 dark:border-zinc-800 overflow-hidden bg-slate-50/60 dark:bg-zinc-800/30">
                                     <table class="w-full text-left text-xs uppercase font-bold">
                                         <thead class="text-slate-400 border-b border-gray-100 dark:border-zinc-800 tracking-widest text-[10px]">
@@ -352,6 +397,29 @@ const statusColor = (status) => {
                                     </table>
                                 </div>
                             </div>
+
+                            <div class="space-y-4">
+                                <h4 class="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900 dark:text-white"><Factory class="w-5 h-5 text-sky-500" /> Production Lots <span class="text-[10px] text-slate-400 font-bold">· Opened stock in manufacturing</span></h4>
+                                <div class="rounded-3xl border border-sky-100 dark:border-sky-900/40 overflow-hidden bg-sky-50/50 dark:bg-sky-950/10">
+                                    <table v-if="selectedMaterial.production_breakdown?.length" class="w-full text-left text-xs uppercase font-bold">
+                                        <thead class="text-slate-400 border-b border-sky-100 dark:border-sky-900/40 tracking-widest text-[10px]">
+                                            <tr>
+                                                <th class="px-6 py-4">Department</th>
+                                                <th class="px-6 py-4 text-right">Live Lots</th>
+                                                <th class="px-6 py-4 text-right">Remaining</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-sky-100/60 dark:divide-sky-900/20 text-slate-700 dark:text-gray-300">
+                                            <tr v-for="row in selectedMaterial.production_breakdown" :key="row.department" class="hover:bg-white dark:hover:bg-zinc-900 transition">
+                                                <td class="px-6 py-4 text-sky-700 dark:text-sky-300 font-black capitalize">{{ row.department }}</td>
+                                                <td class="px-6 py-4 text-right font-black">{{ row.lots }}</td>
+                                                <td class="px-6 py-4 text-right text-gray-900 dark:text-white font-black">{{ row.remaining }} {{ selectedMaterial.unit }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <p v-else class="px-6 py-8 text-center text-xs font-bold text-slate-400">No opened stock — this material has never been moved to production{{ selectedMaterial.opened_status === 'depleted' ? ' (all lots fully consumed)' : '' }}.</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="p-5 bg-slate-50/80 dark:bg-zinc-800/40 border-t border-gray-100 dark:border-zinc-800 flex flex-wrap justify-between items-center gap-3">
                             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CheckCircle class="w-4 h-4 text-emerald-500" /> Changes persist in master database</span>
@@ -367,42 +435,61 @@ const statusColor = (status) => {
             </Transition>
         </Teleport>
 
-        <!-- Procurement Request Modal -->
+        <!-- Edit Material Modal -->
         <Teleport to="body">
             <Transition name="modal">
-                <div v-if="showProcurementModal && selectedMaterial" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg" @click.self="showProcurementModal = false">
+                <div v-if="showEditModal && selectedMaterial" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg" @click.self="showEditModal = false">
                     <div class="modal-panel bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 w-full max-w-md overflow-hidden">
-                        <div class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 p-6 text-white">
+                        <div class="relative overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 p-6 text-white">
                             <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl animate-float" />
                             <div class="absolute inset-0 opacity-[0.15]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;" />
                             <div class="relative flex items-center justify-between">
-                                <h3 class="text-lg font-black tracking-tight">Request Procurement</h3>
-                                <button @click="showProcurementModal = false" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition"><X class="w-4 h-4" /></button>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/30 animate-pop"><Pencil class="w-5 h-5" /></div>
+                                    <div>
+                                        <h3 class="text-lg font-black tracking-tight">Edit Material</h3>
+                                        <p class="relative text-xs text-white/80 mt-0.5 font-mono">{{ selectedMaterial.mat_id }}</p>
+                                    </div>
+                                </div>
+                                <button @click="showEditModal = false" class="p-2 rounded-xl bg-white/15 hover:bg-white/25 ring-1 ring-white/25 transition"><X class="w-4 h-4" /></button>
                             </div>
-                            <p class="relative text-xs text-blue-100/90 mt-1">{{ selectedMaterial.name }}</p>
                         </div>
                         <div class="p-6 space-y-4">
                             <div class="space-y-1">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Quantity ({{ selectedMaterial.unit }})</label>
-                                <input v-model.number="procurementForm.required_qty" type="number" step="0.01" min="0.01" class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500/30 font-bold text-sm text-gray-900 dark:text-white outline-none" />
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Material Name</label>
+                                <input v-model="editForm.name" type="text" placeholder="e.g. Cotton Yarn"
+                                    class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl focus:ring-2 focus:ring-amber-500/30 font-bold text-sm text-gray-900 dark:text-white outline-none" />
+                                <p v-if="editForm.errors.name" class="text-rose-500 text-[10px] font-black uppercase tracking-tight">{{ editForm.errors.name }}</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Category</label>
+                                    <select v-model="editForm.category"
+                                        class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl font-bold text-sm text-gray-900 dark:text-white outline-none">
+                                        <option v-for="cat in ['Yarn', 'Dye', 'Supplies', 'Packaging']" :value="cat">{{ cat }}</option>
+                                    </select>
+                                    <p v-if="editForm.errors.category" class="text-rose-500 text-[10px] font-black uppercase tracking-tight">{{ editForm.errors.category }}</p>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Unit</label>
+                                    <select v-model="editForm.unit"
+                                        class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl font-bold text-sm text-gray-900 dark:text-white outline-none">
+                                        <option v-for="u in ['Rolls', 'Kg', 'Pcs']" :value="u">{{ u }}</option>
+                                    </select>
+                                    <p v-if="editForm.errors.unit" class="text-rose-500 text-[10px] font-black uppercase tracking-tight">{{ editForm.errors.unit }}</p>
+                                </div>
                             </div>
                             <div class="space-y-1">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Urgency</label>
-                                <select v-model="procurementForm.urgency" class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl font-bold text-sm text-gray-900 dark:text-white outline-none">
-                                    <option value="High">High</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Low">Low</option>
-                                </select>
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Notes (Optional)</label>
-                                <textarea v-model="procurementForm.notes" rows="3" class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl focus:ring-2 focus:ring-indigo-500/30 font-bold text-sm text-gray-900 dark:text-white outline-none" placeholder="Additional details..."></textarea>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Reorder Point ({{ selectedMaterial.unit }})</label>
+                                <input v-model.number="editForm.reorder_point" type="number" min="0"
+                                    class="w-full px-4 py-3 bg-slate-100 dark:bg-zinc-800 border-0 rounded-2xl focus:ring-2 focus:ring-amber-500/30 font-bold text-sm text-gray-900 dark:text-white outline-none" />
+                                <p v-if="editForm.errors.reorder_point" class="text-rose-500 text-[10px] font-black uppercase tracking-tight">{{ editForm.errors.reorder_point }}</p>
                             </div>
                         </div>
                         <div class="p-6 pt-0 flex gap-3">
-                            <button @click="showProcurementModal = false" class="flex-1 py-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-gray-300 font-black uppercase text-xs rounded-2xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">Cancel</button>
-                            <button v-if="canEditMaterials" @click="submitProcurement" :disabled="procurementForm.processing" class="flex-1 py-3.5 bg-indigo-600 text-white font-black uppercase text-xs rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/25 active:scale-95">
-                                {{ procurementForm.processing ? 'Sending...' : 'Send to SCM' }}
+                            <button @click="showEditModal = false" class="flex-1 py-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-gray-300 font-black uppercase text-xs rounded-2xl hover:bg-slate-200 dark:hover:bg-zinc-700 transition">Cancel</button>
+                            <button @click="submitUpdate" :disabled="editForm.processing || !editForm.name" class="flex-[1.5] py-3.5 bg-amber-500 text-white font-black uppercase text-xs rounded-2xl hover:bg-amber-600 transition shadow-lg shadow-amber-500/25 active:scale-95 disabled:opacity-50">
+                                {{ editForm.processing ? 'Saving...' : 'Save Changes' }}
                             </button>
                         </div>
                     </div>

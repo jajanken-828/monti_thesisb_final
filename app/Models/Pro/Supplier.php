@@ -22,6 +22,12 @@ class Supplier extends Authenticatable
         'email',
         'phone_number',
         'password',
+        'status',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
+        'rejection_reason',
     ];
 
     /**

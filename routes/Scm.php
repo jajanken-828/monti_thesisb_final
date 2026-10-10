@@ -24,20 +24,15 @@ Route::prefix('dashboard/scm')->name('scm.')->middleware(['auth', 'verified', 'm
     Route::get('/dashboard', [ScmDashboardController::class, 'index'])
         ->middleware('page.permission:dashboard,view')->name('dashboard');
 
-    // Sales Orders (from ECO)
+    // Sales Orders (from ECO — sustainability already checked in the ECO
+    // Push Center; SCM re-verifies live at push-to-production, so the manual
+    // check-inventory buttons are gone)
     Route::get('/sales-orders', [ScmSalesOrderController::class, 'index'])
         ->middleware('page.permission:sales,view')->name('sales-orders');
-    Route::post('/sales-orders/{order}/check-inventory', [ScmSalesOrderController::class, 'checkInventory'])
-        ->middleware('page.permission:sales,edit')->name('sales-order.check-inventory');
     Route::post('/sales-orders/{order}/push-to-production', [ScmSalesOrderController::class, 'pushToProduction'])
         ->middleware('page.permission:sales,edit')->name('sales-order.push-to-production');
-    Route::post('/sales-orders/sales/{salesOrder}/check-inventory', [ScmSalesOrderController::class, 'checkInventorySalesOrder'])
-        ->middleware('page.permission:sales,edit')->name('sales-order.check-inventory-sales');
     Route::post('/sales-orders/sales/{salesOrder}/push-to-production', [ScmSalesOrderController::class, 'pushToProductionSalesOrder'])
         ->middleware('page.permission:sales,edit')->name('sales-order.push-to-production-sales');
-    Route::get('/sales-orders/check-inventory-instant/{type}/{id}', [ScmSalesOrderController::class, 'checkInventoryInstant'])
-        ->middleware('page.permission:sales,view')
-        ->name('sales-order.check-inventory-instant');
 
     // Procurement Orders (requests from Inventory)
     Route::get('/procurement-orders', [ScmProcurementOrderController::class, 'index'])

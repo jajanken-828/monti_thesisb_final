@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Crm\CrmInquiryController;
+use App\Http\Controllers\Eco\EcoClientController;
 use App\Http\Controllers\Eco\EcoCreditController;
 use App\Http\Controllers\Eco\EcoDashboardController;
 use App\Http\Controllers\Eco\EcoPushController;
@@ -27,6 +28,9 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
     // NOTE: client inquiries & conversations moved to the CRM module
     // (dashboard/crm/inquiries) — highly customized orders belong with the
     // relationship workflow, not the storefront.
+    // Display-only client directory (information viewing, no chat).
+    Route::get('/clients', [EcoClientController::class, 'index'])
+        ->middleware('page.permission:client,view')->name('clients');
     Route::get('/clients/{client}/credit-check', [CrmInquiryController::class, 'creditCheck'])
         ->middleware('page.permission:credit,view')->name('credit.check');
 
@@ -62,6 +66,9 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
         ->middleware('page.permission:supplier,view')->name('suppliers');
     Route::get('/suppliers/{supplier}/conversation', [EcoSupplierController::class, 'conversation'])
         ->middleware('page.permission:supplier,view')->name('supplier.conversation');
+    // Real-time poll feed (new messages since ?after=id, no page reload).
+    Route::get('/suppliers/{supplier}/feed', [EcoSupplierController::class, 'feed'])
+        ->middleware('page.permission:supplier,view')->name('supplier.feed');
     Route::post('/suppliers/{supplier}/message', [EcoSupplierController::class, 'sendMessage'])
         ->middleware('page.permission:supplier,edit')->name('supplier.message');
     Route::post('/suppliers/{supplier}/meeting', [EcoSupplierController::class, 'setMeeting'])
@@ -70,8 +77,6 @@ Route::prefix('dashboard/eco')->name('eco.')->middleware(['auth', 'verified', 'm
         ->middleware('page.permission:supplier,view')->name('supplier.credit-check');
     Route::post('/suppliers/{supplier}/request', [EcoSupplierController::class, 'sendRequest'])
         ->middleware('page.permission:supplier,edit')->name('supplier.request');
-    Route::get('/suppliers/{supplier}/conversation', [EcoSupplierController::class, 'conversation'])
-        ->middleware('page.permission:supplier,view')->name('supplier.conversation');
 
     Route::post('/push/manual-po', [EcoPushController::class, 'manualStore'])
         ->middleware('page.permission:push,edit')->name('po.manual_store');

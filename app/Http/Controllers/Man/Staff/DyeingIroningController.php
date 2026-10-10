@@ -12,7 +12,10 @@ class DyeingIroningController extends ManufacturingStaffController
 {
     public function index()
     {
+        // Checker gate: only squeezer jobs whose fabric the quality checker
+        // already approved to 'iron' may be ironed.
         $pendingCount = SqueezerJob::whereDoesntHave('ironJob')
+            ->whereHas('softenerJob.fabric', fn ($q) => $q->where('status', 'iron'))
             ->count();
 
         $recentJobs = IronJob::with('squeezerJob.softenerJob.fabric')
@@ -23,6 +26,7 @@ class DyeingIroningController extends ManufacturingStaffController
 
         $nextQueue = SqueezerJob::with('softenerJob.fabric')
             ->whereDoesntHave('ironJob')
+            ->whereHas('softenerJob.fabric', fn ($q) => $q->where('status', 'iron'))
             ->orderBy('created_at', 'asc')
             ->take(3)
             ->get(['id', 'code', 'created_at']);
@@ -57,11 +61,12 @@ class DyeingIroningController extends ManufacturingStaffController
 
     public function dyeingIroning()
     {
-        // Auto-flow from squeezer (fabric status is set to 'iron'
-        // in DyeingSqueezerController@storeSqueezer). Only jobs without
-        // a next-stage iron job are listed.
+        // Only checker-approved work: squeezer jobs without an iron job yet
+        // whose fabric sits at 'iron'. Anything still awaiting squeezer QC
+        // is invisible here.
         $squeezerJobs = SqueezerJob::with('softenerJob.fabric')
             ->whereDoesntHave('ironJob')
+            ->whereHas('softenerJob.fabric', fn ($q) => $q->where('status', 'iron'))
             ->get();
 
         return Inertia::render('Dashboard/MAN/Employee/DyeingIroning/DyeingIroning', [
@@ -78,6 +83,16 @@ class DyeingIroningController extends ManufacturingStaffController
 
         $squeezerJob = SqueezerJob::with('softenerJob.fabric')->findOrFail($validated['squeezer_job_id']);
 
+        // Checker gate: the fabric must already sit at 'iron' (checker
+        // approved the squeezer job). Ironing unapproved work is blocked.
+        $fabric = $squeezerJob->softenerJob?->fabric;
+        if (! $fabric || $fabric->status !== 'iron') {
+            return back()->withErrors(['squeezer_job_id' => 'This fabric has not been approved to ironing yet — awaiting quality check.']);
+        }
+        if ($squeezerJob->ironJob()->exists()) {
+            return back()->withErrors(['squeezer_job_id' => 'An iron job is already recorded for this fabric — awaiting quality check.']);
+        }
+
         IronJob::create([
             'squeezer_job_id' => $validated['squeezer_job_id'],
             'remarks' => $validated['remarks'],
@@ -87,13 +102,10 @@ class DyeingIroningController extends ManufacturingStaffController
             'processed_at' => now(),
         ]);
 
-        // Forming step removed: ironing now flows directly to packaging.
-        $fabric = $squeezerJob->softenerJob?->fabric;
-        if ($fabric) {
-            $fabric->update(['status' => 'packed']);
-        }
-
-        return redirect()->back()->with('message', 'Ironing recorded successfully.');
+        // Checker gate: fabric stays 'iron' until the quality checker
+        // approves it (passIron → packed) or sends it back for rework.
+        // (Forming step removed: approved ironing flows directly to packaging.)
+        return redirect()->back()->with('message', 'Ironing recorded successfully. Awaiting quality check before it can move to packaging.');
     }
 
     public function reports()

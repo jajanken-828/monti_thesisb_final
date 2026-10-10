@@ -4,7 +4,7 @@ import { route } from 'ziggy-js';
 import { computed, watch } from 'vue'
 import {
     Menu, X, LayoutDashboard, ChevronRight, Building2, ShieldCheck, UserCog2,
-    ShoppingBag, ShoppingCart, Receipt, User, HelpCircle, Truck, Navigation, Clock, CalendarDays,
+    ShoppingBag, ShoppingCart, Receipt, User, HelpCircle, Truck, Navigation, MessageSquare, Clock, CalendarDays,
     History, HandCoins, Bell, FileText, Stamp, Printer, Target, Wrench, Repeat, ClipboardList,
     Zap, ScanSearch, Megaphone, UserCog,
 } from 'lucide-vue-next'
@@ -78,6 +78,7 @@ const navItems = computed(() => {
     if (isSupplier.value) {
         return [
             { label: 'Vendor Hub', href: route('supplier.dashboard'), icon: LayoutDashboard },
+            { label: 'Messages', href: route('supplier.messages'), icon: MessageSquare },
             { label: 'Purchase Orders', href: route('supplier.orders'), icon: ShoppingCart },
             { label: 'My Products', href: route('supplier.products'), icon: ShoppingBag },
         ]
@@ -86,8 +87,11 @@ const navItems = computed(() => {
         return [
             { label: 'Dashboard', href: route('client.dashboard'), icon: LayoutDashboard },
             { label: 'Products', href: route('client.products'), icon: ShoppingBag },
+            { label: 'Conversations', href: route('client.conversations'), icon: MessageSquare },
             { label: 'Orders', href: route('client.orders'), icon: ShoppingCart },
+            { label: 'Order Tracking', href: route('client.tracking'), icon: Navigation },
             { label: 'Invoices', href: route('client.invoices'), icon: Receipt },
+            { label: 'Receiving', href: route('client.receiving'), icon: Truck },
             { label: 'Profile', href: route('client.profile.edit'), icon: User },
             { label: 'Support', href: route('client.support'), icon: HelpCircle },
         ]

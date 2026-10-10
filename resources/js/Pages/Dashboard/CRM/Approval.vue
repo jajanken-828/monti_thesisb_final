@@ -25,6 +25,8 @@ const selectedClient  = ref(null);
 const showMeetingModal = ref(false);
 const showNoteModal    = ref(false);
 const showRejectModal  = ref(false);
+const showAcceptModal  = ref(false);
+const accepting = ref(false);
 
 // ── Meeting ────────────────────────────────────────────────────────────────────
 const openMeetingModal = (client) => {
@@ -58,11 +60,19 @@ const submitNote = () => {
 };
 
 // ── Accept / Reject ────────────────────────────────────────────────────────────
-const acceptClient = (client) => {
+const openAcceptModal = (client) => {
     if (!canEdit.value) return;
-    if (confirm(`Accept ${client.company_name} as active partner?`)) {
-        router.post(route('crm.approval.accept', client.id));
-    }
+    selectedClient.value = client;
+    showAcceptModal.value = true;
+};
+const acceptClient = () => {
+    if (!canEdit.value || !selectedClient.value || accepting.value) return;
+    accepting.value = true;
+    router.post(route('crm.approval.accept', selectedClient.value.id), {}, {
+        preserveScroll: true,
+        onSuccess: () => { showAcceptModal.value = false; },
+        onFinish: () => { accepting.value = false; },
+    });
 };
 const openRejectModal = (client) => {
     if (!canEdit.value) return;
@@ -150,7 +160,7 @@ const updateMeetingStatus = (meetingId, status) => {
                                 </div>
                             </div>
                             <div v-if="canEdit" class="flex gap-2 shrink-0">
-                                <button @click="acceptClient(client)" class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
+                                <button @click="openAcceptModal(client)" class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
                                     <CheckCircle class="w-4 h-4" /> Accept
                                 </button>
                                 <button @click="openRejectModal(client)" class="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 py-2 text-xs font-black uppercase tracking-wide text-white shadow-lg shadow-rose-500/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
@@ -299,6 +309,37 @@ const updateMeetingStatus = (meetingId, status) => {
                                 <button type="submit" :disabled="noteForm.processing" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-sm shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-60">Save Note</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </Transition>
+
+            <!-- ── Accept Modal ──────────────────────────────────────────────── -->
+            <Transition name="modal">
+                <div
+                    v-if="showAcceptModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                    @click.self="showAcceptModal = false"
+                >
+                    <div class="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600 p-5 text-white flex justify-between items-center relative overflow-hidden">
+                            <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-2xl" />
+                            <h2 class="relative font-black flex items-center gap-2"><CheckCircle class="w-4 h-4" /> Accept Registration</h2>
+                            <button @click="showAcceptModal = false" class="relative flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 hover:bg-white/35 hover:rotate-90 transition-all"><X class="w-4 h-4" /></button>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex items-start gap-3 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-900/10 p-4">
+                                <CheckCircle class="w-5 h-5 shrink-0 text-emerald-500 mt-0.5" />
+                                <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                    Accept <span class="font-black text-gray-900 dark:text-white">{{ selectedClient?.company_name }}</span>
+                                    <span v-if="selectedClient?.contact_person" class="text-gray-500 dark:text-gray-400">({{ selectedClient.contact_person }} · {{ selectedClient.email }})</span>
+                                    as an active partner? This will grant them full client access.
+                                </p>
+                            </div>
+                            <div class="flex gap-3 pt-1">
+                                <button type="button" @click="showAcceptModal = false" class="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 font-bold text-sm hover:bg-gray-200 active:scale-95 transition">Cancel</button>
+                                <button type="button" @click="acceptClient" :disabled="accepting" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-sm shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-60">Confirm Accept</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </Transition>

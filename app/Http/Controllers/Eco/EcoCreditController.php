@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Crm\Client;
 use App\Models\Eco\CreditAccount;
 use App\Models\Ord\PurchaseOrder;
+use App\Services\Ord\OrderLifecycleService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 class EcoCreditController extends Controller
 {
@@ -75,5 +77,44 @@ class EcoCreditController extends Controller
             Log::error('Failed to approve credit review: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to approve order.']);
         }
+    }
+
+    /**
+     * Send the finalized quote to the client for approval.
+     * credit_review → pending_client_approval (guarded lifecycle transition
+     * with an audit row). The client accepts it from Orders / Invoices /
+     * Order Tracking, which flips it to approved — no step is skipped.
+     */
+    public function approveOrder(PurchaseOrder $order, OrderLifecycleService $lifecycle)
+    {
+        try {
+            $lifecycle->transitionPurchaseOrder(
+                $order, 'pending_client_approval', auth()->user(), 'Credit cleared by ECO — sent to client for approval'
+            );
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return back()->with('success', "Order {$order->po_number} sent to the client for approval.");
+    }
+
+    /**
+     * Reject a credit review (guarded transition to cancelled).
+     */
+    public function rejectOrder(Request $request, PurchaseOrder $order, OrderLifecycleService $lifecycle)
+    {
+        $data = $request->validate([
+            'reason' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $lifecycle->transitionPurchaseOrder(
+                $order, 'cancelled', auth()->user(), $data['reason'] ?? 'Credit rejected by ECO'
+            );
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return back()->with('success', "Order {$order->po_number} credit review rejected.");
     }
 }

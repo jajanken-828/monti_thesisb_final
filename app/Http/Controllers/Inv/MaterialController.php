@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Inv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inv\Material;
-use App\Models\War\Warehouse;
-use App\Models\War\WarehouseStockItem;
 use App\Models\Scm\MaterialRequest;
+use App\Services\Inv\MaterialStockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -15,21 +15,14 @@ class MaterialController extends Controller
 {
     /**
      * Display the materials catalog with stock levels and delivery history.
+     * Stock math comes from MaterialStockService (shared with Checker and
+     * the INV dashboard).
      */
     public function index()
     {
-        $user = auth()->user();
+        $warehouseIds = MaterialStockService::visibleWarehouseIds(auth()->user());
 
-        // 1. Determine warehouse visibility based on role/permissions
-        if (in_array($user->position, ['secretary', 'special_officer'])) {
-            $warehouses = Warehouse::all();
-        } else {
-            $warehouses = $user->warehouseAccess()->get();
-        }
-
-        $warehouseIds = $warehouses->pluck('id')->toArray();
-
-        // 2. Fetch materials with deep relationships
+        // Fetch materials with deep relationships
         // We include stockItems to grab the specific 'control_number' (Lot Number)
         $materials = Material::with([
             'receivingItems.receiving.warehouse', 
@@ -39,14 +32,15 @@ class MaterialController extends Controller
         ->orderBy('name')
         ->get();
 
-        $materialsWithStock = $materials->map(function ($material) use ($warehouseIds) {
-            // Real-time stock calculation across authorized warehouses
-            $totalStock = WarehouseStockItem::where('material_id', $material->id)
-                ->whereIn('warehouse_id', $warehouseIds)
-                ->where('status', 'in_stock')
-                ->sum('quantity');
+        // 2b. OPENED (production) stock per material — bulk aggregates so the
+        // per-material map below stays cheap. Depleted lots are excluded
+        // Shared stock math (unopened + opened + flow). Delivery history
+        // below is Materials-specific.
+        $aggregates = MaterialStockService::openedAggregates();
 
-            $status = ($totalStock <= 0) ? 'out' : (($totalStock <= $material->reorder_point) ? 'low' : 'ok');
+        $materialsWithStock = $materials->map(function ($material) use ($warehouseIds, $aggregates) {
+            $row = MaterialStockService::buildRow($material, $warehouseIds, $aggregates);
+            $flow = MaterialStockService::flowInfo($material, $aggregates);
 
             // 3. Map Delivery History from actual Receiving Logs
             $deliveryHistory = $material->receivingItems->map(function ($item) use ($material) {
@@ -85,16 +79,11 @@ class MaterialController extends Controller
                 ];
             })->filter()->values();
 
-            return [
-                'id'               => $material->id,
-                'mat_id'           => $material->mat_id,
-                'name'             => $material->name,
-                'category'         => $material->category,
-                'unit'             => $material->unit,
-                'reorder_point'    => (float) $material->reorder_point,
+            return $row + [
                 'unit_cost'        => (float) $material->unit_cost,
-                'total_stock'      => (float) $totalStock,
-                'status'           => $status,
+                'received_total'   => $flow['received_total'],
+                'moved_to_production' => $flow['moved_to_production'],
+                'consumed_qty'     => $flow['consumed_qty'],
                 'delivery_history' => $deliveryHistory,
             ];
         });
@@ -138,7 +127,60 @@ class MaterialController extends Controller
     }
 
     /**
-     * Update material details (Name and Reorder Point)
+     * Bulk procurement: request multiple raw materials in one send.
+     * Each line carries its own quantity, urgency and notes (falling back
+     * to batch-level urgency/notes when omitted). Creates one material
+     * request per chosen material inside a single transaction — SCM picks
+     * them up as individual pending rows on its Procurement Orders page.
+     */
+    public function bulkProcurement(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1|max:100',
+            'items.*.material_id' => 'required|integer|exists:materials,id',
+            'items.*.required_qty' => 'required|numeric|min:0.01',
+            'items.*.urgency' => 'nullable|in:High,Medium,Low',
+            'items.*.notes' => 'nullable|string|max:1000',
+            'urgency' => 'nullable|in:High,Medium,Low',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $warehouseIds = MaterialStockService::visibleWarehouseIds(auth()->user());
+        $batch = 'BULK-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
+
+        $created = 0;
+        DB::transaction(function () use ($validated, $warehouseIds, $batch, &$created) {
+            foreach ($validated['items'] as $item) {
+                $material = Material::findOrFail($item['material_id']);
+
+                MaterialRequest::create([
+                    'req_number' => 'REQ-' . strtoupper(bin2hex(random_bytes(3))),
+                    'material_id' => $material->id,
+                    'material_name' => $material->name,
+                    'category' => $material->category,
+                    'unit' => $material->unit,
+                    'current_stock' => MaterialStockService::unopenedStock($material->id, $warehouseIds),
+                    'reorder_point' => $material->reorder_point,
+                    'required_qty' => $item['required_qty'],
+                    'urgency' => $item['urgency'] ?? $validated['urgency'] ?? 'Medium',
+                    'notes' => "[{$batch}] " . ($item['notes'] ?? $validated['notes'] ?? 'Bulk request from Stock Checker'),
+                    'requested_by' => auth()->user()->name,
+                    'requested_at' => now(),
+                    'status' => 'pending',
+                ]);
+                $created++;
+            }
+        });
+
+        return redirect()->back()->with(
+            'success',
+            "{$created} procurement request(s) sent to SCM ({$batch})."
+        );
+    }
+
+    /**
+     * Update material details (name, category, unit and reorder point).
+     * Category/unit enums match store() so master data stays consistent.
      */
     public function update(Request $request, $id)
     {
@@ -146,6 +188,8 @@ class MaterialController extends Controller
 
         $validated = $request->validate([
             'name'          => 'required|string|max:255',
+            'category'      => 'required|in:Yarn,Dye,Supplies,Packaging',
+            'unit'          => 'required|in:Rolls,Kg,Pcs',
             'reorder_point' => 'required|numeric|min:0',
         ]);
 

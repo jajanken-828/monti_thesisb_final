@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\SupplierAuthController;
+use App\Http\Controllers\Suppliers\SupplierChatController;
 use App\Http\Controllers\Suppliers\SupplierDashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,4 +37,8 @@ Route::middleware('auth:supplier')->prefix('supplier')->name('supplier.')->group
     Route::post('/products', [SupplierDashboardController::class, 'storeProduct'])->name('products.store');
     Route::patch('/products/{product}/toggle', [SupplierDashboardController::class, 'toggleProduct'])->name('products.toggle');
     Route::delete('/products/{product}', [SupplierDashboardController::class, 'destroyProduct'])->name('products.destroy');
+    // Two-way chat with ECO (same supplier_messages thread, sender_type=supplier).
+    Route::get('/messages', [SupplierChatController::class, 'index'])->name('messages');
+    Route::get('/chat/feed', [SupplierChatController::class, 'feed'])->name('chat.feed');
+    Route::post('/chat', [SupplierChatController::class, 'send'])->name('chat.send');
 });

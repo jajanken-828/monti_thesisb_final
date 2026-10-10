@@ -25,6 +25,39 @@ use Inertia\Inertia;
 class CrmInquiryController extends Controller
 {
     /**
+     * Credit snapshot for one client (ECO credit-check drawer).
+     * {client} is implicitly bound (hashed keys resolve via
+     * Client::resolveRouteBinding).
+     */
+    public function creditCheck(\App\Models\Crm\Client $client)
+    {
+        $client->load(['creditAccount', 'purchaseOrders']);
+
+        $orders = $client->purchaseOrders->map(fn ($o) => [
+            'id' => $o->id,
+            'po_number' => $o->po_number,
+            'total_amount' => (float) $o->total_amount,
+            'status' => $o->status,
+            'created_at' => $o->created_at?->format('Y-m-d'),
+        ]);
+
+        return response()->json([
+            'client' => [
+                'id' => $client->id,
+                'company_name' => $client->company_name,
+                'contact_person' => $client->contact_person,
+                'credit_limit' => (float) ($client->credit_limit ?? 0),
+            ],
+            'credit_account' => $client->creditAccount ? [
+                'outstanding_balance' => (float) $client->creditAccount->outstanding_balance,
+                'is_good_payer' => (bool) $client->creditAccount->is_good_payer,
+            ] : null,
+            'orders_count' => $orders->count(),
+            'orders' => $orders,
+        ]);
+    }
+
+    /**
      * Display a listing of the inquiries.
      */
     public function index()
@@ -330,8 +363,11 @@ class CrmInquiryController extends Controller
 
     /**
      * Schedule a meeting for an inquiry.
+     * NOTE: {inquiry} is implicitly bound (hashed keys resolve via
+     * Inquiry::resolveRouteBinding), so this receives the model directly —
+     * do NOT hash-decode it again (that path 500s on the model instance).
      */
-    public function setMeeting(Request $request, $key)
+    public function setMeeting(Request $request, Inquiry $inquiry)
     {
         $request->validate([
             // Meetings can only be set for today or a future date —
@@ -341,7 +377,6 @@ class CrmInquiryController extends Controller
             'type'         => 'nullable|string|in:video,phone,onsite',
         ]);
 
-        $inquiry     = Inquiry::findOrFail(InquiryHash::decodeOrFail((string) $key));
         $meetingData = [
             'scheduled_at' => $request->scheduled_at,
             'location'     => $request->location ?? 'Not specified',

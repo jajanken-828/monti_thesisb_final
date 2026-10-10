@@ -113,6 +113,12 @@ export const manModule = {
         // backend auto-grant, which is also reflected in this list.
         const can = (permKey) => ctx.hasModulePermission('MAN', permKey);
         const hasStaffEntry = can('production') || can('dashboard');
+        // Every plant role workspace link (including its Dashboard tab) is
+        // gated by page.permission:production,view on the backend — a
+        // Dashboard-only grant can never open any of them, so role links
+        // require the production grant. Without it the menu stays empty
+        // (module hidden) instead of offering links that only 403.
+        const hasRoleWorkspace = can('production');
 
         const qualityCheckerChildren = [
             { label: 'Dashboard', href: '/dashboard/man/checker-quality', icon: LayoutDashboard },
@@ -173,7 +179,7 @@ export const manModule = {
         if (isManufacturingSupervisor) {
             children = managerChildren.filter(child => !child.permKey || can(child.permKey))
 
-            if (ctx.supervisedDepartment && hasStaffEntry) {
+            if (ctx.supervisedDepartment && hasRoleWorkspace) {
                 const staffDropdowns = departmentStaffDropdowns(ctx)
                 if (staffDropdowns.length) {
                     children.push({ isDivider: true, label: '── Department Staff ──' })
@@ -182,9 +188,11 @@ export const manModule = {
             }
         } else {
             // Case 2: regular staff with a single manufacturing_role.
-            // Role pages require production (or dashboard) — without a usable
-            // grant the menu stays empty so the sidebar hides this module.
-            if (!hasStaffEntry) {
+            // Role pages require production — without a usable grant the
+            // menu stays empty so the sidebar hides this module (a
+            // Dashboard-only grant opens nothing: the staff entry only
+            // redirects into the production-gated workspace).
+            if (!hasRoleWorkspace) {
                 return []
             }
             const manufacturingRole = user?.manufacturing_role

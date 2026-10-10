@@ -62,7 +62,7 @@ class OrderLifecycleService
     ];
 
     public const PO_TRANSITIONS = [
-        'credit_review' => ['pending_client_approval', 'approved', 'on_hold', 'cancelled'],
+        'credit_review' => ['tier_assignment', 'pending_client_approval', 'approved', 'on_hold', 'cancelled'],
         'tier_assignment' => ['pending_client_approval', 'approved', 'on_hold', 'cancelled'],
         'pending_client_approval' => ['approved', 'on_hold', 'cancelled'],
         'approved' => ['released_to_production', 'on_hold', 'cancelled'],

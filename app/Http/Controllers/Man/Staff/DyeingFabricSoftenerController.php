@@ -15,11 +15,17 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
 {
     public function index()
     {
+        // Checker gate: fabrics at 'softener' with no live job row yet
+        // ('softened' awaiting QC, or 'squeezed' already moved on). Fabrics
+        // the checker sent back for rework ('resoften') re-appear here so
+        // staff can redo them; recorded work sits with the checker until
+        // approved and never lingers in this queue.
         $pendingCount = Fabric::where('status', 'softener')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('softener_jobs')
-                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id');
+                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id')
+                    ->whereIn('softener_jobs.status', ['softened', 'squeezed']);
             })
             ->count();
         $recentJobs = SoftenerJob::with('fabric')
@@ -32,7 +38,8 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('softener_jobs')
-                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id');
+                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id')
+                    ->whereIn('softener_jobs.status', ['softened', 'squeezed']);
             })
             ->orderBy('created_at', 'asc')
             ->take(3)
@@ -67,16 +74,18 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
 
     public function dyeingFabricSoftener()
     {
-        // Only fabrics that are AT the softener stage AND don't already have a
-        // softener job recorded. Once a job is created, the fabric stays at
-        // status 'softener' until the quality checker approves it — so without
-        // this exclusion, it would keep showing up as "pending" here forever.
+        // Only fabrics that are AT the softener stage AND have no live job
+        // row yet ('softened' awaiting QC, or 'squeezed' already moved on).
+        // Fabrics the checker sent back for rework ('resoften') re-appear
+        // here for redo; recorded work stays at status 'softener' with the
+        // quality checker until approved.
         $fabrics = Fabric::with('machine', 'salesOrder')
             ->where('status', 'softener')
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('softener_jobs')
-                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id');
+                    ->whereColumn('softener_jobs.fabric_id', 'fabrics.id')
+                    ->whereIn('softener_jobs.status', ['softened', 'squeezed']);
             })
             ->get();
 
@@ -139,6 +148,17 @@ class DyeingFabricSoftenerController extends ManufacturingStaffController
                 if ($fabric->status !== 'softener') {
                     continue;
                 }
+
+                // Skip fabrics already recorded and awaiting QC; clear prior
+                // checker-rejected ('resoften') rows so the redo replaces
+                // them and the checker sees a single fresh job. Fabrics
+                // holding any other job row (e.g. already squeezed) are not
+                // re-workable here — they belong to a later gate.
+                $existingStates = SoftenerJob::where('fabric_id', $fabric->id)->pluck('status')->all();
+                if (in_array('softened', $existingStates, true) || in_array('squeezed', $existingStates, true)) {
+                    continue;
+                }
+                SoftenerJob::where('fabric_id', $fabric->id)->where('status', 'resoften')->delete();
 
                 // Create softener job
                 SoftenerJob::create([

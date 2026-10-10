@@ -298,16 +298,22 @@
                                 </div>
                             </div>
 
-                            <!-- Sent: Accept / Reject -->
-                            <div v-if="quotation.status === 'sent'" class="relative flex gap-2 pt-1">
-                                <button @click="openRejectModal(quotation)"
-                                    class="flex-1 py-2 border border-red-200 dark:border-red-900 text-red-500 rounded-xl text-[9px] font-black uppercase hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition">
-                                    Reject
+                            <!-- Sent: View document first, then Accept / Reject -->
+                            <div v-if="quotation.status === 'sent'" class="relative pt-1 space-y-2">
+                                <button @click="openQuotationPreview(quotation)"
+                                    class="w-full py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:scale-[1.01] active:scale-95 transition-all">
+                                    <Eye class="h-3 w-3" /> View Quotation
                                 </button>
-                                <button @click="openAcceptModal(quotation)"
-                                    class="flex-1 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-                                    Accept
-                                </button>
+                                <div class="flex gap-2">
+                                    <button @click="openRejectModal(quotation)"
+                                        class="flex-1 py-2 border border-red-200 dark:border-red-900 text-red-500 rounded-xl text-[9px] font-black uppercase hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95 transition">
+                                        Reject
+                                    </button>
+                                    <button @click="openAcceptModal(quotation)"
+                                        class="flex-1 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[9px] font-black uppercase shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+                                        Accept
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Accepted: Preview / Download + Trash -->
@@ -531,37 +537,6 @@
                         <textarea v-model="acceptModal.notes" rows="2"
                             class="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition resize-none"
                             placeholder="Notes (optional)"></textarea>
-                        <!-- Attachments -->
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Attachments (Optional)</label>
-                                <button type="button" @click="$refs.acceptFileInput.click()"
-                                    class="text-xs font-semibold text-blue-600 hover:text-blue-700">
-                                    + Add Files
-                                </button>
-                            </div>
-                            <div v-if="acceptModal.files.length" class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                                <div v-for="(file, i) in acceptModal.files" :key="i"
-                                    class="relative group h-14 w-14 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                                    <img v-if="file.type.startsWith('image/')" :src="getFilePreview(file)"
-                                        class="h-full w-full object-cover" />
-                                    <div v-else class="h-full w-full flex items-center justify-center">
-                                        <FileText class="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition">
-                                        <button type="button" @click="previewAcceptFile(file)"
-                                            class="p-1.5 bg-white/20 rounded-lg">
-                                            <Eye class="h-3 w-3 text-white" />
-                                        </button>
-                                        <button type="button" @click="confirmRemoveAcceptFile(i)"
-                                            class="p-1.5 bg-red-500 rounded-lg">
-                                            <Trash2 class="h-3 w-3 text-white" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <input ref="acceptFileInput" type="file" class="hidden" multiple @change="onAcceptFilesSelected" />
                         <!-- Submit -->
                         <button type="submit" :disabled="acceptModal.submitting"
                             class="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-black text-xs uppercase tracking-wide flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all">
@@ -718,6 +693,7 @@
                         </div>
                         <div class="relative flex items-center gap-2">
                             <button
+                                v-if="quotationPreviewModal.quotation?.status === 'accepted'"
                                 @click="downloadQuotationPDF(quotationPreviewModal.quotation)"
                                 :disabled="quotationPreviewModal.downloading"
                                 class="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 rounded-xl text-xs font-black uppercase hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all shadow-lg disabled:opacity-60">
@@ -725,6 +701,7 @@
                                 <Download v-else class="h-3.5 w-3.5" />
                                 <span class="hidden sm:inline">Download PDF</span>
                             </button>
+                            <span v-else class="hidden sm:inline text-[10px] font-bold uppercase tracking-widest text-blue-100/70">Accept to enable PDF download</span>
                             <button @click="quotationPreviewModal.show = false"
                                 class="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/35 hover:rotate-90 transition-all">
                                 <X class="h-4 w-4" />
@@ -735,8 +712,8 @@
                     <!-- Document preview body -->
                     <div class="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6">
                         <div v-if="quotationPreviewModal.quotation" id="quotation-doc"
-                            class="bg-white shadow-lg mx-auto"
-                            style="max-width:680px; padding:40px 48px; font-family:'Times New Roman',Times,serif;">
+                            class="bg-white shadow-lg mx-auto overflow-y-auto"
+                            style="width:100%;max-width:620px;aspect-ratio:210/297;max-height:100%;padding:40px 48px;font-family:'Times New Roman',Times,serif;">
 
                             <!-- Company Header -->
                             <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:10px;">
@@ -892,9 +869,8 @@ const poModal = ref({ show: false, files: [], notes: '', submitting: false });
 const poFileInput = ref(null);
 
 const rejectModal = ref({ show: false, quotation: null, reason: '', requestNew: false, submitting: false });
-const acceptModal = ref({ show: false, quotation: null, notes: '', files: [], submitting: false });
+const acceptModal = ref({ show: false, quotation: null, notes: '', submitting: false });
 const trashModal = ref({ show: false, quotation: null, notes: '', submitting: false });
-const acceptFileInput = ref(null);
 const previewModal = ref({ show: false, title: '', files: [], activeFile: null });
 
 // Quotation preview/download modal
@@ -1086,24 +1062,12 @@ const handleSend = async () => {
     }
 };
 
-const openAcceptModal = (quotation) => { acceptModal.value = { show: true, quotation, notes: '', files: [], submitting: false }; };
-const onAcceptFilesSelected = (e) => { acceptModal.value.files.push(...Array.from(e.target.files)); e.target.value = ''; };
-const previewAcceptFile = (file) => { previewModal.value = { show: true, title: "Selected File", files: acceptModal.value.files, activeFile: file }; };
-
-const confirmRemoveAcceptFile = (index) => {
-    showDialog('confirm', 'Remove File', 'Do you want to remove this attachment from the quotation acceptance?', () => {
-        acceptModal.value.files.splice(index, 1);
-    });
-};
+const openAcceptModal = (quotation) => { acceptModal.value = { show: true, quotation, notes: '', submitting: false }; };
 
 const submitAccept = () => {
     showDialog('confirm', 'Accept Quotation', 'Do you confirm that you accept this quotation? You will be able to send your Purchase Order afterwards.', () => {
         acceptModal.value.submitting = true;
-        const formData = new FormData();
-        formData.append('notes', acceptModal.value.notes);
-        acceptModal.value.files.forEach((file, index) => formData.append(`files[${index}]`, file));
-        router.post(route('client.quotation.accept', acceptModal.value.quotation.id), formData, {
-            forceFormData: true,
+        router.post(route('client.quotation.accept', acceptModal.value.quotation.id), { notes: acceptModal.value.notes }, {
             onSuccess: () => { acceptModal.value.show = false; },
             onFinish: () => { acceptModal.value.submitting = false; }
         });

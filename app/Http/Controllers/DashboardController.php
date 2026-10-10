@@ -243,6 +243,18 @@ class DashboardController extends Controller
                     && empty($user->is_manufacturing_supervisor)) {
                     continue;
                 }
+                // Plant staff entry is only a redirector into the
+                // production-gated role workspace: a Dashboard-only grant
+                // (production disabled/missing, no native auto-access) can
+                // never open anything behind it, so skip it here and let the
+                // user land on another usable page — or on the staff entry's
+                // friendly limited-access notice instead of a raw 403.
+                if ($module === 'MAN' && $page === 'dashboard'
+                    && strtolower($position) === 'staff'
+                    && empty($user->is_manufacturing_supervisor)
+                    && ! $this->manRoleWorkspaceReachable($user)) {
+                    continue;
+                }
                 if (Route::has($routeName)) {
                     return $routeName;
                 }
@@ -305,6 +317,7 @@ class DashboardController extends Controller
                 'dashboard' => 'eco.dashboard',
                 'store' => 'eco.store',
                 'supplier' => 'eco.suppliers',
+                'client' => 'eco.clients',
                 'credit' => 'eco.credit',
                 'push' => 'eco.push',
             ],
@@ -361,6 +374,37 @@ class DashboardController extends Controller
         ];
 
         return $map[strtoupper($module)] ?? [];
+    }
+
+    /**
+     * Whether plain MAN plant staff can actually open their role workspace:
+     * a usable MAN production grant, or native auto-access (MAN staff with
+     * zero explicit MAN rows). Mirrors CheckPagePermission semantics.
+     */
+    protected function manRoleWorkspaceReachable($user): bool
+    {
+        if (strtoupper($user->role ?? '') !== 'MAN') {
+            return false;
+        }
+
+        $usableProduction = PagePermission::where('user_id', $user->id)
+            ->whereIn('module', ['MAN', 'man'])
+            ->whereRaw('LOWER(page) = ?', ['production'])
+            ->where(function ($q) {
+                $q->whereIn('permission_level', ['view', 'edit'])
+                    ->orWhereNull('permission_level');
+            })
+            ->exists();
+
+        if ($usableProduction) {
+            return true;
+        }
+
+        $hasManExplicit = PagePermission::where('user_id', $user->id)
+            ->whereIn('module', ['MAN', 'man'])
+            ->exists();
+
+        return ! $hasManExplicit && in_array(strtolower($user->position ?? ''), ['manager', 'staff'], true);
     }
 
     /**

@@ -20,6 +20,7 @@ const props = defineProps({
     clients: { type: Array, default: () => [] },
     products: { type: Array, default: () => [] },
     materials: { type: Array, default: () => [] },
+    orders: { type: Array, default: () => [] },
     auth: Object,
 });
 
@@ -29,36 +30,54 @@ const showForm = ref(false);
 const editingId = ref(null);
 const processing = ref(false);
 
-// Form for creating/editing recipe
+// Form for creating/editing recipe.
+// materials = { material_id: kg-per-unit qty } — the stock check multiplies
+// each qty straight by the order quantity.
 const form = useForm({
     client_id: '',
     product_id: '',
     yarn_type: '',
     dye_color: '',
     weave_design: '',
-    materials: [], // array of material IDs (no quantity)
+    materials: {},
+    order_id: '',
 });
 
-// Material selection (no quantity)
+// Material picker (id + per-unit qty in kg)
 const selectedMaterialId = ref('');
+const newMaterialQty = ref(1);
 
 // Add material to recipe
 const addMaterialToRecipe = () => {
     if (!selectedMaterialId.value) return;
     const matId = parseInt(selectedMaterialId.value);
-    if (form.materials.includes(matId)) {
-        alert('Material already added.');
+    if (form.materials[matId] !== undefined) {
+        alert('Material already added — adjust its quantity below.');
         return;
     }
-    form.materials.push(matId);
+    const qty = Number(newMaterialQty.value);
+    if (!(qty > 0)) {
+        alert('Quantity must be above zero (kg per 1 unit ordered).');
+        return;
+    }
+    form.materials[matId] = qty;
     selectedMaterialId.value = '';
+    newMaterialQty.value = 1;
 };
 
 // Remove material from recipe
 const removeMaterialFromRecipe = (materialId) => {
-    const index = form.materials.indexOf(materialId);
-    if (index > -1) form.materials.splice(index, 1);
+    delete form.materials[materialId];
 };
+
+// Orders of the chosen client — a formula can be pinned to one specific order.
+const clientOrders = computed(() => {
+    if (!form.client_id) return [];
+    return (props.orders ?? []).filter((o) => Number(o.client_id) === Number(form.client_id));
+});
+
+// Orders currently using a recipe (used-by column + edit context).
+const recipeOrders = (recipeId) => (props.orders ?? []).filter((o) => Number(o.recipe_id) === Number(recipeId));
 
 // Reset form
 const resetForm = () => {
@@ -67,7 +86,8 @@ const resetForm = () => {
     form.yarn_type = '';
     form.dye_color = '';
     form.weave_design = '';
-    form.materials = [];
+    form.materials = {};
+    form.order_id = '';
     form.clearErrors();
     editingId.value = null;
 };
@@ -80,8 +100,10 @@ const openEdit = (recipe) => {
     form.yarn_type = recipe.yarn_type;
     form.dye_color = recipe.dye_color;
     form.weave_design = recipe.weave_design;
-    // Convert materials object keys to array of IDs
-    form.materials = Object.keys(recipe.materials || {}).map(id => parseInt(id));
+    // Keep stored per-material quantities (kg per unit ordered).
+    form.materials = { ...(recipe.materials || {}) };
+    form.order_id = '';
+    form.clearErrors();
     showForm.value = true;
 };
 
@@ -91,24 +113,28 @@ const submitForm = () => {
         alert('Please fill all required fields.');
         return;
     }
-    if (form.materials.length === 0) {
+    const ids = Object.keys(form.materials);
+    if (ids.length === 0) {
         alert('Please add at least one material to the recipe.');
         return;
     }
+    for (const id of ids) {
+        if (!(Number(form.materials[id]) > 0)) {
+            alert('Every material needs a quantity above zero (kg per 1 unit ordered).');
+            return;
+        }
+    }
     processing.value = true;
-    
-    // Convert materials array to object with quantity = 1 for storage compatibility
-    const materialsObj = {};
-    form.materials.forEach(id => { materialsObj[id] = 1; });
-    
+
     const payload = {
         ...form.data(),
-        materials: materialsObj,
+        materials: Object.fromEntries(ids.map((id) => [id, Number(form.materials[id])])),
+        order_id: form.order_id || undefined,
     };
-    
+
     const url = editingId.value ? route('inv.bom.update', editingId.value) : route('inv.bom.store');
     const method = editingId.value ? 'put' : 'post';
-    
+
     router[method](url, payload, {
         preserveScroll: true,
         onSuccess: () => {
@@ -217,7 +243,8 @@ const getMaterialName = (id) => {
                                     <th class="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">Yarn Type</th>
                                     <th class="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">Dye Color</th>
                                     <th class="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">Weave Design</th>
-                                    <th class="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">Materials</th>
+                                    <th class="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">Formula · kg/unit</th>
+                                    <th class="px-5 py-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400">Used By Orders</th>
                                     <th class="px-5 py-3.5 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-gray-400 w-24">Actions</th>
                                 </tr>
                             </thead>
@@ -231,9 +258,17 @@ const getMaterialName = (id) => {
                                     <td class="px-5 py-4">
                                         <div class="flex flex-wrap gap-1">
                                             <span v-for="(qty, matId) in recipe.materials" :key="matId" class="text-[10px] font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
-                                                {{ getMaterialName(parseInt(matId)) }}
+                                                {{ getMaterialName(parseInt(matId)) }} × {{ qty }}/unit
                                             </span>
                                         </div>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <div v-if="recipeOrders(recipe.id).length" class="flex flex-wrap gap-1">
+                                            <span v-for="o in recipeOrders(recipe.id)" :key="o.id" class="text-[10px] font-mono font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full ring-1 ring-indigo-100 dark:ring-indigo-800">
+                                                {{ o.jo_number }}
+                                            </span>
+                                        </div>
+                                        <span v-else class="text-[11px] text-slate-400 italic">Shared formulation</span>
                                     </td>
                                     <td class="px-5 py-4 text-center">
                                         <div class="flex items-center justify-center gap-2">
@@ -309,29 +344,51 @@ const getMaterialName = (id) => {
                                 </div>
                             </div>
 
-                            <!-- Materials Selector (no quantity) -->
+                            <!-- Materials Formula (detailed quantities) -->
                             <div>
-                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 block">Raw Materials *</label>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Formula · kg per 1 unit ordered *</label>
+                                <p class="text-[11px] text-slate-400 mb-2">Each quantity is multiplied straight by the order qty in stock checks — enter kg of raw material per 1 unit (e.g. 1 kg yarn / 0.02 kg dye per kg fabric).</p>
                                 <div class="bg-slate-50 dark:bg-zinc-800/50 rounded-3xl p-4 border border-gray-100 dark:border-zinc-800">
                                     <!-- Add new material -->
-                                    <div class="flex gap-2 mb-4">
+                                    <div class="flex flex-col sm:flex-row gap-2 mb-4">
                                         <select v-model="selectedMaterialId" class="flex-1 px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-2xl text-gray-900 dark:text-white outline-none">
                                             <option value="">Select material...</option>
                                             <option v-for="mat in materials" :key="mat.id" :value="mat.id">{{ mat.mat_id }} – {{ mat.name }} ({{ mat.unit }})</option>
                                         </select>
+                                        <input v-model.number="newMaterialQty" type="number" step="0.0001" min="0.0001" placeholder="kg/unit"
+                                            class="w-full sm:w-32 px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-2xl text-gray-900 dark:text-white outline-none font-mono font-bold" />
                                         <button @click="addMaterialToRecipe" :disabled="!selectedMaterialId" class="px-4 py-2 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50">Add</button>
                                     </div>
 
                                     <!-- List of added materials -->
-                                    <div v-if="form.materials.length === 0" class="text-center text-slate-400 py-4 text-sm">No materials added yet.</div>
-                                    <div v-for="matId in form.materials" :key="matId" class="flex items-center justify-between gap-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0">
-                                        <div class="flex-1">
-                                            <span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ getMaterialName(matId) }}</span>
+                                    <div v-if="Object.keys(form.materials).length === 0" class="text-center text-slate-400 py-4 text-sm">No materials added yet.</div>
+                                    <div v-for="(qty, matId) in form.materials" :key="matId" class="flex items-center gap-2 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0">
+                                        <div class="flex-1 min-w-0">
+                                            <span class="font-mono text-sm font-bold text-gray-900 dark:text-white">{{ getMaterialName(parseInt(matId)) }}</span>
                                         </div>
-                                        <button @click="removeMaterialFromRecipe(matId)" class="flex h-8 w-8 items-center justify-center rounded-xl text-rose-500 hover:bg-rose-600 hover:text-white transition-all">
+                                        <input v-model.number="form.materials[matId]" type="number" step="0.0001" min="0.0001"
+                                            class="w-28 px-3 py-2 text-sm bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-700 rounded-xl text-gray-900 dark:text-white outline-none font-mono font-bold focus:ring-2 focus:ring-indigo-500/30" />
+                                        <span class="text-[10px] font-bold text-slate-400 w-14">kg/unit</span>
+                                        <button @click="removeMaterialFromRecipe(parseInt(matId))" class="flex h-8 w-8 items-center justify-center rounded-xl text-rose-500 hover:bg-rose-600 hover:text-white transition-all">
                                             <Trash2 class="w-4 h-4" />
                                         </button>
                                     </div>
+                                </div>
+                                <div v-if="form.errors.materials" class="text-rose-500 text-xs mt-1">{{ form.errors.materials }}</div>
+                            </div>
+
+                            <!-- Pin to a specific client order -->
+                            <div>
+                                <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Apply To Specific Order (optional)</label>
+                                <p class="text-[11px] text-slate-400 mb-2">Pin this formula to one order of the chosen client. Empty = shared formulation for the client + product.</p>
+                                <select v-model="form.order_id" :disabled="!form.client_id"
+                                    class="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-2xl text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:opacity-50">
+                                    <option value="">Shared — no specific order</option>
+                                    <option v-for="o in clientOrders" :key="o.id" :value="o.id">{{ o.jo_number }} · {{ o.quantity }} units · {{ o.status }}</option>
+                                </select>
+                                <div v-if="editingId && recipeOrders(editingId).length" class="mt-2 flex flex-wrap gap-1">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider w-full">Currently used by:</span>
+                                    <span v-for="o in recipeOrders(editingId)" :key="o.id" class="text-[10px] font-mono font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full">{{ o.jo_number }}</span>
                                 </div>
                             </div>
                         </div>

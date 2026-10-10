@@ -138,20 +138,41 @@ class CheckerQualityController extends ManufacturingStaffController
     }
 
     // ========== Fabric Actions ==========
+    // Gate 1 — knitting output. The checker approves the fabric into dyeing
+    // (or softener for lots that skip dyeing) or rejects it to the rejected
+    // pile (manager recolor / total-reject flow).
 
     public function passFabric(Request $request, $fabricId)
     {
         $validated = $request->validate([
-            'destination' => 'required|in:dyeing,softener',
+            'action' => 'required|in:approve,reject',
+            'destination' => 'required_if:action,approve|in:dyeing,softener',
+            'rejection_reason' => 'required_if:action,reject|string|nullable|max:500',
         ]);
 
         $fabric = Fabric::findOrFail($fabricId);
+        if ($fabric->status !== 'pending') {
+            return back()->with('error', 'This fabric already left the knitting gate.');
+        }
+
+        if ($validated['action'] === 'reject') {
+            $fabric->update([
+                'status' => 'rejected',
+                'rejection_action' => 'recolor',
+                'rejection_reason' => $validated['rejection_reason'] ?? null,
+            ]);
+
+            return redirect()->back()->with('message', 'Fabric rejected and sent to the rejected pile.');
+        }
+
         $fabric->update(['status' => $validated['destination']]);
 
-        return redirect()->back()->with('message', 'Fabric passed to ' . $validated['destination']);
+        return redirect()->back()->with('message', 'Knitting approved. Fabric passed to ' . $validated['destination']);
     }
 
     // ========== Dye Actions ==========
+    // Gate 2 — dye output. Fabric stays 'dyeing' (set only by this gate or a
+    // manager recolor) until the checker approves it to softener or rejects it.
 
     public function passDye(Request $request, $dyeId)
     {
@@ -160,12 +181,15 @@ class CheckerQualityController extends ManufacturingStaffController
             'rejection_reason' => 'required_if:action,reject|string|nullable|max:500',
         ]);
 
-        $dye = DyeJob::findOrFail($dyeId);
+        $dye = DyeJob::with('fabric')->findOrFail($dyeId);
         $fabric = $dye->fabric;
+        if (! $fabric || $fabric->status !== 'dyeing') {
+            return back()->with('error', 'This dye job already left the dyeing gate.');
+        }
 
         if ($validated['action'] === 'quality') {
             $fabric->update(['status' => 'softener']);
-            return redirect()->back()->with('message', 'Fabric passed to softener stage.');
+            return redirect()->back()->with('message', 'Dyeing approved. Fabric passed to softener stage.');
         } else {
             $fabric->update([
                 'status' => 'rejected',
@@ -177,6 +201,8 @@ class CheckerQualityController extends ManufacturingStaffController
     }
 
     // ========== Softener Actions ==========
+    // Gate 3 — softener output. Fabric stays 'softener' until the checker
+    // approves it to squeezer or sends it back for re-softening.
 
     public function passSoftener(Request $request, $softenerId)
     {
@@ -184,36 +210,67 @@ class CheckerQualityController extends ManufacturingStaffController
             'action' => 'required|in:quality,resoften',
         ]);
 
-        $softener = SoftenerJob::findOrFail($softenerId);
+        $softener = SoftenerJob::with('fabric')->findOrFail($softenerId);
         $fabric = $softener->fabric;
+        if (! $fabric || $fabric->status !== 'softener') {
+            return back()->with('error', 'This softener job already left the softener gate.');
+        }
 
         if ($validated['action'] === 'quality') {
             $fabric->update(['status' => 'squeezer']);
-            return redirect()->back()->with('message', 'Fabric passed to squeezer.');
+            return redirect()->back()->with('message', 'Softening approved. Fabric passed to squeezer.');
         } else {
             $fabric->update(['status' => 'softener']);
             $softener->update(['status' => 'resoften']);
-            return redirect()->back()->with('message', 'Fabric sent back for re-softening.');
+            return redirect()->back()->with('message', 'Softening not approved. Fabric sent back for re-softening.');
         }
     }
 
     // ========== Squeezer Actions ==========
+    // Gate 4 — squeezer output. Fabric stays 'squeezer' until the checker
+    // approves it to iron or sends it back for re-squeezing (the failed job
+    // row is removed so the redo replaces it instead of duplicating).
 
     public function passSqueezer(Request $request, $squeezerId)
     {
-        $squeezer = SqueezerJob::findOrFail($squeezerId);
-        $fabric = $squeezer->softenerJob->fabric;
-        $fabric->update(['status' => 'iron']);
+        $validated = $request->validate([
+            'action' => 'required|in:quality,resqueeze',
+        ]);
 
-        return redirect()->back()->with('message', 'Fabric passed to ironing stage.');
+        $squeezer = SqueezerJob::with('softenerJob.fabric')->findOrFail($squeezerId);
+        $fabric = $squeezer->softenerJob?->fabric;
+        if (! $fabric || $fabric->status !== 'squeezer') {
+            return back()->with('error', 'This squeezer job already left the squeezer gate.');
+        }
+        // Iron work already recorded downstream — re-squeezing now would
+        // orphan it. Reject the iron job first, then send this back.
+        if ($squeezer->ironJob()->exists()) {
+            return back()->with('error', 'Ironing is already recorded for this fabric — handle the iron gate first.');
+        }
+
+        if ($validated['action'] === 'quality') {
+            $fabric->update(['status' => 'iron']);
+
+            return redirect()->back()->with('message', 'Squeezing approved. Fabric passed to ironing stage.');
+        }
+
+        DB::transaction(function () use ($squeezer, $fabric) {
+            $squeezer->softenerJob()->update(['status' => 'softened']);
+            $squeezer->delete();
+        });
+
+        return redirect()->back()->with('message', 'Squeezing not approved. Fabric sent back for re-squeezing.');
     }
 
     // ========== Iron Actions ==========
+    // Gate 5 — iron output. Fabric stays 'iron' until the checker approves
+    // it to packaging or sends it back for re-ironing (the failed job row
+    // is removed so the redo replaces it instead of duplicating).
 
     public function passIron(Request $request, $ironId)
     {
         $validated = $request->validate([
-            'action' => 'required|in:pack',
+            'action' => 'required|in:pack,reiron',
         ]);
 
         $iron = IronJob::with('squeezerJob.softenerJob.fabric')->findOrFail($ironId);
@@ -232,41 +289,22 @@ class CheckerQualityController extends ManufacturingStaffController
         if (!$fabric) {
             return back()->with('error', 'This iron job has no linked fabric — cannot pack.');
         }
+        if ($fabric->status !== 'iron') {
+            return back()->with('error', 'This iron job already left the ironing gate.');
+        }
 
         if ($validated['action'] === 'pack') {
             $fabric->update(['status' => 'packed']);
+
+            return redirect()->back()->with('message', 'Ironing approved. Fabric packed successfully.');
         }
 
-        return redirect()->back()->with('message', 'Fabric packed successfully.');
+        $iron->delete();
+
+        return redirect()->back()->with('message', 'Ironing not approved. Fabric sent back for re-ironing.');
     }
 
     // ========== Package Actions ==========
-
-    public function assignPackageToOrder(Request $request, $packageId)
-    {
-        $validated = $request->validate([
-            'manufacturing_order_id' => 'required|exists:manufacturing_orders,id',
-        ]);
-
-        $package = Package::findOrFail($packageId);
-        $order = ManufacturingOrder::findOrFail($validated['manufacturing_order_id']);
-
-        $totalInPackage = $package->items->sum('quantity');
-        if ($totalInPackage <= $order->remaining_quantity) {
-            $package->update([
-                'manufacturing_order_id' => $order->id,
-                'status' => 'assigned',
-            ]);
-            $order->decrement('remaining_quantity', $totalInPackage);
-            if ($order->remaining_quantity <= 0) {
-                $order->update(['status' => 'completed']);
-            }
-
-            return redirect()->back()->with('message', 'Package assigned to order.');
-        } else {
-            return redirect()->back()->with('error', 'Package quantity exceeds remaining order quantity.');
-        }
-    }
 
     /**
      * Push a manufacturing package to logistics (creates a WarehousePackage).

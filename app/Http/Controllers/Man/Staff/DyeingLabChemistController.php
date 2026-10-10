@@ -122,6 +122,7 @@ class DyeingLabChemistController extends ManufacturingStaffController
             'auxiliaries.*.material_id' => 'required|exists:materials,id',
             'auxiliaries.*.name' => 'nullable|string|max:255',
             'auxiliaries.*.gpl' => 'nullable|numeric|min:0',
+            'liquor_ratio' => 'nullable|string|max:32',
             'formula_notes' => 'nullable|string|max:2000',
             // One or more yarns (designs may combine 2+ yarns): each row is
             // inventory-connected, like dyestuffs/auxiliaries.
@@ -145,10 +146,12 @@ class DyeingLabChemistController extends ManufacturingStaffController
             $formula = [
                 'dyestuffs' => $this->resolveFormulaRows($validated['dyestuffs'] ?? [], 'pct'),
                 'auxiliaries' => $this->resolveFormulaRows($validated['auxiliaries'] ?? [], 'gpl'),
+                'liquor_ratio' => $validated['liquor_ratio'] ?? null,
                 'notes' => $validated['formula_notes'] ?? null,
             ];
 
-            // ID-keyed recipe materials so downstream stock checks resolve.
+            // ID-keyed recipe materials (kg per kg ordered — pct/gpl are
+            // converted inside) so downstream stock checks resolve.
             $materials = $this->recipeMaterialsFromFormula($formula);
             // Yarn(s) are part of the recipe too (kg yarn per kg ordered)
             // so the ECO stock check reads them like recipe #1.
@@ -284,19 +287,33 @@ class DyeingLabChemistController extends ManufacturingStaffController
     }
 
     /**
-     * Recipe material map (material_id => quantity) from a stored formula.
+     * Recipe material map (material_id => KG PER KG ORDERED) from a stored
+     * formula. Unit contract — BomRecord.materials is ALWAYS kg of raw
+     * material per 1 unit of order quantity, because DSS multiplies it
+     * straight by the order qty:
+     *  - dyestuffs are entered as %OWF  → kg/kg = pct / 100
+     *  - auxiliaries are entered as g/L → kg/kg = gpl × liquor L/kg / 1000
+     *    (liquor comes from the trial/sample liquor_ratio, default 1:10)
+     *  - yarns are already entered as kg/kg → used as-is
      * New rows carry material_id; legacy name-only rows are resolved by
      * name and unresolvable ones skipped (never stored as ID 0).
      */
-    protected function recipeMaterialsFromFormula(array $formula): array
+    protected function recipeMaterialsFromFormula(array $formula, ?float $liquorLitersPerKg = null): array
     {
+        $lr = $liquorLitersPerKg ?? self::parseLiquorRatio($formula['liquor_ratio'] ?? null);
         $materials = [];
 
+        // [group, qty key, to-kg-per-kg converter]
+        $groups = [
+            ['dyestuffs', 'pct', fn ($v) => ((float) $v) / 100],
+            ['auxiliaries', 'gpl', fn ($v) => ((float) $v) * $lr / 1000],
+        ];
+
         $legacyNames = [];
-        foreach (['dyestuffs' => 'pct', 'auxiliaries' => 'gpl'] as $group => $qtyKey) {
+        foreach ($groups as [$group, $qtyKey, $convert]) {
             foreach ($formula[$group] ?? [] as $item) {
                 $mid = (int) ($item['material_id'] ?? 0);
-                $qty = (float) ($item[$qtyKey] ?? 0);
+                $qty = $convert($item[$qtyKey] ?? 0);
                 if ($mid > 0) {
                     $materials[$mid] = ($materials[$mid] ?? 0) + $qty;
                 } elseif (! empty($item['name'])) {
@@ -318,6 +335,23 @@ class DyeingLabChemistController extends ManufacturingStaffController
         }
 
         return array_filter($materials, fn ($v) => $v > 0);
+    }
+
+    /**
+     * Parse a liquor ratio ("1:10", "10", 10) into bath liters per kg of
+     * fabric. Falls back to 10.0 (1:10) for missing/garbled values.
+     */
+    protected static function parseLiquorRatio($value): float
+    {
+        if (is_numeric($value)) {
+            $lr = (float) $value;
+            return ($lr > 0 && $lr <= 1000) ? $lr : 10.0;
+        }
+        if (is_string($value) && preg_match('/(\d+(?:\.\d+)?)\s*$/', trim($value), $m)) {
+            $lr = (float) $m[1];
+            return ($lr > 0 && $lr <= 1000) ? $lr : 10.0;
+        }
+        return 10.0;
     }
 
     public function storeTrial(Request $request)

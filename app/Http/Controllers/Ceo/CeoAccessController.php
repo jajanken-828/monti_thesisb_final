@@ -77,6 +77,7 @@ class CeoAccessController extends Controller
             'push' => 'Push Notifications',
             'credit' => 'Credit',
             'supplier' => 'Suppliers',
+            'client' => 'Clients',
         ],
         'ORD' => [
             'dashboard' => 'Dashboard',

@@ -131,6 +131,23 @@ class FinAccessRegressionTest extends TestCase
             $table->string('company_name')->default('N/A');
             $table->timestamps();
         });
+        // Supplier purchase invoices feed the payables sync (empty here).
+        Schema::create('purchase_invoices', function (Blueprint $table) {
+            $table->id();
+            $table->string('invoice_number')->nullable();
+            $table->decimal('amount', 15, 2)->default(0);
+            $table->string('status')->default('unpaid');
+            $table->timestamps();
+            $table->softDeletes();
+        });
+        // Procurement collections feed the cash-flow stats (empty here).
+        Schema::create('procurement_payments', function (Blueprint $table) {
+            $table->id();
+            $table->decimal('amount', 15, 2)->default(0);
+            $table->string('status')->default('pending');
+            $table->date('paid_date')->nullable();
+            $table->timestamps();
+        });
         Schema::create('sales_orders', function (Blueprint $table) {
             $table->id();
             $table->string('jo_number')->nullable();
@@ -145,14 +162,18 @@ class FinAccessRegressionTest extends TestCase
 
     private function makeFinStaff(): User
     {
-        return User::create([
+        // NOTE: role/position/is_active are NOT mass-assignable on User —
+        // persist via query and return fresh, or every module gate 403s.
+        $staff = User::create([
             'name' => 'FIN Staff',
             'email' => 'fin.staff@test.local',
             'password' => Hash::make('password123'),
-            'role' => 'FIN',
-            'position' => 'staff',
-            'is_active' => true,
         ]);
+        User::where('id', $staff->id)->update([
+            'role' => 'FIN', 'position' => 'staff', 'is_active' => true,
+        ]);
+
+        return $staff->fresh();
     }
 
     public function test_fin_staff_can_open_granted_pages(): void

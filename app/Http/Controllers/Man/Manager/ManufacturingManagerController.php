@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Man\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Man\Fabric;
+use App\Models\Man\DyeJob;
 use App\Models\Man\Machine;
 use App\Models\Man\BoilerLog;
 use App\Models\Man\KnittingMachineSetup;
@@ -306,10 +307,19 @@ class ManufacturingManagerController extends Controller
             return back()->with('error', 'Fabric is not in rejected state.');
         }
 
-        $fabric->update([
-            'status' => 'dyeing',
-            'rejection_action' => 'recolor',
-        ]);
+        DB::transaction(function () use ($fabric) {
+            // Redo replaces the failed QC rows: drop this fabric's dye jobs
+            // so it re-queues on the dyeing page (fabrics with a recorded
+            // dye job are otherwise excluded as "awaiting quality check").
+            // Downstream rows cannot exist here — softener/squeezer/iron
+            // work all require later fabric statuses.
+            DyeJob::where('fabric_id', $fabric->id)->delete();
+
+            $fabric->update([
+                'status' => 'dyeing',
+                'rejection_action' => 'recolor',
+            ]);
+        });
 
         return redirect()->back()->with('message', 'Fabric sent back for recoloring.');
     }

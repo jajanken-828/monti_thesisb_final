@@ -82,6 +82,7 @@ return [
         'dashboard' => 'Dashboard',
         'store'     => 'Store',
         'supplier'  => 'Suppliers',
+        'client'    => 'Clients',
         'credit'    => 'Credit',
         'push'      => 'Push',
     ],

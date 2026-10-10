@@ -8,7 +8,7 @@ const { canEdit } = usePageAccess();
 const canEditProduction = computed(() => canEdit('MAN', 'production'));
 import {
     Package, Shirt, Droplet, Factory,
-    CheckCircle, XCircle, ArrowRight,
+    CheckCircle, XCircle,
     Wind, Flame, Truck,
     AlertTriangle, X, Sparkles,
 } from 'lucide-vue-next';
@@ -38,11 +38,13 @@ const tabs = computed(() => [
 const confirmModal   = ref(false);
 const confirmLabel   = ref('');
 const confirmSub     = ref('');
+const confirmOk      = ref('Confirm');
 const confirmAction  = ref(null);
 
-const askConfirm = (label, sub, action) => {
+const askConfirm = (label, sub, action, okLabel = 'Confirm') => {
     confirmLabel.value   = label;
     confirmSub.value     = sub;
+    confirmOk.value      = okLabel;
     confirmAction.value  = action;
     confirmModal.value   = true;
 };
@@ -58,7 +60,16 @@ const cancelConfirm = () => {
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 const passFabric = (fabricId, destination) =>
-    router.post(route('man.staff.checker-quality.pass-fabric', fabricId), { destination });
+    router.post(route('man.staff.checker-quality.pass-fabric', fabricId), { action: 'approve', destination });
+
+const rejectFabricWithReason = (fabric) => {
+    const reason = prompt('Please enter rejection reason:');
+    if (reason !== null && reason.trim() !== '') {
+        router.post(route('man.staff.checker-quality.pass-fabric', fabric.id), { action: 'reject', rejection_reason: reason.trim() });
+    } else if (reason !== null) {
+        alert('Rejection reason is required.');
+    }
+};
 
 const passDye = (dyeId, action, rejectionReason = null) => {
     const data = { action };
@@ -82,27 +93,27 @@ const rejectDyeWithReason = (dye) => {
 const passSoftener = (softenerId, action) =>
     router.post(route('man.staff.checker-quality.pass-softener', softenerId), { action });
 
-const passSqueezer = (squeezerId) =>
-    router.post(route('man.staff.checker-quality.pass-squeezer', squeezerId));
+const passSqueezer = (squeezerId, action) =>
+    router.post(route('man.staff.checker-quality.pass-squeezer', squeezerId), { action }, {
+        preserveScroll: true,
+    });
 
-const passIron = (ironId) =>
-    router.post(route('man.staff.checker-quality.pass-iron', ironId), { action: 'pack' });
+const passIron = (ironId, action) =>
+    router.post(route('man.staff.checker-quality.pass-iron', ironId), { action }, {
+        preserveScroll: true,
+    });
 
-const assignToOrder = (packageId) => {
-    const orderId = prompt('Enter Manufacturing Order ID to assign this package to:');
-    if (orderId && !isNaN(orderId)) {
-        router.post(route('man.staff.checker-quality.assign-package', packageId), { manufacturing_order_id: parseInt(orderId) });
-    } else {
-        alert('Please enter a valid order ID.');
-    }
-};
-
-const pushToLogistics = (packageId) => {
-    if (confirm('Send this package to logistics?')) {
-        router.post(route('man.staff.checker-quality.push-to-logistics', packageId), {}, {
+const pushToLogistics = (pkg) => {
+    const pkgId = typeof pkg === 'object' ? pkg.id : pkg;
+    const code = typeof pkg === 'object' ? pkg.code : `#${pkgId}`;
+    askConfirm(
+        'Push to Logistics?',
+        `Send package ${code} to logistics? This creates the warehouse package record and marks it delivered.`,
+        () => router.post(route('man.staff.checker-quality.push-to-logistics', pkgId), {}, {
             preserveScroll: true,
-        });
-    }
+        }),
+        'Yes, Push to Logistics'
+    );
 };
 </script>
 
@@ -126,7 +137,7 @@ const pushToLogistics = (packageId) => {
                             </p>
                             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Production Pipeline</h1>
                             <span v-if="!canEditProduction" class="mt-2 inline-flex w-fit items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black uppercase tracking-wide text-amber-800">View only</span>
-                            <p class="text-sm text-blue-100/90">Track and advance items through each stage</p>
+                            <p class="text-sm text-blue-100/90">Inspect and approve every stage before it advances</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold ring-1 ring-white/25 backdrop-blur">
@@ -205,6 +216,12 @@ const pushToLogistics = (packageId) => {
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <Droplet class="w-3.5 h-3.5" /> Pass to Dyeing
+                                </button>
+                                <button v-if="canEditProduction"
+                                    @click="rejectFabricWithReason(fabric)"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 hover:bg-rose-100 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
+                                >
+                                    <XCircle class="w-3.5 h-3.5" /> Reject
                                 </button>
                             </div>
                         </div>
@@ -350,10 +367,16 @@ const pushToLogistics = (packageId) => {
                             </div>
                             <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button v-if="canEditProduction"
-                                    @click="passSqueezer(job.id)"
+                                    @click="passSqueezer(job.id, 'quality')"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <CheckCircle class="w-3.5 h-3.5" /> Pass to Iron
+                                </button>
+                                <button v-if="canEditProduction"
+                                    @click="passSqueezer(job.id, 'resqueeze')"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
+                                >
+                                    <Factory class="w-3.5 h-3.5" /> Re-squeeze
                                 </button>
                             </div>
                         </div>
@@ -391,12 +414,18 @@ const pushToLogistics = (packageId) => {
                                     Fabric: <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">{{ iron.squeezer_job?.softener_job?.fabric?.code }}</span>
                                 </p>
                             </div>
-                            <div class="mt-auto">
+                            <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button v-if="canEditProduction"
-                                    @click="passIron(iron.id)"
-                                    class="w-full flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
+                                    @click="passIron(iron.id, 'pack')"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <Package class="w-3.5 h-3.5" /> Pass to Pack
+                                </button>
+                                <button v-if="canEditProduction"
+                                    @click="passIron(iron.id, 'reiron')"
+                                    class="flex-1 flex items-center justify-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-black px-3 py-2.5 rounded-2xl transition active:scale-95"
+                                >
+                                    <Flame class="w-3.5 h-3.5" /> Re-iron
                                 </button>
                             </div>
                         </div>
@@ -438,13 +467,7 @@ const pushToLogistics = (packageId) => {
                             </div>
                             <div class="mt-auto flex flex-col sm:flex-row gap-2">
                                 <button v-if="canEditProduction"
-                                    @click="assignToOrder(pkg.id)"
-                                    class="flex-1 flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl transition hover:-translate-y-0.5 active:scale-95"
-                                >
-                                    <ArrowRight class="w-3.5 h-3.5" /> Assign to Order
-                                </button>
-                                <button v-if="canEditProduction"
-                                    @click="pushToLogistics(pkg.id)"
+                                    @click="pushToLogistics(pkg)"
                                     class="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-3 py-2.5 rounded-2xl shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 active:scale-95"
                                 >
                                     <Truck class="w-3.5 h-3.5" /> Push to Logistics
@@ -485,9 +508,9 @@ const pushToLogistics = (packageId) => {
                         <button
                             @click="runConfirm"
                             type="button"
-                            class="flex-1 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wide shadow-lg shadow-rose-500/25 transition active:scale-95"
+                            class="flex-1 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wide shadow-lg shadow-emerald-500/25 transition active:scale-95"
                         >
-                            Yes, Reject
+                            {{ confirmOk }}
                         </button>
                     </div>
                 </div>

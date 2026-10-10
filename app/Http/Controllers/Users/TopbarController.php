@@ -172,6 +172,7 @@ class TopbarController extends Controller
             ['ECO Dashboard', 'eco.dashboard', 'ECO', 'dashboard'],
             ['Store', 'eco.store', 'ECO', 'store'],
             ['ECO Suppliers', 'eco.suppliers', 'ECO', 'supplier'],
+            ['ECO Clients', 'eco.clients', 'ECO', 'client'],
             ['Credit', 'eco.credit', 'ECO', 'credit'],
             ['Push Center', 'eco.push', 'ECO', 'push'],
             ['ORD Dashboard', 'ord.dashboard', 'ORD', 'dashboard'],

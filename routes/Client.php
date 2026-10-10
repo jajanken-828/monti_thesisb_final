@@ -8,6 +8,7 @@ use App\Http\Controllers\Client\ClientProductsController;
 use App\Http\Controllers\Client\ClientProfileController;
 use App\Http\Controllers\Client\ClientReceivingController;
 use App\Http\Controllers\Client\ClientSupportController;
+use App\Http\Controllers\Client\ClientTrackingController;
 use App\Http\Controllers\Client\OrdersController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,6 +67,11 @@ Route::middleware('auth:client')->prefix('partner')->name('client.')->group(func
     // Orders & Invoices (legacy support)
     Route::get('/orders', [OrdersController::class, 'orders'])->name('orders');
     Route::post('/orders/{order}/accept', [OrdersController::class, 'acceptPurchaseOrder'])->name('orders.accept');
+    // Order Tracking (B2B tracking UI — mirrors PRO/ORD tracking)
+    Route::get('/tracking', [ClientTrackingController::class, 'index'])->name('tracking');
+    Route::get('/tracking/{type}/{id}', [ClientTrackingController::class, 'show'])
+        ->whereIn('type', ['po', 'so', 'PO', 'SO'])
+        ->name('tracking.show');
     Route::get('/invoices', [ClientInvoiceController::class, 'index'])->name('invoices');
     // Detailed invoice: client reviews lines, then accepts and/or sends PO
     Route::get('/invoices/{order}', [ClientInvoiceController::class, 'show'])->name('invoices.show');

@@ -22,6 +22,24 @@ class MessengerController extends Controller
         return $thread;
     }
 
+    /**
+     * Human-readable list preview. Image/file-only messages have an
+     * empty body, so fall back to a 📷/📎 label instead of
+     * "No messages yet".
+     */
+    protected function previewFor(ChatMessage $m): string
+    {
+        $body = trim((string) ($m->body ?? ''));
+        if ($body !== '') {
+            return mb_substr($body, 0, 80);
+        }
+        if (!empty($m->file_path) || !empty($m->file_url)) {
+            $isImage = $m->is_image ?? (bool) preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', (string) ($m->file_name ?? $m->file_path ?? ''));
+            return $isImage ? '📷 Photo' : '📎 Attachment' . (!empty($m->file_name) ? ': ' . $m->file_name : '');
+        }
+        return '📎 Attachment';
+    }
+
     public function threads(Request $request)
     {
         $me = $request->user()->id;
@@ -41,7 +59,7 @@ class MessengerController extends Controller
                     'id' => $p->id, 'name' => $p->name, 'role' => $p->role, 'position' => $p->position,
                     'photo' => $p->profile_photo_path ? '/storage/'.ltrim($p->profile_photo_path, '/') : null,
                 ])->values(),
-                'preview' => $t->latestMessage ? mb_substr($t->latestMessage->body, 0, 80) : null,
+                'preview' => $t->latestMessage ? $this->previewFor($t->latestMessage) : null,
                 'preview_by' => $t->latestMessage?->sender?->name,
                 'at' => $t->latestMessage?->created_at ?? $t->created_at,
                 'unread' => $t->unreadFor($me),

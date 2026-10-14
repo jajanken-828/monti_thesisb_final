@@ -33,10 +33,22 @@ class ClientProductsController extends Controller
                     'colors' => $colorsArray,
                     'colorName' => $p->color_name ?? null,
                     'colorHex' => $p->color_hex ?? null,
-                    'images' => $p->images->map(fn($img) => [
-                        'id' => $img->id,
-                        'url' => $img->url
-                    ])->toArray(),
+                    'images' => $p->images->map(function ($img) {
+                        $raw = $img->url ?? '';
+                        if (empty($raw)) {
+                            return null;
+                        }
+                        if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+                            $url = $raw;
+                        } else {
+                            // Normalize: '/storage/x' stays root-relative; bare
+                            // 'products/x' becomes '/storage/products/x' so the
+                            // <img> tag resolves regardless of stored format.
+                            $clean = ltrim(str_replace('storage/', '', $raw), '/');
+                            $url = $clean === '' ? null : '/storage/' . $clean;
+                        }
+                        return $url ? ['id' => $img->id, 'url' => $url] : null;
+                    })->filter()->values()->toArray(),
                     'stock_on_hand' => $p->stock_on_hand ?? 0,
                 ];
             });

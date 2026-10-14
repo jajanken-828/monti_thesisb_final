@@ -31,7 +31,12 @@ class TopbarController extends Controller
         }
 
         return response()->json([
-            'notifications_unread' => Notification::where('user_id', $user->id)->where('is_read', false)->count(),
+            // Bell = general notifications only. Chat ('message') and memo
+            // items have their own dedicated icons, so they are excluded
+            // here to avoid double-counting.
+            'notifications_unread' => Notification::where('user_id', $user->id)->where('is_read', false)
+                ->whereNotIn('type', ['message', 'messages', 'messenger', 'chat', 'memo', 'memos'])
+                ->count(),
             'messages_unread' => $msgUnread,
             'memos_count' => $this->visibleMemos($user)->count(),
         ]);
@@ -39,14 +44,19 @@ class TopbarController extends Controller
 
     public function notifications(Request $request)
     {
+        // Bell feed excludes chat + memo notifications — those surfaces
+        // have their own icons/panels (messenger + memos).
         $items = Notification::with('creator:id,name')
             ->where('user_id', $request->user()->id)
+            ->whereNotIn('type', ['message', 'messages', 'messenger', 'chat', 'memo', 'memos'])
             ->latest()
             ->take(15)
             ->get();
 
         return response()->json([
-            'unread' => Notification::where('user_id', $request->user()->id)->where('is_read', false)->count(),
+            'unread' => Notification::where('user_id', $request->user()->id)->where('is_read', false)
+                ->whereNotIn('type', ['message', 'messages', 'messenger', 'chat', 'memo', 'memos'])
+                ->count(),
             'items' => $items,
         ]);
     }
@@ -158,6 +168,7 @@ class TopbarController extends Controller
             ['Vendors', 'scm.vendors', 'SCM', 'vendor'],
             ['SCM Analytics', 'scm.analytics', 'SCM', 'analytics'],
             ['Production Orders', 'man.manager.production', 'MAN', 'production'],
+            ['Recipes', 'man.recipes', 'MAN', 'production'],
             ['Rejected Items', 'man.manager.rejected', 'MAN', 'reject'],
             ['Plant Inventory', 'man.inventory.index', 'MAN', 'inventory'],
             ['Logistics Dashboard', 'logistics.dashboard', 'LOG', 'dashboard'],

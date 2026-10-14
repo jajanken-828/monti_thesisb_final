@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\Concerns\LogsOutEveryGuard;
 use App\Models\Hrm\Applicant;
 use App\Models\Hrm\ApplicantStatusHistory;
 use App\Models\Hrm\HrmJobPosting;
@@ -25,6 +26,8 @@ use Inertia\Inertia;
  */
 class ApplicantAuthController extends Controller
 {
+    use LogsOutEveryGuard;
+
     public function create()
     {
         return Inertia::render('Auth/ApplicantRegister', [
@@ -167,10 +170,7 @@ class ApplicantAuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('applicant')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $this->logoutEveryGuard($request);
 
         return redirect()->route('applicant.login');
     }

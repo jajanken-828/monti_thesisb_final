@@ -496,7 +496,7 @@ const closeModal = () => { selectedProduct.value = null; };
                                     class="font-mono text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                                     {{ product.product_id }}
                                 </span>
-                                <span v-if="product.subcategory || product.category"
+                                <span v-if="(product.subcategory || product.category) && (product.subcategory || product.category) !== 'Uncategorized'"
                                     class="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
                                     {{ product.subcategory || product.category }}
                                 </span>
@@ -588,7 +588,7 @@ const closeModal = () => { selectedProduct.value = null; };
                                 <span
                                     class="font-mono text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-md">{{
                                         selectedProduct.product_id }}</span>
-                                <span v-if="selectedProduct.category"
+                                <span v-if="selectedProduct.category && selectedProduct.category !== 'Uncategorized'"
                                     class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full">{{
                                         selectedProduct.category }}</span>
                             </div>

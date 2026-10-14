@@ -86,13 +86,27 @@
                         <div class="absolute left-0 top-5 bottom-5 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-r-full scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300 z-10" />
 
                         <div class="relative overflow-hidden bg-gray-100 dark:bg-zinc-800 h-56">
-                            <div v-if="product.images && product.images.length > 0" class="relative w-full h-full">
-                                <img :src="product.images[currentImageIndex[product.id] || 0]" :alt="product.name"
+                            <div v-if="productImages(product).length > 0" class="relative w-full h-full">
+                                <img :src="productImages(product)[currentImageIndex[product.id] || 0]" :alt="product.name"
                                     class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                <div v-if="product.images.length > 1" class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                                    <button v-for="(_, idx) in product.images" :key="idx"
+                                <!-- Prev / Next arrows (2+ images) -->
+                                <template v-if="productImages(product).length > 1">
+                                    <button @click.stop="prevImage(product.id, productImages(product).length)"
+                                        class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-black/65 active:scale-95" title="Previous photo">
+                                        <ChevronLeft class="h-4 w-4" />
+                                    </button>
+                                    <button @click.stop="nextImage(product.id, productImages(product).length)"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-black/65 active:scale-95" title="Next photo">
+                                        <ChevronRight class="h-4 w-4" />
+                                    </button>
+                                    <span class="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur">
+                                        {{ (currentImageIndex[product.id] || 0) + 1 }}/{{ productImages(product).length }}
+                                    </span>
+                                </template>
+                                <div v-if="productImages(product).length > 1" class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                    <button v-for="(_, idx) in productImages(product)" :key="idx"
                                         @click.stop="setImageIndex(product.id, idx)"
-                                        :class="['w-1.5 h-1.5 rounded-full transition-all', ((currentImageIndex[product.id] || 0) === idx) ? 'bg-white scale-125' : 'bg-white/50']" />
+                                        :class="['h-1.5 rounded-full transition-all', ((currentImageIndex[product.id] || 0) === idx) ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80']" />
                                 </div>
                             </div>
                             <div v-else class="h-full w-full flex items-center justify-center text-gray-300 dark:text-zinc-700">
@@ -113,7 +127,7 @@
                                     <span class="font-mono text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                                         {{ product.sku }}
                                     </span>
-                                    <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full">
+                                    <span v-if="product.category && product.category !== 'Uncategorized'" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded-full">
                                         {{ product.category }}
                                     </span>
                                 </div>
@@ -194,16 +208,25 @@
                             <div class="p-6 sm:p-8 overflow-y-auto flex-1">
                                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div class="space-y-4">
-                                        <div class="bg-gray-100 dark:bg-zinc-800 rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800">
-                                            <img v-if="selectedProduct.images && selectedProduct.images[0]" :src="selectedProduct.images[0]" :alt="selectedProduct.name"
+                                        <div class="relative bg-gray-100 dark:bg-zinc-800 rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+                                            <img v-if="productImages(selectedProduct).length" :src="productImages(selectedProduct)[detailImageIndex]" :alt="selectedProduct.name"
                                                 class="w-full object-cover max-h-80" />
                                             <div v-else class="h-64 flex items-center justify-center text-gray-400">
                                                 <Package class="h-16 w-16" />
                                             </div>
+                                            <template v-if="productImages(selectedProduct).length > 1">
+                                                <button @click="detailPrev" class="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur hover:bg-black/65 active:scale-95">
+                                                    <ChevronLeft class="h-4 w-4" />
+                                                </button>
+                                                <button @click="detailNext" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur hover:bg-black/65 active:scale-95">
+                                                    <ChevronRight class="h-4 w-4" />
+                                                </button>
+                                                <span class="absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-black text-white">{{ detailImageIndex + 1 }}/{{ productImages(selectedProduct).length }}</span>
+                                            </template>
                                         </div>
-                                        <div v-if="selectedProduct.images && selectedProduct.images.length > 1" class="flex gap-2 overflow-x-auto pb-2">
-                                            <img v-for="img in selectedProduct.images" :key="img" :src="img"
-                                                class="h-20 w-20 rounded-2xl object-cover border-2 border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-indigo-500 transition-all hover:-translate-y-0.5" />
+                                        <div v-if="productImages(selectedProduct).length > 1" class="flex gap-2 overflow-x-auto pb-2">
+                                            <img v-for="(img, idx) in productImages(selectedProduct)" :key="img + idx" :src="img" @click="detailImageIndex = idx"
+                                                :class="['h-20 w-20 rounded-2xl object-cover border-2 cursor-pointer transition-all hover:-translate-y-0.5', detailImageIndex === idx ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-200 dark:border-zinc-700 hover:border-indigo-300']" />
                                         </div>
                                     </div>
 
@@ -212,8 +235,8 @@
                                             <h2 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{{ selectedProduct.name }}</h2>
                                             <div class="flex items-center gap-2 mt-2">
                                                 <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ selectedProduct.product_id }}</span>
-                                                <span class="text-xs text-gray-400">•</span>
-                                                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ selectedProduct.category }}</span>
+                                                <span v-if="selectedProduct.category && selectedProduct.category !== 'Uncategorized'" class="text-xs text-gray-400">•</span>
+                                                <span v-if="selectedProduct.category && selectedProduct.category !== 'Uncategorized'" class="text-xs font-bold text-indigo-600 dark:text-indigo-400">{{ selectedProduct.category }}</span>
                                             </div>
                                         </div>
 
@@ -295,6 +318,8 @@ import {
     Package,
     Search,
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     X,
     Eye,
     Weight,
@@ -317,6 +342,15 @@ const selectedCategory = ref('All');
 const showDetailModal = ref(false);
 const selectedProduct = ref(null);
 const currentImageIndex = ref({});
+const detailImageIndex = ref(0);
+
+// Normalize images: backend sends string[] but tolerate {url} objects.
+const productImages = (product) => {
+    if (!product || !product.images) return [];
+    return product.images
+        .map((img) => (typeof img === 'string' ? img : img?.url))
+        .filter(Boolean);
+};
 
 // Derived categories
 const categories = computed(() => {
@@ -361,8 +395,27 @@ const setImageIndex = (id, idx) => {
     currentImageIndex.value = { ...currentImageIndex.value, [id]: idx };
 };
 
+const nextImage = (id, total) => {
+    currentImageIndex.value = { ...currentImageIndex.value, [id]: ((currentImageIndex.value[id] || 0) + 1) % total };
+};
+
+const prevImage = (id, total) => {
+    currentImageIndex.value = { ...currentImageIndex.value, [id]: ((currentImageIndex.value[id] || 0) - 1 + total) % total };
+};
+
+const detailNext = () => {
+    const total = productImages(selectedProduct.value).length;
+    if (total > 1) detailImageIndex.value = (detailImageIndex.value + 1) % total;
+};
+
+const detailPrev = () => {
+    const total = productImages(selectedProduct.value).length;
+    if (total > 1) detailImageIndex.value = (detailImageIndex.value - 1 + total) % total;
+};
+
 const openDetail = (product) => {
     selectedProduct.value = product;
+    detailImageIndex.value = currentImageIndex.value[product.id] || 0;
     showDetailModal.value = true;
 };
 

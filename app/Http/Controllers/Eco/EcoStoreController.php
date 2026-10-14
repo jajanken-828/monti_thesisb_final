@@ -19,19 +19,25 @@ class EcoStoreController extends Controller
             }])
             ->get()
             ->map(function ($product) {
-                
-                // FLATTEN IMAGES: Convert objects to a simple array of URL strings
+
+                // FLATTEN IMAGES: Convert to a simple array of URL strings.
+                // Handles string URLs, /storage/... paths, storage/... paths,
+                // and absolute http(s) URLs so the carousel never breaks.
                 $images = $product->images->map(function ($image) {
-                    // 1. Get the raw path from the DB (checking both 'url' and 'path' columns)
-                    $rawPath = $image->url ?? $image->path;
-
-                    // 2. Clean the path: remove '/storage/' or 'storage/' if it already exists 
-                    // to prevent URLs like 'storage/storage/products/img.jpg'
+                    $rawPath = $image->url ?? $image->path ?? '';
+                    if (empty($rawPath)) {
+                        return null;
+                    }
+                    if (str_starts_with($rawPath, 'http://') || str_starts_with($rawPath, 'https://')) {
+                        return $rawPath;
+                    }
+                    // Normalize to a single storage-relative path, then asset URL.
                     $cleanPath = ltrim(str_replace('storage/', '', $rawPath), '/');
-
-                    // 3. Return the full public URL string
+                    if ($cleanPath === '') {
+                        return null;
+                    }
                     return asset('storage/' . $cleanPath);
-                })->values()->toArray();
+                })->filter()->values()->toArray();
 
                 return [
                     'id' => $product->id,

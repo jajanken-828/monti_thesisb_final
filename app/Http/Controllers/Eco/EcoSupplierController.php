@@ -47,6 +47,10 @@ class EcoSupplierController extends Controller
                     'rejected_at' => $r->rejected_at,
                     'created_at' => $r->created_at,
                     'requirements' => $r->requirements,
+                    // Suppliers have no uploaded logo file (unlike client
+                    // CrmLogoPartner) — directory shows a branded initial
+                    // avatar; logo_url stays null until a logo store exists.
+                    'logo_url' => null,
                     'latest_message' => $supplierId
                         ? SupplierMessage::where('supplier_id', $supplierId)->latest()->first()
                         : null,

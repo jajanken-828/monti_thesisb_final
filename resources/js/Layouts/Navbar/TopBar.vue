@@ -71,6 +71,45 @@ watch(currentUrl, syncModuleScope);
 
 // ─── Logout confirmation ────────────────────────────────────────
 const showLogoutConfirm = ref(false);
+const loggingOut = ref(false);
+const logoutForm = ref(null);
+
+const refreshCsrfToken = () => {
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || csrfToken.value;
+};
+
+// Logout via fetch (instead of a raw native submit) so a stale CSRF token /
+// expired session (HTTP 419) reloads into the true auth state instead of
+// stranding the user on an error page while still logged in. Falls back to
+// the native form submit if the request itself cannot be made (offline…).
+const submitLogout = async () => {
+    if (loggingOut.value) return;
+    loggingOut.value = true;
+    refreshCsrfToken();
+    try {
+        const res = await fetch(logoutHref.value, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken.value, 'Accept': 'text/html' },
+            credentials: 'same-origin',
+            redirect: 'follow',
+        });
+        if (res.ok) {
+            showLogoutConfirm.value = false;
+            window.location.href = '/';
+            return;
+        }
+        if (res.status === 419) {
+            window.location.reload();
+            return;
+        }
+        throw new Error(`Logout failed with status ${res.status}`);
+    } catch {
+        // Last resort: plain native submit (previous behavior).
+        logoutForm.value?.submit();
+    } finally {
+        loggingOut.value = false;
+    }
+};
 
 // ─── Panel plumbing ─────────────────────────────────────────────────
 const openPanel = ref(null); // messenger | memo | notif | settings
@@ -142,6 +181,14 @@ const loadMemos = async () => {
 
 // ─── Messenger ──────────────────────────────────────────────────────
 const threads = ref([]);
+// List preview: image/file-only messages carry an empty body, so show a
+// 📷/📎 label instead of "No messages yet" (backend already sends the
+// label; this is the cached/legacy fallback).
+const previewText = (t) => {
+    const p = (t?.preview ?? '').trim();
+    if (p) return p;
+    return 'No messages yet';
+};
 const activeThread = ref(null);
 const messages = ref([]);
 const draft = ref('');
@@ -558,7 +605,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <header class="sticky top-0 z-40 border-b border-gray-200/70 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90">
+    <header class="sticky top-16 md:top-0 z-40 border-b border-gray-200/70 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90">
         <div class="topbar-row mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 flex-1 items-center gap-2">
                 <!-- Sidebar toggle (drawer on mobile, collapse on desktop) -->
@@ -996,13 +1043,14 @@ onMounted(() => {
                                     class="flex-1 rounded-xl bg-gray-100 py-2.5 text-xs font-black uppercase text-gray-500 hover:bg-gray-200 dark:bg-zinc-800 dark:text-gray-300">
                                     Cancel
                                 </button>
-                                <!-- Native form POST: works even if Inertia router state is stale;
-                                     the session is destroyed server-side, then a full reload lands on /. -->
-                                <form :action="logoutHref" method="POST" class="flex-1">
+                                <!-- Fetch POST with 419 recovery + native fallback:
+                                     the session is destroyed server-side for every
+                                     guard, then a full reload lands on /. -->
+                                <form ref="logoutForm" :action="logoutHref" method="POST" class="flex-1" @submit.prevent="submitLogout">
                                     <input type="hidden" name="_token" :value="csrfToken" />
-                                    <button type="submit"
-                                        class="w-full rounded-xl bg-rose-600 py-2.5 text-xs font-black uppercase text-white hover:bg-rose-700 active:scale-95">
-                                        Log Out
+                                    <button type="submit" :disabled="loggingOut"
+                                        class="w-full rounded-xl bg-rose-600 py-2.5 text-xs font-black uppercase text-white hover:bg-rose-700 active:scale-95 disabled:opacity-60">
+                                        {{ loggingOut ? 'Logging out…' : 'Log Out' }}
                                     </button>
                                 </form>
                             </div>

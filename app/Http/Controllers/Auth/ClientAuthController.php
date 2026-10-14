@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\Concerns\LogsOutEveryGuard;
 use App\Models\Crm\Client;
 use App\Models\Crm\CrmLogoPartner;
 use Illuminate\Auth\Events\Lockout;
@@ -18,6 +19,7 @@ use Inertia\Inertia;
 
 class ClientAuthController extends Controller
 {
+    use LogsOutEveryGuard;
     public function create()
     {
         return Inertia::render('Auth/ClientRegister');
@@ -129,10 +131,7 @@ class ClientAuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('client')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $this->logoutEveryGuard($request);
 
         return redirect()->route('client.login');
     }

@@ -107,7 +107,7 @@ const reloadPage = () => {
         <div :class="sidebarCollapsed ? 'md:pl-0' : 'md:pl-64'"
             class="pt-16 md:pt-0 flex flex-col flex-1 min-h-screen transition-all duration-300">
             <TopBar v-if="!hasError" />
-            <main class="py-8 flex-1 bg-gray-50 dark:bg-zinc-900">
+            <main class="py-8 pb-24 md:pb-8 flex-1 bg-gray-50 dark:bg-zinc-900">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <!-- Location status – always visible -->
                     <div class="mb-4 flex items-center gap-4">

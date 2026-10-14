@@ -182,7 +182,7 @@ const getMaterialName = (id) => {
 </script>
 
 <template>
-    <Head title="Recipes | Inventory" />
+    <Head title="Recipes | Manufacturing" />
     <AuthenticatedLayout>
         <div class="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 dark:from-zinc-950 dark:via-zinc-950 dark:to-indigo-950/30">
             <div class="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-16">

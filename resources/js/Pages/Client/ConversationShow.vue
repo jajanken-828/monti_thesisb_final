@@ -824,7 +824,16 @@ const selectedFiles = ref([]);
 // ── Real-time conversation (no reload) ──────────────────────────
 const liveMessages = ref([...(props.inquiry?.messages ?? [])]);
 
-const scrollToBottom = () => { nextTick(() => { if (messagesContainer.value) messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight; }); };
+const scrollToBottom = () => {
+    // Force to latest chat on open + after images/files load (layout shift).
+    const el = messagesContainer.value;
+    if (!el) return;
+    nextTick(() => {
+        el.scrollTop = el.scrollHeight;
+        requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 300);
+    });
+};
 
 const mergeMessages = (incoming) => {
     const list = Array.isArray(incoming) ? incoming : [incoming];
@@ -1345,7 +1354,11 @@ const colorDotStyle = (color) => {
 };
 
 watch(() => props.inquiry.messages, () => scrollToBottom(), { deep: true });
-onMounted(() => scrollToBottom());
+onMounted(() => {
+    scrollToBottom();
+    // Images shift layout after load — re-pin to bottom.
+    setTimeout(() => scrollToBottom(), 500);
+});
 </script>
 
 <style scoped>

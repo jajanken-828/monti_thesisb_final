@@ -89,8 +89,25 @@
                         </div>
 
                         <div class="relative overflow-hidden bg-gray-100 dark:bg-zinc-800 h-56">
-                            <img v-if="product.images && product.images.length > 0" :src="product.images[0].url" :alt="product.name"
-                                class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            <template v-if="productImages(product).length > 0">
+                                <img :src="productImages(product)[cardIndex(product.id)]" :alt="product.name"
+                                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                <template v-if="productImages(product).length > 1">
+                                    <button @click.stop="prevCardImage(product.id, productImages(product).length)"
+                                        class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-black/65 active:scale-95" title="Previous photo">
+                                        <ChevronLeft class="h-4 w-4" />
+                                    </button>
+                                    <button @click.stop="nextCardImage(product.id, productImages(product).length)"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-black/65 active:scale-95" title="Next photo">
+                                        <ChevronRight class="h-4 w-4" />
+                                    </button>
+                                    <span class="absolute bottom-2 right-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white">{{ cardIndex(product.id) + 1 }}/{{ productImages(product).length }}</span>
+                                    <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                        <button v-for="(_, idx) in productImages(product)" :key="idx" @click.stop="setCardImage(product.id, idx)"
+                                            :class="['h-1.5 rounded-full transition-all', cardIndex(product.id) === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80']" />
+                                    </div>
+                                </template>
+                            </template>
                             <div v-else class="h-full w-full flex items-center justify-center text-gray-300 dark:text-zinc-600">
                                 <Package class="h-16 w-16" />
                             </div>
@@ -130,7 +147,7 @@
                             <div class="mb-2">
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="font-mono text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded">{{ product.sku }}</span>
-                                    <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full uppercase">{{ product.category }}</span>
+                                    <span v-if="product.category && product.category !== 'Uncategorized'" class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full uppercase">{{ product.category }}</span>
                                 </div>
                                 <h3 class="font-black text-gray-900 dark:text-white text-base leading-tight tracking-tight group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">{{ product.name }}</h3>
                             </div>
@@ -250,8 +267,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import { Package, Search, ChevronDown, X, Check, Send, Sparkles } from 'lucide-vue-next';
+import { ref, computed, onMounted } from 'vue';
+import { Package, Search, ChevronDown, ChevronLeft, ChevronRight, X, Check, Send, Sparkles } from 'lucide-vue-next';
 
 const props = defineProps({
     products: {
@@ -270,6 +287,20 @@ const getParsedColors = (colors) => {
         return [];
     }
 };
+
+// ── Image carousel (supports string[] and {url}[] shapes) ──
+const cardImageIndex = ref({});
+const productImages = (product) => {
+    if (!product?.images) return [];
+    return product.images.map((img) => (typeof img === 'string' ? img : img?.url)).filter(Boolean);
+};
+const cardIndex = (id) => cardImageIndex.value[id] || 0;
+const setCardImage = (id, idx) => { cardImageIndex.value = { ...cardImageIndex.value, [id]: idx }; };
+const nextCardImage = (id, total) => { cardImageIndex.value = { ...cardImageIndex.value, [id]: (cardIndex(id) + 1) % total }; };
+const prevCardImage = (id, total) => { cardImageIndex.value = { ...cardImageIndex.value, [id]: (cardIndex(id) - 1 + total) % total }; };
+onMounted(() => {
+    props.products.forEach((p) => { if (productImages(p).length) cardImageIndex.value[p.id] = 0; });
+});
 
 // Filter state
 const searchQuery = ref('');

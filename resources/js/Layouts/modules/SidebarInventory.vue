@@ -1,5 +1,5 @@
 <script>
-import { LayoutDashboard, Spool, Package, Layers, AlertCircle, Boxes } from 'lucide-vue-next'
+import { LayoutDashboard, Spool, Package, AlertCircle, Boxes } from 'lucide-vue-next'
 
 export const inventoryModule = {
     key: 'INV',
@@ -16,7 +16,6 @@ export const inventoryModule = {
             { label: 'Dashboard', href: route('inv.dashboard'), icon: LayoutDashboard, permKey: 'dashboard' },
             { label: 'Materials', href: route('inv.materials'), icon: Spool, permKey: 'materials' },
             { label: 'Products', href: route('inv.products'), icon: Package, permKey: 'products' },
-            { label: 'Recipes', href: route('inv.bom'), icon: Layers, permKey: 'bom' },
             { label: 'Stock Checker', href: route('inv.checker'), icon: AlertCircle, permKey: 'checker' },
         ]
         if (isCEO) return all

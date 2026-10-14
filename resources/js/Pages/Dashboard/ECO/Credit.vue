@@ -105,6 +105,9 @@
                 </div>
 
                 <!-- Pending Credit Reviews Section -->
+                <div class="animate-fade-up rounded-3xl border border-indigo-200 bg-indigo-50 p-4 text-xs font-bold text-indigo-800 dark:border-indigo-800/50 dark:bg-indigo-900/20 dark:text-indigo-200" style="animation-delay:100ms">
+                    ✓ Pre-acceptance checklist (aligned with Push Center): before a PO is accepted, verify <strong>inventory</strong> (Push Center → Check Inv) and <strong>credits</strong> below (good payer vs pending payments). Credit flags are advisory only — Monti may still accept at their judgement.
+                </div>
                 <div v-if="pendingCreditReviews.length > 0" class="animate-fade-up bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-amber-200 dark:border-amber-800/50 overflow-hidden hover:shadow-xl transition-shadow duration-300" style="animation-delay:120ms">
                     <div class="p-6 border-b border-amber-200 dark:border-amber-800/50 bg-gradient-to-r from-amber-50 to-transparent dark:from-amber-900/20 flex items-center gap-2">
                         <AlertCircle class="h-5 w-5 text-amber-600" />
@@ -325,9 +328,9 @@ const openHistoryModal = (client) => {
 };
 
 const approveCreditReview = (order) => {
-    if (!confirm(`Approve order ${order.po_number}? This will move it to the Push Center.`)) return;
+    if (!confirm(`Approve order ${order.po_number}? This will run the credit check (advisory only) and move it toward the Push Center. At-risk clients can still be accepted at Monti's judgement.`)) return;
     approving.value[order.id] = true;
-    router.post(route('eco.credit.approve', order.id), {}, {
+    router.post(route('eco.credit.approve-order', order.id), {}, {
         preserveScroll: true,
         onSuccess: () => {
             showToast('success', `Order ${order.po_number} approved.`);

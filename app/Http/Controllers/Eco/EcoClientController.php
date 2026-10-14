@@ -14,7 +14,7 @@ class EcoClientController extends Controller
      */
     public function index()
     {
-        $clients = Client::orderBy('created_at', 'desc')
+        $clients = Client::with('logo')->orderBy('created_at', 'desc')
             ->get()
             ->map(fn ($c) => [
                 'id' => $c->id,
@@ -31,6 +31,7 @@ class EcoClientController extends Controller
                 'credit_limit' => $c->credit_limit,
                 'payment_terms_days' => $c->payment_terms_days,
                 'created_at' => $c->created_at,
+                'logo_url' => $c->logo?->logo_url,
             ]);
 
         return Inertia::render('Dashboard/ECO/ClientList', [

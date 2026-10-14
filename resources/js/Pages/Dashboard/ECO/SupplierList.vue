@@ -213,8 +213,9 @@ const filters = [
                             >
                                 <td class="px-5 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                                            <span class="text-xs font-black text-white uppercase">{{ vendor.business_name?.charAt(0)?.toUpperCase() }}</span>
+                                        <div class="h-9 w-9 overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg ring-1 ring-white/40 group-hover:scale-110 transition-transform duration-300" :title="vendor.business_name">
+                                            <img v-if="vendor.logo_url" :src="vendor.logo_url" :alt="vendor.business_name" class="h-full w-full object-cover" loading="lazy" />
+                                            <span v-else class="text-xs font-black text-white uppercase">{{ vendor.business_name?.charAt(0)?.toUpperCase() }}</span>
                                         </div>
                                         <div class="min-w-0">
                                             <span class="font-bold text-gray-900 dark:text-white block truncate">{{ vendor.business_name }}</span>
@@ -268,8 +269,9 @@ const filters = [
                         <div class="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-400/20 to-fuchsia-400/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                         <div class="relative flex items-start justify-between gap-3 mb-3">
                             <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                                    <span class="text-sm font-black text-white uppercase">{{ vendor.business_name?.charAt(0)?.toUpperCase() }}</span>
+                                <div class="h-9 w-9 overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                                    <img v-if="vendor.logo_url" :src="vendor.logo_url" :alt="vendor.business_name" class="h-full w-full object-cover" loading="lazy" />
+                                    <span v-else class="text-sm font-black text-white uppercase">{{ vendor.business_name?.charAt(0)?.toUpperCase() }}</span>
                                 </div>
                                 <div class="min-w-0">
                                     <p class="font-bold text-gray-900 dark:text-white text-sm truncate">{{ vendor.business_name }}</p>

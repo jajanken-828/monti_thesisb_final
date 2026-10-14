@@ -23,8 +23,11 @@
                             <p class="text-sm text-blue-100/90">Forward approved job orders to SCM in one click.</p>
                             <span v-if="!canEditPush" class="mt-2 inline-block text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full">View only</span>
                         </div>
-                        <button @click="refreshData" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition active:scale-95">
+                        <button @click="refreshData" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25 backdrop-blur hover:bg-white/25 transition active:scale-95" title="Refresh">
                             <RefreshCw class="h-4 w-4" />
+                        </button>
+                        <button @click="scheduleModal.show = true" class="flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-black uppercase tracking-wide text-indigo-700 shadow-lg hover:scale-105 active:scale-95 transition" title="View delivery schedule calendar">
+                            <CalendarDays class="h-4 w-4" /> Schedule
                         </button>
                     </div>
 
@@ -264,6 +267,14 @@
                                         <p class="text-sm font-black text-gray-900 dark:text-white">{{ jo.quantity }} kg</p>
                                         <p class="text-[10px] font-bold text-gray-400 mt-1">₱{{
                                             formatPrice(jo.total_amount) }}</p>
+                                        <span v-if="jo.credit && !jo.credit.is_good_payer"
+                                            class="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300" title="Client has pending payments — advisory only, you may still accept">
+                                            ⚠ At Risk · ₱{{ formatPrice(jo.credit.outstanding_balance) }}
+                                        </span>
+                                        <span v-else-if="jo.credit && jo.credit.pending_count > 0"
+                                            class="mt-1.5 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase text-blue-700 ring-1 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300" :title="`${jo.credit.pending_count} pending payment(s)`">
+                                            {{ jo.credit.pending_count }} pending
+                                        </span>
                                     </td>
 
                                     <!-- Actions -->
@@ -609,6 +620,28 @@
                                 This action will move the order out of the pending queue.
                             </p>
 
+                            <!-- Credit + inventory pre-acceptance checklist (advisory only) -->
+                            <div v-if="confirmModal.order?.credit && !confirmModal.order.credit.is_good_payer"
+                                class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-bold text-amber-800 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-200">
+                                ⚠ Credit notice: {{ confirmModal.order.client?.company_name }} is flagged
+                                <strong>At Risk</strong> — outstanding ₱{{ formatPrice(confirmModal.order.credit.outstanding_balance) }}<span v-if="confirmModal.order.credit.pending_count"> · {{ confirmModal.order.credit.pending_count }} pending payment(s)</span>.
+                                This is for notification only — you may still accept at your judgement.
+                            </div>
+                            <div v-else-if="confirmModal.order?.credit?.pending_count > 0"
+                                class="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs font-bold text-blue-800 dark:border-blue-800/50 dark:bg-blue-900/20 dark:text-blue-200">
+                                ℹ {{ confirmModal.order.client?.company_name }} has {{ confirmModal.order.credit.pending_count }} pending payment(s) to settle (outstanding ₱{{ formatPrice(confirmModal.order.credit.outstanding_balance) }}). Advisory only — acceptance is at your judgement.
+                            </div>
+                            <p class="rounded-2xl bg-teal-50 border border-teal-200 p-3 text-[11px] font-bold text-teal-800 dark:bg-teal-900/20 dark:text-teal-200 dark:border-teal-800">
+                                ✓ Inventory: run “Check Inv” before accepting. Blocked pushes auto-suggest procurement. Pick a delivery date below — it shows in tracking (Monti + client) as the scheduled date.
+                            </p>
+
+                            <!-- Scheduled delivery date (calendar picker) -->
+                            <div>
+                                <label class="mb-1 block text-[10px] font-black uppercase tracking-widest text-gray-400">Scheduled delivery date</label>
+                                <input v-model="deliveryDate" type="date" :min="todayStr"
+                                    class="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
+                            </div>
+
                             <!-- Order Summary Card -->
                             <div v-if="confirmModal.order" class="bg-gray-50 dark:bg-zinc-800/60 border border-gray-100 dark:border-zinc-700 rounded-2xl p-5 space-y-3">
                                 <div class="flex justify-between items-center">
@@ -651,6 +684,52 @@
                                 <Send v-else class="h-4 w-4" />
                                 Confirm Push
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             DELIVERY SCHEDULE CALENDAR — all JO loads, Monti-wide
+             ══════════════════════════════════════════════════════════════════ -->
+        <Teleport to="body">
+            <Transition name="modal">
+                <div v-if="scheduleModal.show"
+                    class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
+                    @click.self="scheduleModal.show = false">
+                    <div class="bg-white dark:bg-zinc-900 w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden animate-pop flex flex-col max-h-[90vh]">
+                        <div class="relative overflow-hidden px-6 py-5 bg-gradient-to-br from-blue-700 via-indigo-700 to-violet-800 text-white flex justify-between items-center">
+                            <div class="relative">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">JO Delivery Schedule</p>
+                                <h3 class="font-black text-xl tracking-tight">{{ calendarTitle }}</h3>
+                                <p class="text-[11px] text-blue-100/90">{{ scheduledList.length }} scheduled · {{ unscheduledCount }} unscheduled</p>
+                            </div>
+                            <div class="relative flex items-center gap-2">
+                                <button @click="calOffset--" class="p-2 bg-white/15 hover:bg-white/25 rounded-xl transition"><ChevronLeft class="h-4 w-4" /></button>
+                                <button @click="calOffset = 0" class="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-xl text-[10px] font-black uppercase">Today</button>
+                                <button @click="calOffset++" class="p-2 bg-white/15 hover:bg-white/25 rounded-xl transition"><ChevronRight class="h-4 w-4" /></button>
+                                <button @click="scheduleModal.show = false" class="p-2 bg-white/15 hover:bg-white/25 rounded-xl transition"><X class="h-4 w-4" /></button>
+                            </div>
+                        </div>
+                        <div class="p-6 overflow-y-auto">
+                            <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">
+                                <span v-for="d in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']" :key="d">{{ d }}</span>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1">
+                                <div v-for="cell in calendarCells" :key="cell.key"
+                                    :class="['min-h-20 rounded-2xl border p-1.5 text-left transition', cell.isToday ? 'border-indigo-400 ring-2 ring-indigo-200 bg-indigo-50/60 dark:bg-indigo-900/20' : 'border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/40', !cell.inMonth && 'opacity-40']">
+                                    <p class="text-[11px] font-black" :class="cell.isToday ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-500'">{{ cell.day }}</p>
+                                    <div class="mt-1 space-y-1">
+                                        <span v-for="o in cell.orders.slice(0, 3)" :key="o.id" :title="`${o.jo_number} · ${o.client?.company_name}`"
+                                            class="block truncate rounded-lg bg-indigo-600 px-1.5 py-0.5 text-[9px] font-black text-white">{{ o.jo_number }}</span>
+                                        <span v-if="cell.orders.length > 3" class="block text-[9px] font-black text-indigo-600">+{{ cell.orders.length - 3 }} more</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="unscheduledCount > 0" class="mt-4 rounded-2xl bg-amber-50 border border-amber-200 p-3 text-[11px] font-bold text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                                {{ unscheduledCount }} pushed JO(s) have no delivery date yet — open them and set one via Push SCM.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -810,7 +889,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { usePageAccess } from '@/composables/usePageAccess';
-import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2, ClipboardList, ChevronDown } from 'lucide-vue-next';
+import { Send, RefreshCw, Search, Loader2, X, Eye, Check, Sparkles, Activity, TriangleAlert, CheckCircle2, ClipboardList, ChevronDown, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-vue-next';
 import axios from 'axios';
 
 const { canEdit } = usePageAccess();
@@ -830,6 +909,42 @@ const summaryModal = ref({ show: false, data: {} });
 
 // Confirmation modal state
 const confirmModal = ref({ show: false, order: null, module: null });
+const deliveryDate = ref('');
+const todayStr = new Date().toISOString().slice(0, 10);
+
+// Delivery schedule calendar (all JO loads, Monti-wide)
+const scheduleModal = ref({ show: false });
+const calOffset = ref(0);
+const calBase = computed(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + calOffset.value, 1);
+});
+const calendarTitle = computed(() => calBase.value.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }));
+const scheduledList = computed(() => [...(props.pushedOrders || []), ...(props.salesOrders || [])].filter((o) => o.expected_ship_date));
+const unscheduledCount = computed(() => (props.pushedOrders || []).filter((o) => !o.expected_ship_date).length);
+const calendarCells = computed(() => {
+    const base = calBase.value;
+    const y = base.getFullYear(), m = base.getMonth();
+    const first = new Date(y, m, 1).getDay();
+    const days = new Date(y, m + 1, 0).getDate();
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const byDate = {};
+    scheduledList.value.forEach((o) => {
+        const k = String(o.expected_ship_date).slice(0, 10);
+        (byDate[k] = byDate[k] || []).push(o);
+    });
+    const cells = [];
+    for (let i = 0; i < first; i++) {
+        const d = new Date(y, m, -first + i + 1);
+        const k = d.toISOString().slice(0, 10);
+        cells.push({ key: 'pad-' + i, day: d.getDate(), inMonth: false, isToday: k === todayKey, orders: byDate[k] || [] });
+    }
+    for (let d = 1; d <= days; d++) {
+        const k = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        cells.push({ key: k, day: d, inMonth: true, isToday: k === todayKey, orders: byDate[k] || [] });
+    }
+    return cells;
+});
 
 // Inventory-check state (THE single stock check for ECO + SCM, run before acceptance)
 const dssModal = ref({ show: false, loading: false, order: null, result: null });
@@ -861,6 +976,7 @@ const openDss = async (order) => {
 const pushFromDss = () => {
     const order = dssModal.value.order;
     dssModal.value.show = false;
+    deliveryDate.value = order?.expected_ship_date ? String(order.expected_ship_date).slice(0, 10) : '';
     confirmModal.value = { show: true, order, module: 'scm' };
 };
 
@@ -939,11 +1055,13 @@ const openSummary = (jo) => {
 const openConfirmFromSummary = () => {
     const order = summaryModal.value.data;
     summaryModal.value.show = false;
+    deliveryDate.value = order?.expected_ship_date ? String(order.expected_ship_date).slice(0, 10) : '';
     confirmModal.value = { show: true, order, module: 'scm' };
 };
 
 // Open confirmation modal (from table / card buttons)
 const openConfirm = (order, module) => {
+    deliveryDate.value = order?.expected_ship_date ? String(order.expected_ship_date).slice(0, 10) : '';
     confirmModal.value = { show: true, order, module };
 };
 
@@ -957,13 +1075,14 @@ const executePush = () => {
 
     router.post(
         route(module === 'scm' ? 'eco.push.scm' : 'eco.push.ordermgmt', order.id),
-        {},
+        deliveryDate.value ? { delivery_date: deliveryDate.value } : {},
         {
             preserveScroll: true,
             onSuccess: () => {
                 showToast(
                     `Order ${order.jo_number} successfully pushed to ${module === 'scm' ? 'SCM' : 'Order Management'}!`
                 );
+                deliveryDate.value = '';
                 // Auto-switch to the "Already Pushed" tab
                 activeTab.value = 'pushed';
             },

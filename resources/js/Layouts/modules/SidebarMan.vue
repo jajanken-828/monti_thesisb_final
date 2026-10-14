@@ -2,7 +2,7 @@
 import {
     Factory, LayoutDashboard, ClipboardList, XCircle, Boxes, CheckCircle2,
     Eye, Award, FileText, Sparkles, Palette, Wrench, History, Cog, Flag, FlaskConical,
-    ClipboardCheck, ArrowRightLeft, Leaf, HardHat, Flame,
+    ClipboardCheck, ArrowRightLeft, Leaf, HardHat, Flame, Layers,
 } from 'lucide-vue-next'
 
 // Static config for the "single manufacturing role" staff view (Case 2 below)
@@ -65,6 +65,8 @@ function getRoleLinks(route, roleWithUnderscores, label, icon, hasReports = true
         links.push({ label: 'Tests & CoA', href: route(`${routePrefix}.tests`), icon: ClipboardCheck })
         links.push({ label: 'Lab Inventory', href: route(`${routePrefix}.inventory`), icon: Boxes })
         links.push({ label: 'Bulk Transfer', href: route(`${routePrefix}.transfer`), icon: ArrowRightLeft })
+        // Recipes live in Manufacturing now — the dyeing lab chemist owns them.
+        try { links.push({ label: 'Recipes', href: route('man.recipes'), icon: Layers }) } catch (e) {}
     }
     if (hasReports) {
         links.push({ label: 'Reports', href: route(`${routePrefix}.reports`), icon: FileText })
@@ -128,6 +130,7 @@ export const manModule = {
         const managerChildren = [
             { label: 'Dashboard', href: route('man.manager.dashboard'), icon: Factory, permKey: 'dashboard' },
             { label: 'Production Orders', href: route('man.manager.production'), icon: ClipboardList, permKey: 'production' },
+            { label: 'Recipes', href: route('man.recipes'), icon: Layers, permKey: 'production' },
             { label: 'Rejected Items', href: route('man.manager.rejected'), icon: XCircle, permKey: 'reject' },
             { label: 'Production Inventory', href: route('man.inventory.index'), icon: Boxes, permKey: 'inventory' },
         ]

@@ -49,6 +49,11 @@ class EcoPushController extends Controller
                 $data = $order->toArray();
                 $companyName = $order->direct_company_name ?? $order->po_company_name ?? 'N/A';
                 $data['client'] = ['company_name' => $companyName];
+                // Resolve the owning client id (direct FK wins, else via PO number).
+                $clientId = $order->client_id
+                    ?? PurchaseOrder::where('po_number', $order->purchase_order_id)->value('client_id');
+                $data['client']['id'] = $clientId;
+                $data['credit'] = $this->creditFor($clientId, $order->total_amount);
 
                 $recipeId = $order->recipe_id ?? null;
                 if ($recipeId) $recipeId = (int) $recipeId;
@@ -85,6 +90,10 @@ class EcoPushController extends Controller
                 $data = $order->toArray();
                 $companyName = $order->direct_company_name ?? $order->po_company_name ?? 'N/A';
                 $data['client'] = ['company_name' => $companyName];
+                $clientId = $order->client_id
+                    ?? PurchaseOrder::where('po_number', $order->purchase_order_id)->value('client_id');
+                $data['client']['id'] = $clientId;
+                $data['credit'] = $this->creditFor($clientId, $order->total_amount);
 
                 $recipeId = $order->recipe_id ?? null;
                 if ($recipeId) $recipeId = (int) $recipeId;
@@ -104,6 +113,34 @@ class EcoPushController extends Controller
             'salesOrders'  => $salesOrders,
             'pushedOrders' => $pushedOrders,
         ]);
+    }
+
+    /**
+     * Credit snapshot for the Push Center confirm modal + Credit ledger
+     * alignment. Advisory only — Monti may still accept at their judgement
+     * even when the client is flagged At Risk / has pending balances.
+     */
+    protected function creditFor($clientId, $orderAmount = 0): array
+    {
+        if (!$clientId) {
+            return ['is_good_payer' => true, 'outstanding_balance' => 0, 'pending_count' => 0, 'over_limit' => false];
+        }
+        $client = Client::with('creditAccount')->find($clientId);
+        $outstanding = (float) ($client?->creditAccount?->outstanding_balance ?? 0);
+        $isGood = $client?->creditAccount ? (bool) $client->creditAccount->is_good_payer : true;
+        $pending = PurchaseOrder::where('client_id', $clientId)
+            ->whereIn('status', ['credit_review', 'pending_client_approval'])
+            ->count();
+        $overLimit = $client && $client->credit_limit
+            ? ($outstanding + (float) $orderAmount) > (float) $client->credit_limit
+            : false;
+        return [
+            'is_good_payer' => $isGood,
+            'outstanding_balance' => $outstanding,
+            'pending_count' => $pending,
+            'over_limit' => $overLimit,
+            'credit_limit' => $client?->credit_limit,
+        ];
     }
 
     /**
@@ -222,9 +259,16 @@ class EcoPushController extends Controller
                 return redirect()->back()->withErrors(['error' => $blocker]);
             }
 
+            $data = request()->validate([
+                'delivery_date' => 'nullable|date|after_or_equal:today',
+            ]);
+
             $salesOrder->update([
                 'status'    => 'pushed_to_scm',
                 'pushed_to' => 'SCM',
+                // Scheduled delivery chosen in the Push Center calendar UI.
+                // Visible in tracking (Monti + client) as the committed date.
+                'expected_ship_date' => $data['delivery_date'] ?? $salesOrder->expected_ship_date,
             ]);
 
             return redirect()->back()->with('success', 'Order successfully pushed to SCM.');
@@ -255,9 +299,14 @@ class EcoPushController extends Controller
                 return redirect()->back()->withErrors(['error' => $blocker]);
             }
 
+            $data = request()->validate([
+                'delivery_date' => 'nullable|date|after_or_equal:today',
+            ]);
+
             $salesOrder->update([
                 'status'    => 'pushed_to_ordermgmt',
                 'pushed_to' => 'Order Mgmt',
+                'expected_ship_date' => $data['delivery_date'] ?? $salesOrder->expected_ship_date,
             ]);
 
             return redirect()->back()->with('success', 'Order forwarded to Order Management.');

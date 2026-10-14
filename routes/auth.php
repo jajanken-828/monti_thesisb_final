@@ -82,12 +82,13 @@ Route::middleware('auth:web,client')->group(function () {
         ->name('password.update');
 
     // ✅ Unified Logout Logic
-    // Detects which guard is active and logs out the correct user session
+    // Logs out of EVERY guard (web, client, supplier, applicant). Logging
+    // out a single guard leaves the other guards' remember-me cookies alive,
+    // so the next request silently re-authenticates and the user appears to
+    // still be logged in ("log out twice" bug).
     Route::post('logout', function (Request $request) {
-        if (Auth::guard('client')->check()) {
-            Auth::guard('client')->logout();
-        } else {
-            Auth::guard('web')->logout();
+        foreach (['web', 'client', 'supplier', 'applicant'] as $guard) {
+            Auth::guard($guard)->logout();
         }
 
         $request->session()->invalidate();

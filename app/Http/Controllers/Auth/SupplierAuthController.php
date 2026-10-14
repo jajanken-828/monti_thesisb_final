@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\Concerns\LogsOutEveryGuard;
 use App\Models\Pro\Supplier;
 use App\Support\NotifiesExecutive;
 use App\Models\Pro\VendorRegistration;
@@ -19,6 +20,8 @@ use Inertia\Inertia;
 
 class SupplierAuthController extends Controller
 {
+    use LogsOutEveryGuard;
+
     /** Show the supplier login form */
     public function showLogin()
     {
@@ -166,10 +169,7 @@ class SupplierAuthController extends Controller
     /** Log out the supplier */
     public function logout(Request $request)
     {
-        Auth::guard('supplier')->logout();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $this->logoutEveryGuard($request);
 
         return redirect('/');
     }

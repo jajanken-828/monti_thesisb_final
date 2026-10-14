@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Inv\BomController;
 use App\Http\Controllers\Man\Manager\ManufacturingManagerController;
 use App\Http\Controllers\Man\ManDashboardController;
 use App\Http\Controllers\Man\ManufacturingInventoryController;
@@ -72,6 +73,18 @@ Route::prefix('dashboard/man')->name('man.')->middleware(['auth', 'verified', 'm
         // (man.staff.checker-quality.*) — the Finishing supervisor reaches
         // them via man.role:checker_quality; no manager-level duplicates.
     });
+
+    // ── Recipes (moved from Inventory → Manufacturing; dyeing lab chemist owns it).
+    // Same BomController, new canonical route man.recipes. inv.bom is kept
+    // as a legacy alias so old links/bookmarks keep working.
+    Route::get('/recipes', [BomController::class, 'index'])
+        ->middleware('page.permission:production,view')->name('recipes');
+    Route::post('/recipes', [BomController::class, 'store'])
+        ->middleware('page.permission:production,edit')->name('recipes.store');
+    Route::put('/recipes/{id}', [BomController::class, 'update'])
+        ->middleware('page.permission:production,edit')->name('recipes.update');
+    Route::delete('/recipes/{id}', [BomController::class, 'destroy'])
+        ->middleware('page.permission:production,edit')->name('recipes.destroy');
 
     // ──────────────────────────────────────────────────────────────────────────
     // Staff-specific routes (only for users with matching manufacturing_role)
